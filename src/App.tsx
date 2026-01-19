@@ -95,7 +95,7 @@ function App() {
     : null;
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-zinc-950">
       {pendingDeleteId && pendingWorkspace && (
         <ConfirmModal
           title="Delete Workspace"
@@ -105,31 +105,35 @@ function App() {
           onCancel={() => setPendingDeleteId(null)}
         />
       )}
-      {/* Sidebar */}
-      <div className="w-64 flex-shrink-0 h-full">
-        <Sidebar
-          projects={projects}
-          selectedWorkspaceId={activeWorkspaceId}
-          onSelectWorkspace={handleSelectWorkspace}
-          onAddProject={handleAddProject}
-          onAddWorkspace={handleAddWorkspace}
-        />
-      </div>
 
-      {/* Main Claude Pane */}
-      <div className="flex-1 h-full min-w-0">
-        <ClaudePane
-          openWorkspaces={openWorkspaces}
-          activeWorkspaceId={activeWorkspaceId}
-          onSelectTab={handleSelectTab}
-          onCloseTab={handleCloseTab}
-          onDeleteWorkspace={handleDeleteWorkspace}
-        />
-      </div>
+      {/* Main content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-64 flex-shrink-0 h-full">
+          <Sidebar
+            projects={projects}
+            selectedWorkspaceId={activeWorkspaceId}
+            onSelectWorkspace={handleSelectWorkspace}
+            onAddProject={handleAddProject}
+            onAddWorkspace={handleAddWorkspace}
+          />
+        </div>
 
-      {/* Right Panel */}
-      <div className="w-80 flex-shrink-0 h-full">
-        <RightPanel workspace={activeWorkspace} changedFiles={changedFiles} />
+        {/* Main Claude Pane */}
+        <div className="flex-1 h-full min-w-0">
+          <ClaudePane
+            openWorkspaces={openWorkspaces}
+            activeWorkspaceId={activeWorkspaceId}
+            onSelectTab={handleSelectTab}
+            onCloseTab={handleCloseTab}
+            onDeleteWorkspace={handleDeleteWorkspace}
+          />
+        </div>
+
+        {/* Right Panel */}
+        <div className="w-80 flex-shrink-0 h-full">
+          <RightPanel workspace={activeWorkspace} changedFiles={changedFiles} />
+        </div>
       </div>
     </div>
   );

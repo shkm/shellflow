@@ -1,6 +1,7 @@
 import { FolderGit2, Plus, ChevronRight, ChevronDown, GitBranch } from 'lucide-react';
 import { Project, Workspace } from '../../types';
 import { useState } from 'react';
+import { DragRegion } from '../DragRegion';
 
 interface SidebarProps {
   projects: Project[];
@@ -35,7 +36,9 @@ export function Sidebar({
 
   return (
     <div className="flex flex-col h-full bg-zinc-900 border-r border-zinc-800">
-      <div className="flex-1 overflow-y-auto p-2 pt-3">
+      {/* Drag region for macOS traffic lights */}
+      <DragRegion className="h-10 flex-shrink-0" />
+      <div className="flex-1 overflow-y-auto p-2">
         {projects.length === 0 ? (
           <div className="text-center py-8 text-zinc-500 text-sm">
             <FolderGit2 className="mx-auto mb-2" size={32} />

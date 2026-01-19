@@ -1,6 +1,7 @@
 import { X, Terminal, Trash2 } from 'lucide-react';
 import { Workspace } from '../../types';
 import { ClaudeTab } from './ClaudeTab';
+import { DragRegion } from '../DragRegion';
 
 interface ClaudePaneProps {
   openWorkspaces: Workspace[];
@@ -19,18 +20,21 @@ export function ClaudePane({
 }: ClaudePaneProps) {
   if (openWorkspaces.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-zinc-950 text-zinc-500">
-        <Terminal size={48} className="mb-4 opacity-50" />
-        <p className="text-lg">No workspaces open</p>
-        <p className="text-sm mt-1">Select a workspace from the sidebar to start</p>
+      <div className="flex flex-col h-full bg-zinc-950 text-zinc-500">
+        <DragRegion className="h-10 flex-shrink-0 bg-zinc-900 border-b border-zinc-800" />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <Terminal size={48} className="mb-4 opacity-50" />
+          <p className="text-lg">No workspaces open</p>
+          <p className="text-sm mt-1">Select a workspace from the sidebar to start</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
-      {/* Tab bar */}
-      <div className="flex items-center bg-zinc-900 border-b border-zinc-800">
+      {/* Tab bar with drag region */}
+      <DragRegion className="flex items-end h-10 bg-zinc-900 border-b border-zinc-800">
         <div className="flex items-center overflow-x-auto flex-1">
           {openWorkspaces.map((workspace) => (
             <div
@@ -65,7 +69,7 @@ export function ClaudePane({
             <Trash2 size={16} />
           </button>
         )}
-      </div>
+      </DragRegion>
 
       {/* Terminal content */}
       <div className="flex-1 relative">
