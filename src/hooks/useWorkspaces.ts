@@ -67,11 +67,25 @@ export function useWorkspaces() {
     [loadProjects]
   );
 
+  const removeProject = useCallback(
+    async (projectId: string) => {
+      try {
+        await invoke('remove_project', { projectId });
+        await loadProjects();
+      } catch (err) {
+        console.error('Failed to remove project:', err);
+        throw err;
+      }
+    },
+    [loadProjects]
+  );
+
   return {
     projects,
     loading,
     error,
     addProject,
+    removeProject,
     createWorkspace,
     deleteWorkspace,
     refresh: loadProjects,

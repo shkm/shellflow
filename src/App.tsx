@@ -8,14 +8,15 @@ import { useWorkspaces } from './hooks/useWorkspaces';
 import { useGitStatus } from './hooks/useGitStatus';
 import { useConfig } from './hooks/useConfig';
 import { selectFolder } from './lib/tauri';
-import { Workspace } from './types';
+import { Project, Workspace } from './types';
 
 function App() {
-  const { projects, addProject, createWorkspace, deleteWorkspace } = useWorkspaces();
+  const { projects, addProject, removeProject, createWorkspace, deleteWorkspace } = useWorkspaces();
   const { config } = useConfig();
   const [openWorkspaces, setOpenWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingRemoveProject, setPendingRemoveProject] = useState<Project | null>(null);
 
   const activeWorkspace = openWorkspaces.find((w) => w.id === activeWorkspaceId) || null;
   const { files: changedFiles } = useGitStatus(activeWorkspace);
@@ -92,6 +93,27 @@ function App() {
     }
   }, [deleteWorkspace, pendingDeleteId, activeWorkspaceId, openWorkspaces]);
 
+  const handleRemoveProject = useCallback((project: Project) => {
+    setPendingRemoveProject(project);
+  }, []);
+
+  const confirmRemoveProject = useCallback(async () => {
+    if (!pendingRemoveProject) return;
+    try {
+      // Close any open workspaces from this project
+      const projectWorkspaceIds = new Set(pendingRemoveProject.workspaces.map((w) => w.id));
+      setOpenWorkspaces((prev) => prev.filter((w) => !projectWorkspaceIds.has(w.id)));
+      if (activeWorkspaceId && projectWorkspaceIds.has(activeWorkspaceId)) {
+        setActiveWorkspaceId(null);
+      }
+      await removeProject(pendingRemoveProject.id);
+    } catch (err) {
+      console.error('Failed to remove project:', err);
+    } finally {
+      setPendingRemoveProject(null);
+    }
+  }, [removeProject, pendingRemoveProject, activeWorkspaceId]);
+
   const pendingWorkspace = pendingDeleteId
     ? openWorkspaces.find((w) => w.id === pendingDeleteId) ||
       projects.flatMap((p) => p.workspaces).find((w) => w.id === pendingDeleteId)
@@ -106,6 +128,20 @@ function App() {
           confirmLabel="Delete"
           onConfirm={confirmDeleteWorkspace}
           onCancel={() => setPendingDeleteId(null)}
+        />
+      )}
+
+      {pendingRemoveProject && (
+        <ConfirmModal
+          title="Remove Project"
+          message={
+            pendingRemoveProject.workspaces.length > 0
+              ? `Are you sure you want to remove "${pendingRemoveProject.name}"? This will also delete ${pendingRemoveProject.workspaces.length} workspace${pendingRemoveProject.workspaces.length === 1 ? '' : 's'} and cannot be undone.`
+              : `Are you sure you want to remove "${pendingRemoveProject.name}"?`
+          }
+          confirmLabel="Remove"
+          onConfirm={confirmRemoveProject}
+          onCancel={() => setPendingRemoveProject(null)}
         />
       )}
 
@@ -124,6 +160,8 @@ function App() {
               onSelectWorkspace={handleSelectWorkspace}
               onAddProject={handleAddProject}
               onAddWorkspace={handleAddWorkspace}
+              onDeleteWorkspace={(workspace) => handleDeleteWorkspace(workspace.id)}
+              onRemoveProject={handleRemoveProject}
             />
           </div>
         </Panel>

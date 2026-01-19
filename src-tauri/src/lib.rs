@@ -36,6 +36,16 @@ fn list_projects(state: State<'_, Arc<AppState>>) -> Result<Vec<Project>> {
     Ok(state.persisted.read().projects.clone())
 }
 
+#[tauri::command]
+fn remove_project(state: State<'_, Arc<AppState>>, project_id: &str) -> Result<()> {
+    {
+        let mut persisted = state.persisted.write();
+        persisted.projects.retain(|p| p.id != project_id);
+    }
+    state.save().map_err(map_err)?;
+    Ok(())
+}
+
 // Workspace commands
 #[tauri::command]
 fn create_workspace(
@@ -189,6 +199,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             add_project,
             list_projects,
+            remove_project,
             create_workspace,
             list_workspaces,
             delete_workspace,
