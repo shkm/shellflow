@@ -169,6 +169,8 @@ pub fn spawn_pty(
         let mut consecutive_empty = 0;
         let mut total_bytes = 0usize;
         let mut read_count = 0usize;
+        // Buffer for incomplete UTF-8 sequences (max 3 bytes needed)
+        let mut utf8_buf: Vec<u8> = Vec::with_capacity(4);
 
         loop {
             match reader.read(&mut buf) {
@@ -188,14 +190,34 @@ pub fn spawn_pty(
                     if read_count <= 5 || read_count % 100 == 0 {
                         eprintln!("[PTY:{}] Read {} bytes (total: {})", pty_id_clone, n, total_bytes);
                     }
-                    let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                    let _ = app_handle.emit(
-                        "pty-output",
-                        PtyOutput {
-                            pty_id: pty_id_clone.clone(),
-                            data,
-                        },
-                    );
+
+                    // Combine any leftover bytes with new data
+                    utf8_buf.extend_from_slice(&buf[..n]);
+
+                    // Find the last valid UTF-8 boundary
+                    let valid_up_to = match std::str::from_utf8(&utf8_buf) {
+                        Ok(_) => utf8_buf.len(),
+                        Err(e) => e.valid_up_to(),
+                    };
+
+                    if valid_up_to > 0 {
+                        // Safe because we just validated this portion
+                        let data = unsafe {
+                            std::str::from_utf8_unchecked(&utf8_buf[..valid_up_to])
+                        }.to_string();
+
+                        let _ = app_handle.emit(
+                            "pty-output",
+                            PtyOutput {
+                                pty_id: pty_id_clone.clone(),
+                                data,
+                            },
+                        );
+                    }
+
+                    // Keep any incomplete bytes for next read
+                    let leftover = utf8_buf.split_off(valid_up_to);
+                    utf8_buf = leftover;
                 }
                 Err(e) => {
                     eprintln!("[PTY:{}] Read error: {:?}", pty_id_clone, e);
