@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
 import { Workspace } from '../../types';
 import { usePty } from '../../hooks/usePty';
 import '@xterm/xterm/css/xterm.css';
@@ -84,6 +85,17 @@ export function ClaudeTab({ workspace, isActive }: ClaudeTabProps) {
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(webLinksAddon);
     terminal.open(containerRef.current);
+
+    // Load WebGL addon for GPU-accelerated rendering
+    try {
+      const webglAddon = new WebglAddon();
+      webglAddon.onContextLoss(() => {
+        webglAddon.dispose();
+      });
+      terminal.loadAddon(webglAddon);
+    } catch (e) {
+      console.warn('WebGL addon failed to load, using canvas renderer:', e);
+    }
 
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
