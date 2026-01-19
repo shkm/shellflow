@@ -35,18 +35,23 @@ export function ClaudeTab({ workspace, isActive }: ClaudeTabProps) {
     }
   }, []);
 
-  const { ptyId, spawn, write, resize } = usePty(handleOutput);
+  const { ptyId, spawn, write, resize, kill } = usePty(handleOutput);
 
-  // Store spawn in ref so it's stable for the effect
+  // Store spawn/kill in refs so they're stable for the effect
   const spawnRef = useRef(spawn);
+  const killRef = useRef(kill);
   useEffect(() => {
     spawnRef.current = spawn;
-  }, [spawn]);
+    killRef.current = kill;
+  }, [spawn, kill]);
 
   // Initialize terminal and spawn PTY - only runs once per workspace
   useEffect(() => {
     if (!containerRef.current || initializedRef.current) return;
     initializedRef.current = true;
+
+    // Track if this effect instance is still active (for StrictMode cleanup)
+    let isMounted = true;
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -105,10 +110,17 @@ export function ClaudeTab({ workspace, isActive }: ClaudeTabProps) {
       // Wait for layout to fully settle
       await new Promise(resolve => setTimeout(resolve, 300));
 
+      // Bail out if cleanup happened during the wait (StrictMode)
+      if (!isMounted) return;
+
       fitAddon.fit();
 
       // Wait a bit more and fit again to ensure stable size
       await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Bail out if cleanup happened during the wait (StrictMode)
+      if (!isMounted) return;
+
       fitAddon.fit();
 
       const cols = terminal.cols;
@@ -122,10 +134,13 @@ export function ClaudeTab({ workspace, isActive }: ClaudeTabProps) {
     initPty().catch(console.error);
 
     return () => {
+      isMounted = false;
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
       initializedRef.current = false;
+      // Kill the PTY process on cleanup
+      killRef.current();
     };
   }, [workspace.id]); // Only re-run when workspace changes
 
