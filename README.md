@@ -1,5 +1,7 @@
 # One Man Band
 
+> ⚠️ I vibe-coded the crap out of this.
+
 A desktop application for macOS that orchestrates git worktrees and launches Claude Code CLI instances in each.
 
 ## Features
