@@ -111,14 +111,18 @@ pub fn spawn_pty(
 
     eprintln!("[PTY] Spawning command: {} in {}", command, workspace_path);
 
-    let mut cmd = if command == "main" {
-        let mut cmd = CommandBuilder::new("claude");
-        cmd.cwd(workspace_path);
-        cmd
-    } else {
+    // "shell" is a special command that spawns the user's login shell
+    // Any other command is run directly (e.g., "claude", "aider")
+    let is_main_command = command != "shell";
+
+    let mut cmd = if command == "shell" {
         let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
         let mut cmd = CommandBuilder::new(&shell);
         cmd.arg("-l");
+        cmd.cwd(workspace_path);
+        cmd
+    } else {
+        let mut cmd = CommandBuilder::new(command);
         cmd.cwd(workspace_path);
         cmd
     };
@@ -163,7 +167,6 @@ pub fn spawn_pty(
     let app_handle = app.clone();
     let pty_id_clone = pty_id.clone();
     let workspace_id_clone = workspace_id.to_string();
-    let is_main_command = command == "main";
     let ready_emitted = Arc::new(AtomicBool::new(false));
     let ready_emitted_clone = ready_emitted.clone();
 

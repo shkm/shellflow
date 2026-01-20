@@ -64,7 +64,7 @@ function App() {
     });
   }, []);
 
-  // Listen for workspace ready events (when Claude has started)
+  // Listen for workspace ready events (when the main command has started)
   useEffect(() => {
     const unlistenReady = listen<{ ptyId: string; workspaceId: string }>(
       'pty-ready',
@@ -109,7 +109,7 @@ function App() {
 
       try {
         const workspace = await createWorkspace(project.path);
-        // Mark as loading until Claude is ready
+        // Mark as loading until the main command is ready
         setLoadingWorkspaces((prev) => new Set([...prev, workspace.id]));
         setOpenWorkspaces((prev) => [...prev, workspace]);
         setActiveWorkspaceId(workspace.id);

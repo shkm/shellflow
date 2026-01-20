@@ -154,7 +154,7 @@ export function Sidebar({
                           <GitBranch size={12} className={isOpen ? '' : 'opacity-50'} />
                           <span className="truncate flex-1">{workspace.name}</span>
                           {isLoading ? (
-                            <span title="Starting Claude...">
+                            <span title="Starting...">
                               <Loader2 size={12} className="animate-spin text-blue-400" />
                             </span>
                           ) : (

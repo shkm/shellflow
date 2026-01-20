@@ -233,7 +233,7 @@ export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
         <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-950">
           <div className="flex flex-col items-center gap-3 text-zinc-400">
             <Loader2 size={32} className="animate-spin" />
-            <span className="text-sm">Starting Claude...</span>
+            <span className="text-sm">Starting...</span>
           </div>
         </div>
       )}

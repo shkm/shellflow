@@ -6,13 +6,18 @@ export interface TerminalConfig {
   fontSize: number;
 }
 
+export interface MainConfig extends TerminalConfig {
+  command: string;
+}
+
 export interface Config {
-  main: TerminalConfig;
+  main: MainConfig;
   terminal: TerminalConfig;
 }
 
 const defaultConfig: Config = {
   main: {
+    command: 'claude',
     fontFamily: "Menlo, Monaco, 'Courier New', monospace",
     fontSize: 13,
   },

@@ -4,9 +4,30 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
-    pub main: TerminalConfig,
+    pub main: MainConfig,
     pub terminal: TerminalConfig,
     pub worktree: WorktreeConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MainConfig {
+    /// Command to run in the main terminal pane
+    pub command: String,
+    #[serde(rename = "fontFamily")]
+    pub font_family: String,
+    #[serde(rename = "fontSize")]
+    pub font_size: u16,
+}
+
+impl Default for MainConfig {
+    fn default() -> Self {
+        Self {
+            command: "claude".to_string(),
+            font_family: "Menlo, Monaco, 'Courier New', monospace".to_string(),
+            font_size: 13,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +111,8 @@ pub fn load_config() -> Config {
 
   // Main terminal pane
   "main": {
+    // Command to run (e.g., "claude", "aider", "cursor")
+    "command": "claude",
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
     "fontSize": 13
   },

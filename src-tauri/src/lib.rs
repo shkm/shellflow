@@ -171,6 +171,10 @@ fn spawn_main(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String> {
+    // Load config to get the main command
+    let cfg = config::load_config();
+    let command = cfg.main.command;
+
     // Find workspace path
     let workspace_path = {
         let persisted = state.persisted.read();
@@ -183,7 +187,7 @@ fn spawn_main(
             .ok_or_else(|| format!("Workspace not found: {}", workspace_id))?
     };
 
-    pty::spawn_pty(&app, &state, workspace_id, &workspace_path, "main", cols, rows).map_err(map_err)
+    pty::spawn_pty(&app, &state, workspace_id, &workspace_path, &command, cols, rows).map_err(map_err)
 }
 
 #[tauri::command]
