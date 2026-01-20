@@ -2,10 +2,10 @@ export interface Project {
   id: string;
   name: string;
   path: string;
-  workspaces: Workspace[];
+  worktrees: Worktree[];
 }
 
-export interface Workspace {
+export interface Worktree {
   id: string;
   name: string;
   path: string;
@@ -24,6 +24,6 @@ export interface PtyOutput {
 }
 
 export interface FilesChanged {
-  workspace_path: string;
+  worktree_path: string;
   files: FileChange[];
 }

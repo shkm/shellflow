@@ -1,5 +1,5 @@
 use crate::git;
-use crate::state::{Project, Workspace};
+use crate::state::{Project, Worktree};
 use log::info;
 use rand::seq::SliceRandom;
 use std::path::{Path, PathBuf};
@@ -8,7 +8,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Error, Debug)]
-pub enum WorkspaceError {
+pub enum WorktreeError {
     #[error("Git error: {0}")]
     Git(#[from] git::GitError),
     #[error("IO error: {0}")]
@@ -17,11 +17,11 @@ pub enum WorkspaceError {
     NotARepository,
     #[error("Project not found: {0}")]
     ProjectNotFound(String),
-    #[error("Workspace not found: {0}")]
-    WorkspaceNotFound(String),
+    #[error("Worktree not found: {0}")]
+    WorktreeNotFound(String),
 }
 
-// Fun random name generator for workspaces
+// Fun random name generator for worktrees
 const ADJECTIVES: &[&str] = &[
     "fuzzy", "quick", "lazy", "happy", "sleepy", "brave", "calm", "eager",
     "gentle", "jolly", "keen", "lively", "merry", "noble", "proud", "swift",
@@ -34,7 +34,7 @@ const ANIMALS: &[&str] = &[
     "badger", "ferret", "marten", "stoat", "heron", "crane", "swan", "robin",
 ];
 
-pub fn generate_workspace_name() -> String {
+pub fn generate_worktree_name() -> String {
     let mut rng = rand::thread_rng();
     let adj = ADJECTIVES.choose(&mut rng).unwrap_or(&"quick");
     let animal = ANIMALS.choose(&mut rng).unwrap_or(&"fox");
@@ -45,7 +45,7 @@ pub fn generate_workspace_name() -> String {
 /// Supported placeholders:
 /// - {{ repo_directory }} - the repository directory
 ///
-/// The final worktree path will be: {resolved_directory}/{workspace_name}
+/// The final worktree path will be: {resolved_directory}/{worktree_name}
 /// Default: {{ repo_directory }}/.worktrees
 pub fn resolve_worktree_directory(
     worktree_directory: Option<&str>,
@@ -69,64 +69,64 @@ pub fn resolve_worktree_directory(
     }
 }
 
-pub fn create_project(path: &Path) -> Result<Project, WorkspaceError> {
+pub fn create_project(path: &Path) -> Result<Project, WorktreeError> {
     if !git::is_git_repo(path) {
-        return Err(WorkspaceError::NotARepository);
+        return Err(WorktreeError::NotARepository);
     }
 
     Ok(Project {
         id: Uuid::new_v4().to_string(),
         name: git::get_repo_name(path),
         path: path.to_string_lossy().to_string(),
-        workspaces: vec![],
+        worktrees: vec![],
     })
 }
 
-pub fn create_workspace(
+pub fn create_worktree(
     project: &mut Project,
     name: Option<String>,
     worktree_directory: Option<&str>,
-) -> Result<Workspace, WorkspaceError> {
+) -> Result<Worktree, WorktreeError> {
     let total_start = Instant::now();
-    info!("[workspace::create_workspace] Starting...");
+    info!("[worktree::create_worktree] Starting...");
 
-    let workspace_name = name.unwrap_or_else(generate_workspace_name);
-    info!("[workspace::create_workspace] workspace_name: {}", workspace_name);
+    let worktree_name = name.unwrap_or_else(generate_worktree_name);
+    info!("[worktree::create_worktree] worktree_name: {}", worktree_name);
 
-    // Create workspace directory
+    // Create worktree directory
     let project_path = Path::new(&project.path);
     let worktree_base = resolve_worktree_directory(worktree_directory, project_path);
-    let workspace_path = worktree_base.join(&workspace_name);
+    let worktree_path = worktree_base.join(&worktree_name);
 
     let start = Instant::now();
     std::fs::create_dir_all(&worktree_base)?;
-    info!("[workspace::create_workspace] create_dir_all took {:?}", start.elapsed());
+    info!("[worktree::create_worktree] create_dir_all took {:?}", start.elapsed());
 
     // Create git worktree
     let start = Instant::now();
-    git::create_worktree(project_path, &workspace_path, &workspace_name)?;
-    info!("[workspace::create_workspace] git::create_worktree took {:?}", start.elapsed());
+    git::create_worktree(project_path, &worktree_path, &worktree_name)?;
+    info!("[worktree::create_worktree] git::create_worktree took {:?}", start.elapsed());
 
-    let workspace = Workspace {
+    let worktree = Worktree {
         id: Uuid::new_v4().to_string(),
-        name: workspace_name.clone(),
-        path: workspace_path.to_string_lossy().to_string(),
-        branch: workspace_name,
+        name: worktree_name.clone(),
+        path: worktree_path.to_string_lossy().to_string(),
+        branch: worktree_name,
         created_at: chrono_lite_now(),
     };
 
-    project.workspaces.push(workspace.clone());
+    project.worktrees.push(worktree.clone());
 
-    info!("[workspace::create_workspace] TOTAL took {:?}", total_start.elapsed());
-    Ok(workspace)
+    info!("[worktree::create_worktree] TOTAL took {:?}", total_start.elapsed());
+    Ok(worktree)
 }
 
-/// Copy gitignored files from the project to the workspace, excluding patterns in `except`
+/// Copy gitignored files from the project to the worktree, excluding patterns in `except`
 pub fn copy_gitignored_files(
     project_path: &Path,
-    workspace_path: &Path,
+    worktree_path: &Path,
     except: &[String],
-) -> Result<(), WorkspaceError> {
+) -> Result<(), WorktreeError> {
     let total_start = Instant::now();
     info!("[copy_gitignored_files] Starting...");
     info!("[copy_gitignored_files] except patterns: {:?}", except);
@@ -164,7 +164,7 @@ pub fn copy_gitignored_files(
         }
 
         let src = project_path.join(file_path);
-        let dst = workspace_path.join(file_path);
+        let dst = worktree_path.join(file_path);
 
         // Skip if source doesn't exist (shouldn't happen, but be safe)
         if !src.exists() {
@@ -211,26 +211,26 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-pub fn delete_workspace(project: &mut Project, workspace_id: &str) -> Result<(), WorkspaceError> {
-    let workspace_idx = project
-        .workspaces
+pub fn delete_worktree(project: &mut Project, worktree_id: &str) -> Result<(), WorktreeError> {
+    let worktree_idx = project
+        .worktrees
         .iter()
-        .position(|w| w.id == workspace_id)
-        .ok_or_else(|| WorkspaceError::WorkspaceNotFound(workspace_id.to_string()))?;
+        .position(|w| w.id == worktree_id)
+        .ok_or_else(|| WorktreeError::WorktreeNotFound(worktree_id.to_string()))?;
 
-    let workspace = &project.workspaces[workspace_idx];
+    let worktree = &project.worktrees[worktree_idx];
 
     // Delete worktree
     let project_path = Path::new(&project.path);
-    git::delete_worktree(project_path, &workspace.name)?;
+    git::delete_worktree(project_path, &worktree.name)?;
 
-    // Remove workspace directory if it still exists
-    let workspace_path = Path::new(&workspace.path);
-    if workspace_path.exists() {
-        std::fs::remove_dir_all(workspace_path)?;
+    // Remove worktree directory if it still exists
+    let worktree_path = Path::new(&worktree.path);
+    if worktree_path.exists() {
+        std::fs::remove_dir_all(worktree_path)?;
     }
 
-    project.workspaces.remove(workspace_idx);
+    project.worktrees.remove(worktree_idx);
 
     Ok(())
 }

@@ -5,7 +5,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { listen } from '@tauri-apps/api/event';
 import { Loader2 } from 'lucide-react';
-import { Workspace } from '../../types';
+import { Worktree } from '../../types';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import '@xterm/xterm/css/xterm.css';
@@ -20,12 +20,12 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
 }
 
 interface MainTabProps {
-  workspace: Workspace;
+  worktree: Worktree;
   isActive: boolean;
   terminalConfig: TerminalConfig;
 }
 
-export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
+export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -46,7 +46,7 @@ export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
   useEffect(() => {
     if (!ptyId) return;
 
-    const unlisten = listen<{ ptyId: string; workspaceId: string }>('pty-ready', (event) => {
+    const unlisten = listen<{ ptyId: string; worktreeId: string }>('pty-ready', (event) => {
       if (event.payload.ptyId === ptyId) {
         setIsReady(true);
       }
@@ -65,7 +65,7 @@ export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
     killRef.current = kill;
   }, [spawn, kill]);
 
-  // Initialize terminal and spawn PTY - only runs once per workspace
+  // Initialize terminal and spawn PTY - only runs once per worktree
   useEffect(() => {
     if (!containerRef.current || initializedRef.current) return;
     initializedRef.current = true;
@@ -148,7 +148,7 @@ export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
 
       // Spawn main terminal with stable size
       spawnedAtRef.current = Date.now();
-      await spawnRef.current(workspace.id, 'main', cols, rows);
+      await spawnRef.current(worktree.id, 'main', cols, rows);
     };
 
     initPty().catch(console.error);
@@ -162,7 +162,7 @@ export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
       // Kill the PTY process on cleanup
       killRef.current();
     };
-  }, [workspace.id]); // Only re-run when workspace changes
+  }, [worktree.id]); // Only re-run when worktree changes
 
   // Handle user input - set up immediately when we have ptyId
   useEffect(() => {

@@ -24,10 +24,10 @@ export function usePty(onOutput?: (data: string) => void) {
     };
   }, []);
 
-  const spawn = useCallback(async (workspaceId: string, type: PtyType, cols?: number, rows?: number) => {
+  const spawn = useCallback(async (worktreeId: string, type: PtyType, cols?: number, rows?: number) => {
     try {
       const command = type === 'main' ? 'spawn_main' : 'spawn_terminal';
-      const id = await invoke<string>(command, { workspaceId, cols, rows });
+      const id = await invoke<string>(command, { worktreeId, cols, rows });
       setPtyId(id);
 
       // Listen for PTY output

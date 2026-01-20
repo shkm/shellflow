@@ -101,8 +101,8 @@ pub fn delete_worktree(repo_path: &Path, worktree_name: &str) -> Result<(), GitE
     Ok(())
 }
 
-pub fn get_changed_files(workspace_path: &Path) -> Result<Vec<FileChange>, GitError> {
-    let repo = Repository::open(workspace_path)?;
+pub fn get_changed_files(worktree_path: &Path) -> Result<Vec<FileChange>, GitError> {
+    let repo = Repository::open(worktree_path)?;
 
     let mut opts = StatusOptions::new();
     opts.include_untracked(true)

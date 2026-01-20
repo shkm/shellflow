@@ -1,34 +1,34 @@
 import { X, Terminal, Trash2 } from 'lucide-react';
-import { Workspace } from '../../types';
+import { Worktree } from '../../types';
 import { MainTab } from './MainTab';
 import { DragRegion } from '../DragRegion';
 import { TerminalConfig } from '../../hooks/useConfig';
 
 interface MainPaneProps {
-  openWorkspaces: Workspace[];
-  activeWorkspaceId: string | null;
+  openWorktrees: Worktree[];
+  activeWorktreeId: string | null;
   terminalConfig: TerminalConfig;
-  onSelectTab: (workspaceId: string) => void;
-  onCloseTab: (workspaceId: string) => void;
-  onDeleteWorkspace: (workspaceId: string) => void;
+  onSelectTab: (worktreeId: string) => void;
+  onCloseTab: (worktreeId: string) => void;
+  onDeleteWorktree: (worktreeId: string) => void;
 }
 
 export function MainPane({
-  openWorkspaces,
-  activeWorkspaceId,
+  openWorktrees,
+  activeWorktreeId,
   terminalConfig,
   onSelectTab,
   onCloseTab,
-  onDeleteWorkspace,
+  onDeleteWorktree,
 }: MainPaneProps) {
-  if (openWorkspaces.length === 0) {
+  if (openWorktrees.length === 0) {
     return (
       <div className="flex flex-col h-full bg-zinc-950 text-zinc-500 select-none">
         <DragRegion className="h-8 flex-shrink-0 bg-zinc-900 border-b border-zinc-800" />
         <div className="flex-1 flex flex-col items-center justify-center">
           <Terminal size={48} className="mb-4 opacity-50" />
-          <p className="text-lg">No workspaces open</p>
-          <p className="text-sm mt-1">Select a workspace from the sidebar to start</p>
+          <p className="text-lg">No worktrees open</p>
+          <p className="text-sm mt-1">Select a worktree from the sidebar to start</p>
         </div>
       </div>
     );
@@ -39,22 +39,22 @@ export function MainPane({
       {/* Tab bar with drag region */}
       <DragRegion className="flex items-end h-8 bg-zinc-900 border-b border-zinc-800 select-none">
         <div className="flex items-center overflow-x-auto flex-1">
-          {openWorkspaces.map((workspace) => (
+          {openWorktrees.map((worktree) => (
             <div
-              key={workspace.id}
-              onClick={() => onSelectTab(workspace.id)}
+              key={worktree.id}
+              onClick={() => onSelectTab(worktree.id)}
               className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-r border-zinc-800 min-w-0 ${
-                activeWorkspaceId === workspace.id
+                activeWorktreeId === worktree.id
                   ? 'bg-zinc-950 text-zinc-100'
                   : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
               }`}
             >
               <Terminal size={14} className="flex-shrink-0" />
-              <span className="text-sm truncate max-w-[120px]">{workspace.name}</span>
+              <span className="text-sm truncate max-w-[120px]">{worktree.name}</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onCloseTab(workspace.id);
+                  onCloseTab(worktree.id);
                 }}
                 className="p-0.5 rounded hover:bg-zinc-700 flex-shrink-0"
               >
@@ -63,11 +63,11 @@ export function MainPane({
             </div>
           ))}
         </div>
-        {activeWorkspaceId && (
+        {activeWorktreeId && (
           <button
-            onClick={() => onDeleteWorkspace(activeWorkspaceId)}
+            onClick={() => onDeleteWorktree(activeWorktreeId)}
             className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 flex-shrink-0"
-            title="Delete workspace"
+            title="Delete worktree"
           >
             <Trash2 size={16} />
           </button>
@@ -76,14 +76,14 @@ export function MainPane({
 
       {/* Terminal content */}
       <div className="flex-1 relative">
-        {openWorkspaces.map((workspace) => (
+        {openWorktrees.map((worktree) => (
           <div
-            key={workspace.id}
+            key={worktree.id}
             className={`absolute inset-0 ${
-              workspace.id === activeWorkspaceId ? 'block' : 'hidden'
+              worktree.id === activeWorktreeId ? 'block' : 'hidden'
             }`}
           >
-            <MainTab workspace={workspace} isActive={workspace.id === activeWorkspaceId} terminalConfig={terminalConfig} />
+            <MainTab worktree={worktree} isActive={worktree.id === activeWorktreeId} terminalConfig={terminalConfig} />
           </div>
         ))}
       </div>

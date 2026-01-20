@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
-import { Workspace } from '../../types';
+import { Worktree } from '../../types';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import '@xterm/xterm/css/xterm.css';
@@ -17,11 +17,11 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
 }
 
 interface TerminalProps {
-  workspace: Workspace;
+  worktree: Worktree;
   terminalConfig: TerminalConfig;
 }
 
-export function Terminal({ workspace, terminalConfig }: TerminalProps) {
+export function Terminal({ worktree, terminalConfig }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -42,7 +42,7 @@ export function Terminal({ workspace, terminalConfig }: TerminalProps) {
     spawnRef.current = spawn;
   }, [spawn]);
 
-  // Initialize terminal - only runs once per workspace
+  // Initialize terminal - only runs once per worktree
   useEffect(() => {
     if (!containerRef.current || initializedRef.current) return;
     initializedRef.current = true;
@@ -101,7 +101,7 @@ export function Terminal({ workspace, terminalConfig }: TerminalProps) {
       fitAddon.fit();
       const cols = terminal.cols;
       const rows = terminal.rows;
-      await spawnRef.current(workspace.id, 'shell', cols, rows);
+      await spawnRef.current(worktree.id, 'shell', cols, rows);
     };
 
     initPty().catch(console.error);
@@ -112,7 +112,7 @@ export function Terminal({ workspace, terminalConfig }: TerminalProps) {
       fitAddonRef.current = null;
       initializedRef.current = false;
     };
-  }, [workspace.id]); // Only re-run when workspace changes
+  }, [worktree.id]); // Only re-run when worktree changes
 
   // Handle user input
   useEffect(() => {

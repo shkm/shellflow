@@ -91,8 +91,8 @@ lazy_static::lazy_static! {
 pub fn spawn_pty(
     app: &AppHandle,
     state: &AppState,
-    workspace_id: &str,
-    workspace_path: &str,
+    worktree_id: &str,
+    worktree_path: &str,
     command: &str,
     cols: Option<u16>,
     rows: Option<u16>,
@@ -109,7 +109,7 @@ pub fn spawn_pty(
     // Get user's PATH from their login shell
     let user_path = get_user_path();
 
-    eprintln!("[PTY] Spawning command: {} in {}", command, workspace_path);
+    eprintln!("[PTY] Spawning command: {} in {}", command, worktree_path);
 
     // "shell" is a special command that spawns the user's login shell
     // Any other command is run directly (e.g., "claude", "aider")
@@ -119,11 +119,11 @@ pub fn spawn_pty(
         let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
         let mut cmd = CommandBuilder::new(&shell);
         cmd.arg("-l");
-        cmd.cwd(workspace_path);
+        cmd.cwd(worktree_path);
         cmd
     } else {
         let mut cmd = CommandBuilder::new(command);
-        cmd.cwd(workspace_path);
+        cmd.cwd(worktree_path);
         cmd
     };
 
@@ -158,7 +158,7 @@ pub fn spawn_pty(
 
     // Store session info in app state
     let session = Arc::new(PtySession {
-        workspace_id: workspace_id.to_string(),
+        worktree_id: worktree_id.to_string(),
         child_pid,
     });
     state.pty_sessions.write().insert(pty_id.clone(), session);
@@ -166,7 +166,7 @@ pub fn spawn_pty(
     // Spawn reader thread
     let app_handle = app.clone();
     let pty_id_clone = pty_id.clone();
-    let workspace_id_clone = workspace_id.to_string();
+    let worktree_id_clone = worktree_id.to_string();
     let ready_emitted = Arc::new(AtomicBool::new(false));
     let ready_emitted_clone = ready_emitted.clone();
 
@@ -202,10 +202,10 @@ pub fn spawn_pty(
                     // Emit pty-ready event on first substantial output for main command
                     if is_main_command && !ready_emitted_clone.load(Ordering::SeqCst) && total_bytes > 50 {
                         ready_emitted_clone.store(true, Ordering::SeqCst);
-                        eprintln!("[PTY:{}] Emitting pty-ready event for workspace {}", pty_id_clone, workspace_id_clone);
+                        eprintln!("[PTY:{}] Emitting pty-ready event for worktree {}", pty_id_clone, worktree_id_clone);
                         let _ = app_handle.emit("pty-ready", serde_json::json!({
                             "ptyId": pty_id_clone,
-                            "workspaceId": workspace_id_clone,
+                            "worktreeId": worktree_id_clone,
                         }));
                     }
 

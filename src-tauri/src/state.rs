@@ -8,11 +8,11 @@ pub struct Project {
     pub id: String,
     pub name: String,
     pub path: String,
-    pub workspaces: Vec<Workspace>,
+    pub worktrees: Vec<Worktree>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Workspace {
+pub struct Worktree {
     pub id: String,
     pub name: String,
     pub path: String,
@@ -49,7 +49,7 @@ impl Default for PersistedState {
 }
 
 pub struct PtySession {
-    pub workspace_id: String,
+    pub worktree_id: String,
     pub child_pid: u32,
 }
 

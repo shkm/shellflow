@@ -3,10 +3,10 @@ mod git;
 mod pty;
 mod state;
 mod watcher;
-mod workspace;
+mod worktree;
 
 use log::info;
-use state::{AppState, FileChange, Project, Workspace};
+use state::{AppState, FileChange, Project, Worktree};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
@@ -22,7 +22,7 @@ fn map_err<E: std::fmt::Display>(e: E) -> String {
 #[tauri::command]
 fn add_project(state: State<'_, Arc<AppState>>, path: &str) -> Result<Project> {
     let path = Path::new(path);
-    let project = workspace::create_project(path).map_err(map_err)?;
+    let project = worktree::create_project(path).map_err(map_err)?;
 
     {
         let mut persisted = state.persisted.write();
@@ -48,24 +48,24 @@ fn remove_project(state: State<'_, Arc<AppState>>, project_id: &str) -> Result<(
     Ok(())
 }
 
-// Workspace commands
+// Worktree commands
 #[tauri::command]
-fn create_workspace(
+fn create_worktree(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
     project_path: &str,
     name: Option<String>,
-) -> Result<Workspace> {
+) -> Result<Worktree> {
     let total_start = Instant::now();
-    info!("[create_workspace] Starting...");
+    info!("[create_worktree] Starting...");
 
     let start = Instant::now();
     let cfg = config::load_config();
-    info!("[create_workspace] load_config took {:?}", start.elapsed());
+    info!("[create_worktree] load_config took {:?}", start.elapsed());
 
     let start = Instant::now();
     let mut persisted = state.persisted.write();
-    info!("[create_workspace] acquire write lock took {:?}", start.elapsed());
+    info!("[create_worktree] acquire write lock took {:?}", start.elapsed());
 
     let project = persisted
         .projects
@@ -76,64 +76,64 @@ fn create_workspace(
     let project_path_buf = Path::new(&project.path).to_path_buf();
 
     let start = Instant::now();
-    let ws = workspace::create_workspace(
+    let wt = worktree::create_worktree(
         project,
         name,
         cfg.worktree.directory.as_deref(),
     )
     .map_err(map_err)?;
-    info!("[create_workspace] workspace::create_workspace took {:?}", start.elapsed());
+    info!("[create_worktree] worktree::create_worktree took {:?}", start.elapsed());
 
     // Copy gitignored files if enabled in config (in background thread)
     if cfg.worktree.copy.gitignored {
-        let workspace_path = ws.path.clone();
-        let workspace_id = ws.id.clone();
+        let worktree_path = wt.path.clone();
+        let worktree_id = wt.id.clone();
         let except = cfg.worktree.copy.except.clone();
         let app_handle = app.clone();
 
         // Emit copy started event
-        let _ = app_handle.emit("workspace-copy-started", &workspace_id);
+        let _ = app_handle.emit("worktree-copy-started", &worktree_id);
 
         std::thread::spawn(move || {
             let start = Instant::now();
-            let result = workspace::copy_gitignored_files(
+            let result = worktree::copy_gitignored_files(
                 &project_path_buf,
-                Path::new(&workspace_path),
+                Path::new(&worktree_path),
                 &except,
             );
 
             match &result {
-                Ok(()) => info!("[create_workspace] background copy_gitignored_files took {:?}", start.elapsed()),
-                Err(e) => info!("[create_workspace] background copy_gitignored_files failed: {}", e),
+                Ok(()) => info!("[create_worktree] background copy_gitignored_files took {:?}", start.elapsed()),
+                Err(e) => info!("[create_worktree] background copy_gitignored_files failed: {}", e),
             }
 
             // Emit copy completed event
-            let _ = app_handle.emit("workspace-copy-completed", serde_json::json!({
-                "workspaceId": workspace_id,
+            let _ = app_handle.emit("worktree-copy-completed", serde_json::json!({
+                "worktreeId": worktree_id,
                 "success": result.is_ok(),
                 "durationMs": start.elapsed().as_millis() as u64,
             }));
         });
-        info!("[create_workspace] spawned background thread for copy_gitignored_files");
+        info!("[create_worktree] spawned background thread for copy_gitignored_files");
     }
 
-    // Start file watcher for this workspace
+    // Start file watcher for this worktree
     let start = Instant::now();
-    watcher::watch_workspace(app.clone(), ws.id.clone(), ws.path.clone());
-    info!("[create_workspace] watch_workspace took {:?}", start.elapsed());
+    watcher::watch_worktree(app.clone(), wt.id.clone(), wt.path.clone());
+    info!("[create_worktree] watch_worktree took {:?}", start.elapsed());
 
     drop(persisted);
 
     let start = Instant::now();
     state.save().map_err(map_err)?;
-    info!("[create_workspace] state.save took {:?}", start.elapsed());
+    info!("[create_worktree] state.save took {:?}", start.elapsed());
 
-    info!("[create_workspace] TOTAL took {:?}", total_start.elapsed());
-    Ok(ws)
+    info!("[create_worktree] TOTAL took {:?}", total_start.elapsed());
+    Ok(wt)
 }
 
 #[tauri::command]
-fn list_workspaces(state: State<'_, Arc<AppState>>, project_path: &str) -> Result<Vec<Workspace>> {
+fn list_worktrees(state: State<'_, Arc<AppState>>, project_path: &str) -> Result<Vec<Worktree>> {
     let persisted = state.persisted.read();
 
     let project = persisted
@@ -142,24 +142,24 @@ fn list_workspaces(state: State<'_, Arc<AppState>>, project_path: &str) -> Resul
         .find(|p| p.path == project_path)
         .ok_or_else(|| format!("Project not found: {}", project_path))?;
 
-    Ok(project.workspaces.clone())
+    Ok(project.worktrees.clone())
 }
 
 #[tauri::command]
-fn delete_workspace(state: State<'_, Arc<AppState>>, workspace_id: &str) -> Result<()> {
+fn delete_worktree(state: State<'_, Arc<AppState>>, worktree_id: &str) -> Result<()> {
     let mut persisted = state.persisted.write();
 
-    // Find the project containing this workspace
+    // Find the project containing this worktree
     for project in &mut persisted.projects {
-        if project.workspaces.iter().any(|w| w.id == workspace_id) {
-            workspace::delete_workspace(project, workspace_id).map_err(map_err)?;
+        if project.worktrees.iter().any(|w| w.id == worktree_id) {
+            worktree::delete_worktree(project, worktree_id).map_err(map_err)?;
             drop(persisted);
             state.save().map_err(map_err)?;
             return Ok(());
         }
     }
 
-    Err(format!("Workspace not found: {}", workspace_id))
+    Err(format!("Worktree not found: {}", worktree_id))
 }
 
 // PTY commands
@@ -167,7 +167,7 @@ fn delete_workspace(state: State<'_, Arc<AppState>>, workspace_id: &str) -> Resu
 fn spawn_main(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
-    workspace_id: &str,
+    worktree_id: &str,
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String> {
@@ -175,42 +175,42 @@ fn spawn_main(
     let cfg = config::load_config();
     let command = cfg.main.command;
 
-    // Find workspace path
-    let workspace_path = {
+    // Find worktree path
+    let worktree_path = {
         let persisted = state.persisted.read();
         persisted
             .projects
             .iter()
-            .flat_map(|p| &p.workspaces)
-            .find(|w| w.id == workspace_id)
+            .flat_map(|p| &p.worktrees)
+            .find(|w| w.id == worktree_id)
             .map(|w| w.path.clone())
-            .ok_or_else(|| format!("Workspace not found: {}", workspace_id))?
+            .ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
     };
 
-    pty::spawn_pty(&app, &state, workspace_id, &workspace_path, &command, cols, rows).map_err(map_err)
+    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows).map_err(map_err)
 }
 
 #[tauri::command]
 fn spawn_terminal(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
-    workspace_id: &str,
+    worktree_id: &str,
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String> {
-    // Find workspace path
-    let workspace_path = {
+    // Find worktree path
+    let worktree_path = {
         let persisted = state.persisted.read();
         persisted
             .projects
             .iter()
-            .flat_map(|p| &p.workspaces)
-            .find(|w| w.id == workspace_id)
+            .flat_map(|p| &p.worktrees)
+            .find(|w| w.id == worktree_id)
             .map(|w| w.path.clone())
-            .ok_or_else(|| format!("Workspace not found: {}", workspace_id))?
+            .ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
     };
 
-    pty::spawn_pty(&app, &state, workspace_id, &workspace_path, "shell", cols, rows).map_err(map_err)
+    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, "shell", cols, rows).map_err(map_err)
 }
 
 #[tauri::command]
@@ -236,19 +236,19 @@ fn get_config() -> config::Config {
 
 // Git commands
 #[tauri::command]
-fn get_changed_files(workspace_path: &str) -> Result<Vec<FileChange>> {
-    let path = Path::new(workspace_path);
+fn get_changed_files(worktree_path: &str) -> Result<Vec<FileChange>> {
+    let path = Path::new(worktree_path);
     git::get_changed_files(path).map_err(map_err)
 }
 
 #[tauri::command]
-fn start_watching(app: AppHandle, workspace_id: String, workspace_path: String) {
-    watcher::watch_workspace(app, workspace_id, workspace_path);
+fn start_watching(app: AppHandle, worktree_id: String, worktree_path: String) {
+    watcher::watch_worktree(app, worktree_id, worktree_path);
 }
 
 #[tauri::command]
-fn stop_watching(workspace_id: String) {
-    watcher::stop_watching(&workspace_id);
+fn stop_watching(worktree_id: String) {
+    watcher::stop_watching(&worktree_id);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -265,9 +265,9 @@ pub fn run() {
             add_project,
             list_projects,
             remove_project,
-            create_workspace,
-            list_workspaces,
-            delete_workspace,
+            create_worktree,
+            list_worktrees,
+            delete_worktree,
             spawn_main,
             spawn_terminal,
             pty_write,

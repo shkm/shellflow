@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter};
 
 #[derive(Clone, serde::Serialize)]
 pub struct FilesChanged {
-    pub workspace_path: String,
+    pub worktree_path: String,
     pub files: Vec<FileChange>,
 }
 
@@ -20,17 +20,17 @@ lazy_static::lazy_static! {
     static ref WATCHERS: Mutex<HashMap<String, Sender<()>>> = Mutex::new(HashMap::new());
 }
 
-pub fn watch_workspace(app: AppHandle, workspace_id: String, workspace_path: String) {
-    // Check if already watching this workspace
-    if WATCHERS.lock().contains_key(&workspace_id) {
+pub fn watch_worktree(app: AppHandle, worktree_id: String, worktree_path: String) {
+    // Check if already watching this worktree
+    if WATCHERS.lock().contains_key(&worktree_id) {
         return;
     }
 
     // Create stop channel
     let (stop_tx, stop_rx) = channel::<()>();
-    WATCHERS.lock().insert(workspace_id.clone(), stop_tx);
+    WATCHERS.lock().insert(worktree_id.clone(), stop_tx);
 
-    let workspace_id_clone = workspace_id.clone();
+    let worktree_id_clone = worktree_id.clone();
 
     thread::spawn(move || {
         let (tx, rx) = channel::<notify::Result<Event>>();
@@ -43,15 +43,15 @@ pub fn watch_workspace(app: AppHandle, workspace_id: String, workspace_path: Str
             Ok(w) => w,
             Err(e) => {
                 eprintln!("Failed to create watcher: {}", e);
-                WATCHERS.lock().remove(&workspace_id_clone);
+                WATCHERS.lock().remove(&worktree_id_clone);
                 return;
             }
         };
 
-        let path = Path::new(&workspace_path);
+        let path = Path::new(&worktree_path);
         if let Err(e) = watcher.watch(path, RecursiveMode::Recursive) {
             eprintln!("Failed to watch path: {}", e);
-            WATCHERS.lock().remove(&workspace_id_clone);
+            WATCHERS.lock().remove(&worktree_id_clone);
             return;
         }
 
@@ -62,7 +62,7 @@ pub fn watch_workspace(app: AppHandle, workspace_id: String, workspace_path: Str
         loop {
             // Check for stop signal
             if stop_rx.try_recv().is_ok() {
-                eprintln!("[Watcher] Stopping watcher for {}", workspace_id_clone);
+                eprintln!("[Watcher] Stopping watcher for {}", worktree_id_clone);
                 break;
             }
 
@@ -80,7 +80,7 @@ pub fn watch_workspace(app: AppHandle, workspace_id: String, workspace_path: Str
                             let _ = app.emit(
                                 "files-changed",
                                 FilesChanged {
-                                    workspace_path: workspace_path.clone(),
+                                    worktree_path: worktree_path.clone(),
                                     files,
                                 },
                             );
@@ -96,12 +96,12 @@ pub fn watch_workspace(app: AppHandle, workspace_id: String, workspace_path: Str
             }
         }
 
-        WATCHERS.lock().remove(&workspace_id_clone);
+        WATCHERS.lock().remove(&worktree_id_clone);
     });
 }
 
-pub fn stop_watching(workspace_id: &str) {
-    if let Some(tx) = WATCHERS.lock().remove(workspace_id) {
+pub fn stop_watching(worktree_id: &str) {
+    if let Some(tx) = WATCHERS.lock().remove(worktree_id) {
         let _ = tx.send(());
     }
 }

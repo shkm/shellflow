@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Project, Workspace } from '../types';
+import { Project, Worktree } from '../types';
 
-export function useWorkspaces() {
+export function useWorktrees() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,31 +36,31 @@ export function useWorkspaces() {
     }
   }, []);
 
-  const createWorkspace = useCallback(
+  const createWorktree = useCallback(
     async (projectPath: string, name?: string) => {
       try {
-        const workspace = await invoke<Workspace>('create_workspace', {
+        const worktree = await invoke<Worktree>('create_worktree', {
           projectPath,
           name,
         });
-        // Reload projects to get updated workspace list
+        // Reload projects to get updated worktree list
         await loadProjects();
-        return workspace;
+        return worktree;
       } catch (err) {
-        console.error('Failed to create workspace:', err);
+        console.error('Failed to create worktree:', err);
         throw err;
       }
     },
     [loadProjects]
   );
 
-  const deleteWorkspace = useCallback(
-    async (workspaceId: string) => {
+  const deleteWorktree = useCallback(
+    async (worktreeId: string) => {
       try {
-        await invoke('delete_workspace', { workspaceId });
+        await invoke('delete_worktree', { worktreeId });
         await loadProjects();
       } catch (err) {
-        console.error('Failed to delete workspace:', err);
+        console.error('Failed to delete worktree:', err);
         throw err;
       }
     },
@@ -86,8 +86,8 @@ export function useWorkspaces() {
     error,
     addProject,
     removeProject,
-    createWorkspace,
-    deleteWorkspace,
+    createWorktree,
+    deleteWorktree,
     refresh: loadProjects,
   };
 }

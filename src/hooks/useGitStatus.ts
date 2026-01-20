@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { FileChange, FilesChanged, Workspace } from '../types';
+import { FileChange, FilesChanged, Worktree } from '../types';
 
-export function useGitStatus(workspace: Workspace | null) {
+export function useGitStatus(worktree: Worktree | null) {
   const [files, setFiles] = useState<FileChange[]>([]);
   const [loading, setLoading] = useState(false);
   const watchingRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!workspace) {
+    if (!worktree) {
       setFiles([]);
       return;
     }
@@ -17,7 +17,7 @@ export function useGitStatus(workspace: Workspace | null) {
     try {
       setLoading(true);
       const result = await invoke<FileChange[]>('get_changed_files', {
-        workspacePath: workspace.path,
+        worktreePath: worktree.path,
       });
       setFiles(result);
     } catch (err) {
@@ -26,48 +26,48 @@ export function useGitStatus(workspace: Workspace | null) {
     } finally {
       setLoading(false);
     }
-  }, [workspace]);
+  }, [worktree]);
 
   // Initial load and start watcher
   useEffect(() => {
-    if (!workspace) {
+    if (!worktree) {
       setFiles([]);
       return;
     }
 
     refresh();
 
-    // Start watching if not already watching this workspace
-    if (watchingRef.current !== workspace.id) {
+    // Start watching if not already watching this worktree
+    if (watchingRef.current !== worktree.id) {
       // Stop previous watcher if any
       if (watchingRef.current) {
-        invoke('stop_watching', { workspaceId: watchingRef.current }).catch(() => {});
+        invoke('stop_watching', { worktreeId: watchingRef.current }).catch(() => {});
       }
-      watchingRef.current = workspace.id;
+      watchingRef.current = worktree.id;
       invoke('start_watching', {
-        workspaceId: workspace.id,
-        workspacePath: workspace.path,
+        worktreeId: worktree.id,
+        worktreePath: worktree.path,
       }).catch((err) => console.error('Failed to start watching:', err));
     }
 
     // Cleanup on unmount
     return () => {
       if (watchingRef.current) {
-        invoke('stop_watching', { workspaceId: watchingRef.current }).catch(() => {});
+        invoke('stop_watching', { worktreeId: watchingRef.current }).catch(() => {});
         watchingRef.current = null;
       }
     };
-  }, [workspace, refresh]);
+  }, [worktree, refresh]);
 
   // Listen for file change events
   useEffect(() => {
-    if (!workspace) return;
+    if (!worktree) return;
 
     let unlisten: UnlistenFn | null = null;
 
     listen<FilesChanged>('files-changed', (event) => {
-      // Only update if this is for our workspace
-      if (event.payload.workspace_path === workspace.path) {
+      // Only update if this is for our worktree
+      if (event.payload.worktree_path === worktree.path) {
         setFiles(event.payload.files);
       }
     }).then((fn) => {
@@ -79,7 +79,7 @@ export function useGitStatus(workspace: Workspace | null) {
         unlisten();
       }
     };
-  }, [workspace]);
+  }, [worktree]);
 
   return {
     files,

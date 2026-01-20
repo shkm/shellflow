@@ -5,22 +5,22 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { MainPane } from './components/MainPane/MainPane';
 import { RightPanel } from './components/RightPanel/RightPanel';
 import { ConfirmModal } from './components/ConfirmModal';
-import { useWorkspaces } from './hooks/useWorkspaces';
+import { useWorktrees } from './hooks/useWorktrees';
 import { useGitStatus } from './hooks/useGitStatus';
 import { useConfig } from './hooks/useConfig';
 import { selectFolder } from './lib/tauri';
-import { Project, Workspace } from './types';
+import { Project, Worktree } from './types';
 
 const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
 
 function App() {
-  const { projects, addProject, removeProject, createWorkspace, deleteWorkspace } = useWorkspaces();
+  const { projects, addProject, removeProject, createWorktree, deleteWorktree } = useWorktrees();
   const { config } = useConfig();
-  const [openWorkspaces, setOpenWorkspaces] = useState<Workspace[]>([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [openWorktrees, setOpenWorktrees] = useState<Worktree[]>([]);
+  const [activeWorktreeId, setActiveWorktreeId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingRemoveProject, setPendingRemoveProject] = useState<Project | null>(null);
-  const [loadingWorkspaces, setLoadingWorkspaces] = useState<Set<string>>(new Set());
+  const [loadingWorktrees, setLoadingWorktrees] = useState<Set<string>>(new Set());
 
   // Expanded projects - persisted to localStorage
   // We use a separate key to track if we've ever saved, so we can distinguish
@@ -64,17 +64,17 @@ function App() {
     });
   }, []);
 
-  // Listen for workspace ready events (when the main command has started)
+  // Listen for worktree ready events (when the main command has started)
   useEffect(() => {
-    const unlistenReady = listen<{ ptyId: string; workspaceId: string }>(
+    const unlistenReady = listen<{ ptyId: string; worktreeId: string }>(
       'pty-ready',
       (event) => {
-        setLoadingWorkspaces((prev) => {
+        setLoadingWorktrees((prev) => {
           const next = new Set(prev);
-          next.delete(event.payload.workspaceId);
+          next.delete(event.payload.worktreeId);
           return next;
         });
-        console.log(`Workspace ready: ${event.payload.workspaceId}`);
+        console.log(`Worktree ready: ${event.payload.worktreeId}`);
       }
     );
 
@@ -83,8 +83,8 @@ function App() {
     };
   }, []);
 
-  const activeWorkspace = openWorkspaces.find((w) => w.id === activeWorkspaceId) || null;
-  const { files: changedFiles } = useGitStatus(activeWorkspace);
+  const activeWorktree = openWorktrees.find((w) => w.id === activeWorktreeId) || null;
+  const { files: changedFiles } = useGitStatus(activeWorktree);
 
   const handleAddProject = useCallback(async () => {
     const path = await selectFolder();
@@ -99,71 +99,71 @@ function App() {
     }
   }, [addProject]);
 
-  const handleAddWorkspace = useCallback(
+  const handleAddWorktree = useCallback(
     async (projectId: string) => {
       const project = projects.find((p) => p.id === projectId);
       if (!project) return;
 
-      // Expand the project when adding a workspace
+      // Expand the project when adding a worktree
       setExpandedProjects((prev) => new Set([...prev, projectId]));
 
       try {
-        const workspace = await createWorkspace(project.path);
+        const worktree = await createWorktree(project.path);
         // Mark as loading until the main command is ready
-        setLoadingWorkspaces((prev) => new Set([...prev, workspace.id]));
-        setOpenWorkspaces((prev) => [...prev, workspace]);
-        setActiveWorkspaceId(workspace.id);
+        setLoadingWorktrees((prev) => new Set([...prev, worktree.id]));
+        setOpenWorktrees((prev) => [...prev, worktree]);
+        setActiveWorktreeId(worktree.id);
       } catch (err) {
-        console.error('Failed to create workspace:', err);
+        console.error('Failed to create worktree:', err);
       }
     },
-    [projects, createWorkspace]
+    [projects, createWorktree]
   );
 
-  const handleSelectWorkspace = useCallback((workspace: Workspace) => {
-    setOpenWorkspaces((prev) => {
-      if (prev.some((w) => w.id === workspace.id)) {
+  const handleSelectWorktree = useCallback((worktree: Worktree) => {
+    setOpenWorktrees((prev) => {
+      if (prev.some((w) => w.id === worktree.id)) {
         return prev;
       }
-      return [...prev, workspace];
+      return [...prev, worktree];
     });
-    setActiveWorkspaceId(workspace.id);
+    setActiveWorktreeId(worktree.id);
   }, []);
 
-  const handleSelectTab = useCallback((workspaceId: string) => {
-    setActiveWorkspaceId(workspaceId);
+  const handleSelectTab = useCallback((worktreeId: string) => {
+    setActiveWorktreeId(worktreeId);
   }, []);
 
   const handleCloseTab = useCallback(
-    (workspaceId: string) => {
-      setOpenWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
-      if (activeWorkspaceId === workspaceId) {
-        const remaining = openWorkspaces.filter((w) => w.id !== workspaceId);
-        setActiveWorkspaceId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+    (worktreeId: string) => {
+      setOpenWorktrees((prev) => prev.filter((w) => w.id !== worktreeId));
+      if (activeWorktreeId === worktreeId) {
+        const remaining = openWorktrees.filter((w) => w.id !== worktreeId);
+        setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
       }
     },
-    [activeWorkspaceId, openWorkspaces]
+    [activeWorktreeId, openWorktrees]
   );
 
-  const handleDeleteWorkspace = useCallback((workspaceId: string) => {
-    setPendingDeleteId(workspaceId);
+  const handleDeleteWorktree = useCallback((worktreeId: string) => {
+    setPendingDeleteId(worktreeId);
   }, []);
 
-  const confirmDeleteWorkspace = useCallback(async () => {
+  const confirmDeleteWorktree = useCallback(async () => {
     if (!pendingDeleteId) return;
     try {
-      await deleteWorkspace(pendingDeleteId);
-      setOpenWorkspaces((prev) => prev.filter((w) => w.id !== pendingDeleteId));
-      if (activeWorkspaceId === pendingDeleteId) {
-        const remaining = openWorkspaces.filter((w) => w.id !== pendingDeleteId);
-        setActiveWorkspaceId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+      await deleteWorktree(pendingDeleteId);
+      setOpenWorktrees((prev) => prev.filter((w) => w.id !== pendingDeleteId));
+      if (activeWorktreeId === pendingDeleteId) {
+        const remaining = openWorktrees.filter((w) => w.id !== pendingDeleteId);
+        setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
       }
     } catch (err) {
-      console.error('Failed to delete workspace:', err);
+      console.error('Failed to delete worktree:', err);
     } finally {
       setPendingDeleteId(null);
     }
-  }, [deleteWorkspace, pendingDeleteId, activeWorkspaceId, openWorkspaces]);
+  }, [deleteWorktree, pendingDeleteId, activeWorktreeId, openWorktrees]);
 
   const handleRemoveProject = useCallback((project: Project) => {
     setPendingRemoveProject(project);
@@ -172,11 +172,11 @@ function App() {
   const confirmRemoveProject = useCallback(async () => {
     if (!pendingRemoveProject) return;
     try {
-      // Close any open workspaces from this project
-      const projectWorkspaceIds = new Set(pendingRemoveProject.workspaces.map((w) => w.id));
-      setOpenWorkspaces((prev) => prev.filter((w) => !projectWorkspaceIds.has(w.id)));
-      if (activeWorkspaceId && projectWorkspaceIds.has(activeWorkspaceId)) {
-        setActiveWorkspaceId(null);
+      // Close any open worktrees from this project
+      const projectWorktreeIds = new Set(pendingRemoveProject.worktrees.map((w) => w.id));
+      setOpenWorktrees((prev) => prev.filter((w) => !projectWorktreeIds.has(w.id)));
+      if (activeWorktreeId && projectWorktreeIds.has(activeWorktreeId)) {
+        setActiveWorktreeId(null);
       }
       await removeProject(pendingRemoveProject.id);
     } catch (err) {
@@ -184,21 +184,21 @@ function App() {
     } finally {
       setPendingRemoveProject(null);
     }
-  }, [removeProject, pendingRemoveProject, activeWorkspaceId]);
+  }, [removeProject, pendingRemoveProject, activeWorktreeId]);
 
-  const pendingWorkspace = pendingDeleteId
-    ? openWorkspaces.find((w) => w.id === pendingDeleteId) ||
-      projects.flatMap((p) => p.workspaces).find((w) => w.id === pendingDeleteId)
+  const pendingWorktree = pendingDeleteId
+    ? openWorktrees.find((w) => w.id === pendingDeleteId) ||
+      projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingDeleteId)
     : null;
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-zinc-950">
-      {pendingDeleteId && pendingWorkspace && (
+      {pendingDeleteId && pendingWorktree && (
         <ConfirmModal
-          title="Delete Workspace"
-          message={`Are you sure you want to delete "${pendingWorkspace.name}"? This will remove the worktree and cannot be undone.`}
+          title="Delete Worktree"
+          message={`Are you sure you want to delete "${pendingWorktree.name}"? This will remove the worktree and cannot be undone.`}
           confirmLabel="Delete"
-          onConfirm={confirmDeleteWorkspace}
+          onConfirm={confirmDeleteWorktree}
           onCancel={() => setPendingDeleteId(null)}
         />
       )}
@@ -207,8 +207,8 @@ function App() {
         <ConfirmModal
           title="Remove Project"
           message={
-            pendingRemoveProject.workspaces.length > 0
-              ? `Are you sure you want to remove "${pendingRemoveProject.name}"? This will also delete ${pendingRemoveProject.workspaces.length} workspace${pendingRemoveProject.workspaces.length === 1 ? '' : 's'} and cannot be undone.`
+            pendingRemoveProject.worktrees.length > 0
+              ? `Are you sure you want to remove "${pendingRemoveProject.name}"? This will also delete ${pendingRemoveProject.worktrees.length} worktree${pendingRemoveProject.worktrees.length === 1 ? '' : 's'} and cannot be undone.`
               : `Are you sure you want to remove "${pendingRemoveProject.name}"?`
           }
           confirmLabel="Remove"
@@ -228,15 +228,15 @@ function App() {
           <div className="h-full w-full">
             <Sidebar
               projects={projects}
-              selectedWorkspaceId={activeWorkspaceId}
-              openWorkspaceIds={new Set(openWorkspaces.map((w) => w.id))}
-              loadingWorkspaces={loadingWorkspaces}
+              selectedWorktreeId={activeWorktreeId}
+              openWorktreeIds={new Set(openWorktrees.map((w) => w.id))}
+              loadingWorktrees={loadingWorktrees}
               expandedProjects={expandedProjects}
               onToggleProject={toggleProject}
-              onSelectWorkspace={handleSelectWorkspace}
+              onSelectWorktree={handleSelectWorktree}
               onAddProject={handleAddProject}
-              onAddWorkspace={handleAddWorkspace}
-              onDeleteWorkspace={(workspace) => handleDeleteWorkspace(workspace.id)}
+              onAddWorktree={handleAddWorktree}
+              onDeleteWorktree={(worktree) => handleDeleteWorktree(worktree.id)}
               onRemoveProject={handleRemoveProject}
             />
           </div>
@@ -248,12 +248,12 @@ function App() {
         <Panel defaultSize="65%" minSize="30%">
           <div className="h-full w-full">
             <MainPane
-              openWorkspaces={openWorkspaces}
-              activeWorkspaceId={activeWorkspaceId}
+              openWorktrees={openWorktrees}
+              activeWorktreeId={activeWorktreeId}
               terminalConfig={config.main}
               onSelectTab={handleSelectTab}
               onCloseTab={handleCloseTab}
-              onDeleteWorkspace={handleDeleteWorkspace}
+              onDeleteWorktree={handleDeleteWorktree}
             />
           </div>
         </Panel>
@@ -263,7 +263,7 @@ function App() {
         {/* Right Panel */}
         <Panel defaultSize="20%" minSize="15%" maxSize="40%">
           <div className="h-full w-full">
-            <RightPanel workspace={activeWorkspace} changedFiles={changedFiles} terminalConfig={config.terminal} />
+            <RightPanel worktree={activeWorktree} changedFiles={changedFiles} terminalConfig={config.terminal} />
           </div>
         </Panel>
       </PanelGroup>

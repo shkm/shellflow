@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Project, Workspace, FileChange } from '../types';
+import { Project, Worktree, FileChange } from '../types';
 
 // Project commands
 export async function addProject(path: string): Promise<Project> {
@@ -11,29 +11,29 @@ export async function listProjects(): Promise<Project[]> {
   return invoke<Project[]>('list_projects');
 }
 
-// Workspace commands
-export async function createWorkspace(
+// Worktree commands
+export async function createWorktree(
   projectPath: string,
   name?: string
-): Promise<Workspace> {
-  return invoke<Workspace>('create_workspace', { projectPath, name });
+): Promise<Worktree> {
+  return invoke<Worktree>('create_worktree', { projectPath, name });
 }
 
-export async function listWorkspaces(projectPath: string): Promise<Workspace[]> {
-  return invoke<Workspace[]>('list_workspaces', { projectPath });
+export async function listWorktrees(projectPath: string): Promise<Worktree[]> {
+  return invoke<Worktree[]>('list_worktrees', { projectPath });
 }
 
-export async function deleteWorkspace(workspaceId: string): Promise<void> {
-  return invoke('delete_workspace', { workspaceId });
+export async function deleteWorktree(worktreeId: string): Promise<void> {
+  return invoke('delete_worktree', { worktreeId });
 }
 
 // PTY commands
-export async function spawnMain(workspaceId: string): Promise<string> {
-  return invoke<string>('spawn_main', { workspaceId });
+export async function spawnMain(worktreeId: string): Promise<string> {
+  return invoke<string>('spawn_main', { worktreeId });
 }
 
-export async function spawnTerminal(workspaceId: string): Promise<string> {
-  return invoke<string>('spawn_terminal', { workspaceId });
+export async function spawnTerminal(worktreeId: string): Promise<string> {
+  return invoke<string>('spawn_terminal', { worktreeId });
 }
 
 export async function ptyWrite(ptyId: string, data: string): Promise<void> {
@@ -53,8 +53,8 @@ export async function ptyKill(ptyId: string): Promise<void> {
 }
 
 // Git commands
-export async function getChangedFiles(workspacePath: string): Promise<FileChange[]> {
-  return invoke<FileChange[]>('get_changed_files', { workspacePath });
+export async function getChangedFiles(worktreePath: string): Promise<FileChange[]> {
+  return invoke<FileChange[]>('get_changed_files', { worktreePath });
 }
 
 // Dialog helpers

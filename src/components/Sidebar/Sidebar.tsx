@@ -1,34 +1,34 @@
 import { FolderGit2, Plus, ChevronRight, ChevronDown, GitBranch, MoreHorizontal, Trash2, Loader2 } from 'lucide-react';
-import { Project, Workspace } from '../../types';
+import { Project, Worktree } from '../../types';
 import { useState } from 'react';
 import { DragRegion } from '../DragRegion';
 import { ContextMenu } from '../ContextMenu';
 
 interface SidebarProps {
   projects: Project[];
-  selectedWorkspaceId: string | null;
-  openWorkspaceIds: Set<string>;
-  loadingWorkspaces: Set<string>;
+  selectedWorktreeId: string | null;
+  openWorktreeIds: Set<string>;
+  loadingWorktrees: Set<string>;
   expandedProjects: Set<string>;
   onToggleProject: (projectId: string) => void;
-  onSelectWorkspace: (workspace: Workspace) => void;
+  onSelectWorktree: (worktree: Worktree) => void;
   onAddProject: () => void;
-  onAddWorkspace: (projectId: string) => void;
-  onDeleteWorkspace: (workspace: Workspace) => void;
+  onAddWorktree: (projectId: string) => void;
+  onDeleteWorktree: (worktree: Worktree) => void;
   onRemoveProject: (project: Project) => void;
 }
 
 export function Sidebar({
   projects,
-  selectedWorkspaceId,
-  openWorkspaceIds,
-  loadingWorkspaces,
+  selectedWorktreeId,
+  openWorktreeIds,
+  loadingWorktrees,
   expandedProjects,
   onToggleProject,
-  onSelectWorkspace,
+  onSelectWorktree,
   onAddProject,
-  onAddWorkspace,
-  onDeleteWorkspace,
+  onAddWorktree,
+  onDeleteWorktree,
   onRemoveProject,
 }: SidebarProps) {
   const [contextMenu, setContextMenu] = useState<{
@@ -88,30 +88,30 @@ export function Sidebar({
         ) : (
           <>
           {projects.map((project) => {
-            const hasOpenWorkspaces = project.workspaces.some((w) => openWorkspaceIds.has(w.id));
+            const hasOpenWorktrees = project.worktrees.some((w) => openWorktreeIds.has(w.id));
             return (
             <div key={project.id} className="mb-2">
               <div
                 className={`group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-zinc-800 ${
-                  hasOpenWorkspaces ? 'text-zinc-300' : 'text-zinc-500'
+                  hasOpenWorktrees ? 'text-zinc-300' : 'text-zinc-500'
                 }`}
                 onClick={() => onToggleProject(project.id)}
                 onContextMenu={(e) => handleProjectContextMenu(e, project)}
               >
                 {expandedProjects.has(project.id) ? (
-                  <ChevronDown size={14} className={hasOpenWorkspaces ? 'text-zinc-500' : 'text-zinc-600'} />
+                  <ChevronDown size={14} className={hasOpenWorktrees ? 'text-zinc-500' : 'text-zinc-600'} />
                 ) : (
-                  <ChevronRight size={14} className={hasOpenWorkspaces ? 'text-zinc-500' : 'text-zinc-600'} />
+                  <ChevronRight size={14} className={hasOpenWorktrees ? 'text-zinc-500' : 'text-zinc-600'} />
                 )}
-                <FolderGit2 size={14} className={hasOpenWorkspaces ? 'text-zinc-400' : 'text-zinc-600'} />
+                <FolderGit2 size={14} className={hasOpenWorktrees ? 'text-zinc-400' : 'text-zinc-600'} />
                 <span className="text-sm truncate flex-1">{project.name}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onAddWorkspace(project.id);
+                    onAddWorktree(project.id);
                   }}
                   className="p-0.5 rounded hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300"
-                  title="Add Workspace"
+                  title="Add Worktree"
                 >
                   <Plus size={14} />
                 </button>
@@ -126,24 +126,24 @@ export function Sidebar({
 
               {expandedProjects.has(project.id) && (
                 <div className="ml-4 mt-1 space-y-0.5">
-                  {project.workspaces.length === 0 ? (
+                  {project.worktrees.length === 0 ? (
                     <button
-                      onClick={() => onAddWorkspace(project.id)}
+                      onClick={() => onAddWorktree(project.id)}
                       className="flex items-center gap-2 px-2 py-1 text-xs text-zinc-500 hover:text-zinc-300"
                     >
                       <Plus size={12} />
-                      Add workspace
+                      Add worktree
                     </button>
                   ) : (
-                    project.workspaces.map((workspace) => {
-                      const isLoading = loadingWorkspaces.has(workspace.id);
-                      const isOpen = openWorkspaceIds.has(workspace.id);
-                      const isSelected = selectedWorkspaceId === workspace.id;
+                    project.worktrees.map((worktree) => {
+                      const isLoading = loadingWorktrees.has(worktree.id);
+                      const isOpen = openWorktreeIds.has(worktree.id);
+                      const isSelected = selectedWorktreeId === worktree.id;
                       return (
                         <div
-                          key={workspace.id}
-                          onClick={() => onSelectWorkspace(workspace)}
-                          className={`group/workspace flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm ${
+                          key={worktree.id}
+                          onClick={() => onSelectWorktree(worktree)}
+                          className={`group/worktree flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm ${
                             isSelected
                               ? 'bg-zinc-700 text-zinc-100'
                               : isOpen
@@ -152,7 +152,7 @@ export function Sidebar({
                           }`}
                         >
                           <GitBranch size={12} className={isOpen ? '' : 'opacity-50'} />
-                          <span className="truncate flex-1">{workspace.name}</span>
+                          <span className="truncate flex-1">{worktree.name}</span>
                           {isLoading ? (
                             <span title="Starting...">
                               <Loader2 size={12} className="animate-spin text-blue-400" />
@@ -161,10 +161,10 @@ export function Sidebar({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onDeleteWorkspace(workspace);
+                                onDeleteWorktree(worktree);
                               }}
-                              className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-red-400 opacity-0 group-hover/workspace:opacity-100"
-                              title="Delete Workspace"
+                              className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-red-400 opacity-0 group-hover/worktree:opacity-100"
+                              title="Delete Worktree"
                             >
                               <Trash2 size={12} />
                             </button>
