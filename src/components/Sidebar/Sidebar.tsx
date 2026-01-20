@@ -1,4 +1,4 @@
-import { FolderGit2, Plus, ChevronRight, ChevronDown, GitBranch, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight } from 'lucide-react';
+import { FolderGit2, Plus, ChevronRight, ChevronDown, GitBranch, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot } from 'lucide-react';
 import { Project, Worktree } from '../../types';
 import { useState } from 'react';
 import { DragRegion } from '../DragRegion';
@@ -9,6 +9,7 @@ interface SidebarProps {
   activeWorktreeId: string | null;
   openWorktreeIds: Set<string>;
   loadingWorktrees: Set<string>;
+  notifiedWorktreeIds: Set<string>;
   expandedProjects: Set<string>;
   isDrawerOpen: boolean;
   isRightPanelOpen: boolean;
@@ -29,6 +30,7 @@ export function Sidebar({
   activeWorktreeId,
   openWorktreeIds,
   loadingWorktrees,
+  notifiedWorktreeIds,
   expandedProjects,
   isDrawerOpen,
   isRightPanelOpen,
@@ -170,6 +172,10 @@ export function Sidebar({
                           {isLoading ? (
                             <span className="absolute right-1" title="Starting...">
                               <Loader2 size={12} className="animate-spin text-blue-400" />
+                            </span>
+                          ) : notifiedWorktreeIds.has(worktree.id) && !isSelected ? (
+                            <span className="absolute right-1" title="New notification">
+                              <BellDot size={12} className="text-blue-400" />
                             </span>
                           ) : (
                             <div className={`absolute right-1 hidden group-hover/worktree:flex items-center gap-0.5 rounded ${isSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>

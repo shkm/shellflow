@@ -12,6 +12,7 @@ import { useWorktrees } from './hooks/useWorktrees';
 import { useGitStatus } from './hooks/useGitStatus';
 import { useConfig } from './hooks/useConfig';
 import { selectFolder } from './lib/tauri';
+import { sendOsNotification } from './lib/notifications';
 import { Project, Worktree } from './types';
 
 const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
@@ -78,6 +79,7 @@ function App() {
   const [pendingRemoveProject, setPendingRemoveProject] = useState<Project | null>(null);
   const [pendingMergeId, setPendingMergeId] = useState<string | null>(null);
   const [loadingWorktrees, setLoadingWorktrees] = useState<Set<string>>(new Set());
+  const [notifiedWorktreeIds, setNotifiedWorktreeIds] = useState<Set<string>>(new Set());
 
   // Panel refs
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
@@ -246,6 +248,34 @@ function App() {
       return next;
     });
   }, [activeWorktreeId]);
+
+  // Worktree notification handler
+  const handleWorktreeNotification = useCallback((worktreeId: string, title: string, body: string) => {
+    setNotifiedWorktreeIds((prev) => new Set([...prev, worktreeId]));
+    // Only send OS notification if this worktree is not active
+    if (worktreeId !== activeWorktreeId) {
+      // Use worktree name as title if not provided
+      const notificationTitle = title || (() => {
+        for (const project of projects) {
+          const wt = project.worktrees.find(w => w.id === worktreeId);
+          if (wt) return wt.name;
+        }
+        return 'One Man Band';
+      })();
+      sendOsNotification(notificationTitle, body);
+    }
+  }, [activeWorktreeId, projects]);
+
+  // Clear notification when worktree becomes active
+  useEffect(() => {
+    if (activeWorktreeId && notifiedWorktreeIds.has(activeWorktreeId)) {
+      setNotifiedWorktreeIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activeWorktreeId);
+        return next;
+      });
+    }
+  }, [activeWorktreeId, notifiedWorktreeIds]);
 
   // Sync state when right panel is collapsed/expanded via dragging
   const handleRightPanelResize = useCallback((size: { inPixels: number }) => {
@@ -671,6 +701,7 @@ function App() {
               activeWorktreeId={activeWorktreeId}
               openWorktreeIds={openWorktreeIds}
               loadingWorktrees={loadingWorktrees}
+              notifiedWorktreeIds={notifiedWorktreeIds}
               expandedProjects={expandedProjects}
               isDrawerOpen={activeDrawerState?.isOpen ?? false}
               isRightPanelOpen={activeRightPanelState?.isOpen ?? false}
@@ -704,6 +735,7 @@ function App() {
                 terminalConfig={config.main}
                 shouldAutoFocus={activeFocusState === 'main'}
                 onFocus={handleMainPaneFocused}
+                onWorktreeNotification={handleWorktreeNotification}
               />
             </Panel>
 

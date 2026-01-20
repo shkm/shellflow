@@ -32,9 +32,10 @@ interface MainTerminalProps {
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
   onFocus?: () => void;
+  onNotification?: (title: string, body: string) => void;
 }
 
-export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, onFocus }: MainTerminalProps) {
+export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, onFocus, onNotification }: MainTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -103,6 +104,12 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
   useEffect(() => {
     onFocusRef.current = onFocus;
   }, [onFocus]);
+
+  // Store onNotification in ref so handlers can access the latest version
+  const onNotificationRef = useRef(onNotification);
+  useEffect(() => {
+    onNotificationRef.current = onNotification;
+  }, [onNotification]);
 
   // Initialize terminal and spawn PTY
   useEffect(() => {
@@ -184,6 +191,29 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
     };
     containerRef.current.addEventListener('focusin', handleFocus);
 
+    // Register notification handlers
+    // OSC 777: format is "notify;title;body"
+    const osc777Disposable = terminal.parser.registerOscHandler(777, (data) => {
+      const parts = data.split(';');
+      if (parts[0] === 'notify' && parts.length >= 3) {
+        const title = parts[1];
+        const body = parts.slice(2).join(';');
+        onNotificationRef.current?.(title, body);
+      }
+      return true;
+    });
+
+    // OSC 9: ConEmu-style notifications (data is the body)
+    const osc9Disposable = terminal.parser.registerOscHandler(9, (data) => {
+      onNotificationRef.current?.('', data);
+      return true;
+    });
+
+    // Bell (BEL character)
+    const bellDisposable = terminal.onBell(() => {
+      onNotificationRef.current?.('', 'Bell');
+    });
+
     // Fit terminal and spawn main process with correct size
     const initPty = async () => {
       // Wait for next frame to ensure container is laid out
@@ -209,6 +239,9 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       isMounted = false;
       onDataDisposable.dispose();
       containerRef.current?.removeEventListener('focusin', handleFocus);
+      osc777Disposable.dispose();
+      osc9Disposable.dispose();
+      bellDisposable.dispose();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
