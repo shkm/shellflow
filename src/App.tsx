@@ -608,7 +608,7 @@ function App() {
           </div>
         </Panel>
 
-        <PanelResizeHandle className="w-px bg-zinc-800 hover:bg-zinc-600 transition-colors focus:outline-none cursor-col-resize" />
+        <PanelResizeHandle className="w-px bg-zinc-700 hover:bg-zinc-500 transition-colors focus:outline-none !cursor-col-resize" />
 
         {/* Main Pane with Drawer - vertical layout (flex to fill remaining space) */}
         <Panel minSize="300px">
@@ -627,10 +627,10 @@ function App() {
 
             {/* Drawer Panel - collapsible */}
             <PanelResizeHandle
-              className={`h-px transition-colors focus:outline-none cursor-row-resize ${
+              className={`transition-colors focus:outline-none !cursor-row-resize ${
                 activeDrawerState?.isOpen
-                  ? 'bg-zinc-700 hover:bg-zinc-500'
-                  : 'bg-transparent pointer-events-none'
+                  ? 'h-px bg-zinc-700 hover:bg-zinc-500'
+                  : 'h-0 pointer-events-none'
               }`}
             />
             <Panel
@@ -686,9 +686,9 @@ function App() {
 
         {/* Right Panel - collapsible */}
         <PanelResizeHandle
-          className={`w-px transition-colors focus:outline-none cursor-col-resize ${
+          className={`w-px transition-colors focus:outline-none !cursor-col-resize ${
             activeWorktreeId && activeRightPanelState?.isOpen
-              ? 'bg-zinc-800 hover:bg-zinc-600'
+              ? 'bg-zinc-700 hover:bg-zinc-500'
               : 'bg-transparent pointer-events-none'
           }`}
         />
