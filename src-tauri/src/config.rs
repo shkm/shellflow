@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
-    pub claude: TerminalConfig,
+    pub main: TerminalConfig,
     pub terminal: TerminalConfig,
     pub worktree: WorktreeConfig,
 }
@@ -88,8 +88,8 @@ pub fn load_config() -> Config {
         let default_config = r#"{
   // One Man Band Configuration
 
-  // Claude terminal (main pane)
-  "claude": {
+  // Main terminal pane
+  "main": {
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
     "fontSize": 13
   },

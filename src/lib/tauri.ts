@@ -28,8 +28,8 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
 }
 
 // PTY commands
-export async function spawnClaude(workspaceId: string): Promise<string> {
-  return invoke<string>('spawn_claude', { workspaceId });
+export async function spawnMain(workspaceId: string): Promise<string> {
+  return invoke<string>('spawn_main', { workspaceId });
 }
 
 export async function spawnTerminal(workspaceId: string): Promise<string> {

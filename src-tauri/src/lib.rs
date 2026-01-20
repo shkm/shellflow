@@ -123,7 +123,7 @@ fn delete_workspace(state: State<'_, Arc<AppState>>, workspace_id: &str) -> Resu
 
 // PTY commands
 #[tauri::command]
-fn spawn_claude(
+fn spawn_main(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
     workspace_id: &str,
@@ -142,7 +142,7 @@ fn spawn_claude(
             .ok_or_else(|| format!("Workspace not found: {}", workspace_id))?
     };
 
-    pty::spawn_pty(&app, &state, workspace_id, &workspace_path, "claude", cols, rows).map_err(map_err)
+    pty::spawn_pty(&app, &state, workspace_id, &workspace_path, "main", cols, rows).map_err(map_err)
 }
 
 #[tauri::command]
@@ -221,7 +221,7 @@ pub fn run() {
             create_workspace,
             list_workspaces,
             delete_workspace,
-            spawn_claude,
+            spawn_main,
             spawn_terminal,
             pty_write,
             pty_resize,

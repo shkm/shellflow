@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { Sidebar } from './components/Sidebar/Sidebar';
-import { ClaudePane } from './components/ClaudePane/ClaudePane';
+import { MainPane } from './components/MainPane/MainPane';
 import { RightPanel } from './components/RightPanel/RightPanel';
 import { ConfirmModal } from './components/ConfirmModal';
 import { useWorkspaces } from './hooks/useWorkspaces';
@@ -168,13 +168,13 @@ function App() {
 
         <PanelResizeHandle className="w-px bg-zinc-800 hover:bg-zinc-600 transition-colors focus:outline-none cursor-col-resize" />
 
-        {/* Main Claude Pane */}
+        {/* Main Pane */}
         <Panel defaultSize="65%" minSize="30%">
           <div className="h-full w-full">
-            <ClaudePane
+            <MainPane
               openWorkspaces={openWorkspaces}
               activeWorkspaceId={activeWorkspaceId}
-              terminalConfig={config.claude}
+              terminalConfig={config.main}
               onSelectTab={handleSelectTab}
               onCloseTab={handleCloseTab}
               onDeleteWorkspace={handleDeleteWorkspace}

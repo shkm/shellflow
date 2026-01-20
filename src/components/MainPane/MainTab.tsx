@@ -17,13 +17,13 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
   }) as T;
 }
 
-interface ClaudeTabProps {
+interface MainTabProps {
   workspace: Workspace;
   isActive: boolean;
   terminalConfig: TerminalConfig;
 }
 
-export function ClaudeTab({ workspace, isActive, terminalConfig }: ClaudeTabProps) {
+export function MainTab({ workspace, isActive, terminalConfig }: MainTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -107,7 +107,7 @@ export function ClaudeTab({ workspace, isActive, terminalConfig }: ClaudeTabProp
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Fit terminal and spawn Claude with correct size
+    // Fit terminal and spawn main process with correct size
     const initPty = async () => {
       // Wait for layout to fully settle
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -128,9 +128,9 @@ export function ClaudeTab({ workspace, isActive, terminalConfig }: ClaudeTabProp
       const cols = terminal.cols;
       const rows = terminal.rows;
 
-      // Spawn Claude CLI with stable size
+      // Spawn main terminal with stable size
       spawnedAtRef.current = Date.now();
-      await spawnRef.current(workspace.id, 'claude', cols, rows);
+      await spawnRef.current(workspace.id, 'main', cols, rows);
     };
 
     initPty().catch(console.error);
@@ -175,7 +175,7 @@ export function ClaudeTab({ workspace, isActive, terminalConfig }: ClaudeTabProp
         const fitAddon = fitAddonRef.current;
         if (!terminal || !fitAddon || !ptyIdRef.current) return;
 
-        // Skip resizes within 1 second of spawn to let Claude's UI settle
+        // Skip resizes within 1 second of spawn to let the UI settle
         if (Date.now() - spawnedAtRef.current < 1000) return;
 
         fitAddon.fit();

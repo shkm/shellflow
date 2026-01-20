@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { PtyOutput } from '../types';
 
-type PtyType = 'claude' | 'shell';
+type PtyType = 'main' | 'shell';
 
 export function usePty(onOutput?: (data: string) => void) {
   const [ptyId, setPtyId] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export function usePty(onOutput?: (data: string) => void) {
 
   const spawn = useCallback(async (workspaceId: string, type: PtyType, cols?: number, rows?: number) => {
     try {
-      const command = type === 'claude' ? 'spawn_claude' : 'spawn_terminal';
+      const command = type === 'main' ? 'spawn_main' : 'spawn_terminal';
       const id = await invoke<string>(command, { workspaceId, cols, rows });
       setPtyId(id);
 

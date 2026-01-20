@@ -1,6 +1,6 @@
 {
   "name": "onemanband",
-  "description": "Git Worktree Orchestrator with Claude Integration",
+  "description": "Git Worktree Orchestrator",
   "private": true,
   "version": "0.1.0",
   "type": "module",

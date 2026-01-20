@@ -110,7 +110,7 @@ pub fn spawn_pty(
 
     eprintln!("[PTY] Spawning command: {} in {}", command, workspace_path);
 
-    let mut cmd = if command == "claude" {
+    let mut cmd = if command == "main" {
         let mut cmd = CommandBuilder::new("claude");
         cmd.cwd(workspace_path);
         cmd
