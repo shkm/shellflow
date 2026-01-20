@@ -5,7 +5,6 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { listen } from '@tauri-apps/api/event';
 import { Loader2 } from 'lucide-react';
-import { Worktree } from '../../types';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import '@xterm/xterm/css/xterm.css';
@@ -19,18 +18,18 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
   }) as T;
 }
 
-interface MainTabProps {
-  worktree: Worktree;
+interface MainTerminalProps {
+  worktreeId: string;
   isActive: boolean;
   terminalConfig: TerminalConfig;
 }
 
-export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
+export function MainTerminal({ worktreeId, isActive, terminalConfig }: MainTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const initializedRef = useRef(false);
-  const spawnedAtRef = useRef<number>(0); // Track when we spawned to avoid early resizes
+  const spawnedAtRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
 
   // Handle PTY output by writing directly to terminal
@@ -65,12 +64,17 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
     killRef.current = kill;
   }, [spawn, kill]);
 
-  // Initialize terminal and spawn PTY - only runs once per worktree
+  // Store write function in ref so onData handler can use it immediately
+  const writeRef = useRef(write);
+  useEffect(() => {
+    writeRef.current = write;
+  }, [write]);
+
+  // Initialize terminal and spawn PTY
   useEffect(() => {
     if (!containerRef.current || initializedRef.current) return;
     initializedRef.current = true;
 
-    // Track if this effect instance is still active (for StrictMode cleanup)
     let isMounted = true;
 
     const terminal = new Terminal({
@@ -125,62 +129,40 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
+    // Attach onData handler immediately so terminal query responses work
+    const onDataDisposable = terminal.onData((data) => {
+      writeRef.current(data);
+    });
+
     // Fit terminal and spawn main process with correct size
     const initPty = async () => {
-      // Wait for layout to fully settle
       await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Bail out if cleanup happened during the wait (StrictMode)
       if (!isMounted) return;
 
       fitAddon.fit();
-
-      // Wait a bit more and fit again to ensure stable size
       await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Bail out if cleanup happened during the wait (StrictMode)
       if (!isMounted) return;
 
       fitAddon.fit();
-
       const cols = terminal.cols;
       const rows = terminal.rows;
 
-      // Spawn main terminal with stable size
       spawnedAtRef.current = Date.now();
-      await spawnRef.current(worktree.id, 'main', cols, rows);
+      await spawnRef.current(worktreeId, 'main', cols, rows);
     };
 
     initPty().catch(console.error);
 
     return () => {
       isMounted = false;
+      onDataDisposable.dispose();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
       initializedRef.current = false;
-      // Kill the PTY process on cleanup
       killRef.current();
     };
-  }, [worktree.id]); // Only re-run when worktree changes
-
-  // Store write function in ref so onData handler can use it immediately
-  const writeRef = useRef(write);
-  useEffect(() => {
-    writeRef.current = write;
-  }, [write]);
-
-  // Handle user input - set up immediately so terminal query responses work
-  useEffect(() => {
-    const terminal = terminalRef.current;
-    if (!terminal) return;
-
-    const disposable = terminal.onData((data) => {
-      writeRef.current(data);
-    });
-
-    return () => disposable.dispose();
-  }, []);
+  }, [worktreeId]);
 
   // Store resize function in ref to avoid dependency issues
   const resizeRef = useRef(resize);
@@ -191,7 +173,7 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
     ptyIdRef.current = ptyId;
   }, [resize, ptyId]);
 
-  // Debounced resize handler - stable reference
+  // Debounced resize handler
   const debouncedResize = useMemo(
     () =>
       debounce(() => {
@@ -199,7 +181,6 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
         const fitAddon = fitAddonRef.current;
         if (!terminal || !fitAddon || !ptyIdRef.current) return;
 
-        // Skip resizes within 1 second of spawn to let the UI settle
         if (Date.now() - spawnedAtRef.current < 1000) return;
 
         fitAddon.fit();
@@ -211,7 +192,6 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
   // Fit on active change
   useEffect(() => {
     if (isActive && ptyId) {
-      // Small delay to let layout settle, then resize
       const timeout = setTimeout(debouncedResize, 50);
       return () => clearTimeout(timeout);
     }
@@ -234,7 +214,6 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
 
   return (
     <div className="relative w-full h-full" style={{ backgroundColor: '#09090b' }}>
-      {/* Loading overlay */}
       {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-950">
           <div className="flex flex-col items-center gap-3 text-zinc-400">
@@ -243,7 +222,6 @@ export function MainTab({ worktree, isActive, terminalConfig }: MainTabProps) {
           </div>
         </div>
       )}
-      {/* Terminal container */}
       <div
         ref={containerRef}
         className={`w-full h-full transition-opacity duration-200 ${isReady ? 'opacity-100' : 'opacity-0'}`}

@@ -6,7 +6,7 @@ import { ContextMenu } from '../ContextMenu';
 
 interface SidebarProps {
   projects: Project[];
-  selectedWorktreeId: string | null;
+  activeWorktreeId: string | null;
   openWorktreeIds: Set<string>;
   loadingWorktrees: Set<string>;
   expandedProjects: Set<string>;
@@ -20,7 +20,7 @@ interface SidebarProps {
 
 export function Sidebar({
   projects,
-  selectedWorktreeId,
+  activeWorktreeId,
   openWorktreeIds,
   loadingWorktrees,
   expandedProjects,
@@ -70,7 +70,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 border-r border-zinc-800 select-none">
+    <div className="flex flex-col h-full bg-zinc-900 select-none">
       {/* Drag region for macOS traffic lights */}
       <DragRegion className="h-8 flex-shrink-0" />
       <div className="flex-1 overflow-y-auto p-2">
@@ -138,7 +138,7 @@ export function Sidebar({
                     project.worktrees.map((worktree) => {
                       const isLoading = loadingWorktrees.has(worktree.id);
                       const isOpen = openWorktreeIds.has(worktree.id);
-                      const isSelected = selectedWorktreeId === worktree.id;
+                      const isSelected = activeWorktreeId === worktree.id;
                       return (
                         <div
                           key={worktree.id}

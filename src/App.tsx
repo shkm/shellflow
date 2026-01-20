@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { listen } from '@tauri-apps/api/event';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { MainPane } from './components/MainPane/MainPane';
 import { RightPanel } from './components/RightPanel/RightPanel';
+import { Drawer, DrawerTab } from './components/Drawer/Drawer';
+import { DrawerTerminal } from './components/Drawer/DrawerTerminal';
 import { ConfirmModal } from './components/ConfirmModal';
 import { MergeModal } from './components/MergeModal';
 import { useWorktrees } from './hooks/useWorktrees';
@@ -14,19 +16,54 @@ import { Project, Worktree } from './types';
 
 const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
 
+// Per-worktree drawer state
+interface DrawerState {
+  isOpen: boolean;
+  tabs: DrawerTab[];
+  activeTabId: string | null;
+  tabCounter: number;
+}
+
+function createDefaultDrawerState(): DrawerState {
+  return {
+    isOpen: false,
+    tabs: [],
+    activeTabId: null,
+    tabCounter: 0,
+  };
+}
+
 function App() {
   const { projects, addProject, removeProject, createWorktree, deleteWorktree, refresh: refreshProjects } = useWorktrees();
   const { config } = useConfig();
-  const [openWorktrees, setOpenWorktrees] = useState<Worktree[]>([]);
+
+  // Open worktrees (main terminals are kept alive for these)
+  const [openWorktreeIds, setOpenWorktreeIds] = useState<Set<string>>(new Set());
   const [activeWorktreeId, setActiveWorktreeId] = useState<string | null>(null);
+
+  // Per-worktree drawer state
+  const [drawerStates, setDrawerStates] = useState<Map<string, DrawerState>>(new Map());
+
+  // Get current worktree's drawer state
+  const activeDrawerState = activeWorktreeId ? drawerStates.get(activeWorktreeId) ?? createDefaultDrawerState() : null;
+
+  // Modal state
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingRemoveProject, setPendingRemoveProject] = useState<Project | null>(null);
   const [pendingMergeId, setPendingMergeId] = useState<string | null>(null);
   const [loadingWorktrees, setLoadingWorktrees] = useState<Set<string>>(new Set());
 
+  // Derived values
+  const activeWorktree = useMemo(() => {
+    if (!activeWorktreeId) return null;
+    for (const project of projects) {
+      const wt = project.worktrees.find(w => w.id === activeWorktreeId);
+      if (wt) return wt;
+    }
+    return null;
+  }, [activeWorktreeId, projects]);
+
   // Expanded projects - persisted to localStorage
-  // We use a separate key to track if we've ever saved, so we can distinguish
-  // "user collapsed all" from "first run"
   const hasInitialized = useRef(localStorage.getItem(EXPANDED_PROJECTS_KEY) !== null);
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(() => {
@@ -66,7 +103,7 @@ function App() {
     });
   }, []);
 
-  // Listen for worktree ready events (when the main command has started)
+  // Listen for worktree ready events
   useEffect(() => {
     const unlistenReady = listen<{ ptyId: string; worktreeId: string }>(
       'pty-ready',
@@ -76,7 +113,6 @@ function App() {
           next.delete(event.payload.worktreeId);
           return next;
         });
-        console.log(`Worktree ready: ${event.payload.worktreeId}`);
       }
     );
 
@@ -85,15 +121,73 @@ function App() {
     };
   }, []);
 
-  const activeWorktree = openWorktrees.find((w) => w.id === activeWorktreeId) || null;
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeWorktreeId) return;
+
+      // Ctrl+` to toggle drawer
+      if (e.ctrlKey && e.key === '`') {
+        e.preventDefault();
+        setDrawerStates((prev) => {
+          const current = prev.get(activeWorktreeId) ?? createDefaultDrawerState();
+          const willOpen = !current.isOpen;
+          const next = new Map(prev);
+
+          // Create first tab if opening drawer with no tabs
+          if (willOpen && current.tabs.length === 0) {
+            const newCounter = current.tabCounter + 1;
+            const newTab: DrawerTab = {
+              id: `${activeWorktreeId}-drawer-${newCounter}`,
+              label: `Terminal ${newCounter}`,
+            };
+            next.set(activeWorktreeId, {
+              isOpen: true,
+              tabs: [newTab],
+              activeTabId: newTab.id,
+              tabCounter: newCounter,
+            });
+          } else {
+            next.set(activeWorktreeId, { ...current, isOpen: willOpen });
+          }
+          return next;
+        });
+      }
+
+      // Cmd+T to add new terminal tab (when drawer is open)
+      if ((e.metaKey || e.ctrlKey) && e.key === 't' && activeDrawerState?.isOpen) {
+        e.preventDefault();
+        setDrawerStates((prev) => {
+          const current = prev.get(activeWorktreeId) ?? createDefaultDrawerState();
+          const newCounter = current.tabCounter + 1;
+          const newTab: DrawerTab = {
+            id: `${activeWorktreeId}-drawer-${newCounter}`,
+            label: `Terminal ${newCounter}`,
+          };
+          const next = new Map(prev);
+          next.set(activeWorktreeId, {
+            ...current,
+            tabs: [...current.tabs, newTab],
+            activeTabId: newTab.id,
+            tabCounter: newCounter,
+          });
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeWorktreeId, activeDrawerState?.isOpen]);
+
   const { files: changedFiles } = useGitStatus(activeWorktree);
 
+  // Worktree handlers
   const handleAddProject = useCallback(async () => {
     const path = await selectFolder();
     if (path) {
       try {
         const project = await addProject(path);
-        // Expand the newly added project
         setExpandedProjects((prev) => new Set([...prev, project.id]));
       } catch (err) {
         console.error('Failed to add project:', err);
@@ -106,14 +200,12 @@ function App() {
       const project = projects.find((p) => p.id === projectId);
       if (!project) return;
 
-      // Expand the project when adding a worktree
       setExpandedProjects((prev) => new Set([...prev, projectId]));
 
       try {
         const worktree = await createWorktree(project.path);
-        // Mark as loading until the main command is ready
         setLoadingWorktrees((prev) => new Set([...prev, worktree.id]));
-        setOpenWorktrees((prev) => [...prev, worktree]);
+        setOpenWorktreeIds((prev) => new Set([...prev, worktree.id]));
         setActiveWorktreeId(worktree.id);
       } catch (err) {
         console.error('Failed to create worktree:', err);
@@ -123,28 +215,32 @@ function App() {
   );
 
   const handleSelectWorktree = useCallback((worktree: Worktree) => {
-    setOpenWorktrees((prev) => {
-      if (prev.some((w) => w.id === worktree.id)) {
-        return prev;
-      }
-      return [...prev, worktree];
+    setOpenWorktreeIds((prev) => {
+      if (prev.has(worktree.id)) return prev;
+      return new Set([...prev, worktree.id]);
     });
     setActiveWorktreeId(worktree.id);
   }, []);
 
-  const handleSelectTab = useCallback((worktreeId: string) => {
-    setActiveWorktreeId(worktreeId);
-  }, []);
-
-  const handleCloseTab = useCallback(
+  const handleCloseWorktree = useCallback(
     (worktreeId: string) => {
-      setOpenWorktrees((prev) => prev.filter((w) => w.id !== worktreeId));
+      setOpenWorktreeIds((prev) => {
+        const next = new Set(prev);
+        next.delete(worktreeId);
+        return next;
+      });
+      // Clean up drawer state for this worktree
+      setDrawerStates((prev) => {
+        const next = new Map(prev);
+        next.delete(worktreeId);
+        return next;
+      });
       if (activeWorktreeId === worktreeId) {
-        const remaining = openWorktrees.filter((w) => w.id !== worktreeId);
-        setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+        const remaining = Array.from(openWorktreeIds).filter(id => id !== worktreeId);
+        setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1] : null);
       }
     },
-    [activeWorktreeId, openWorktrees]
+    [activeWorktreeId, openWorktreeIds]
   );
 
   const handleDeleteWorktree = useCallback((worktreeId: string) => {
@@ -155,17 +251,27 @@ function App() {
     if (!pendingDeleteId) return;
     try {
       await deleteWorktree(pendingDeleteId);
-      setOpenWorktrees((prev) => prev.filter((w) => w.id !== pendingDeleteId));
+      setOpenWorktreeIds((prev) => {
+        const next = new Set(prev);
+        next.delete(pendingDeleteId);
+        return next;
+      });
+      // Clean up drawer state for this worktree
+      setDrawerStates((prev) => {
+        const next = new Map(prev);
+        next.delete(pendingDeleteId);
+        return next;
+      });
       if (activeWorktreeId === pendingDeleteId) {
-        const remaining = openWorktrees.filter((w) => w.id !== pendingDeleteId);
-        setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+        const remaining = Array.from(openWorktreeIds).filter(id => id !== pendingDeleteId);
+        setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1] : null);
       }
     } catch (err) {
       console.error('Failed to delete worktree:', err);
     } finally {
       setPendingDeleteId(null);
     }
-  }, [deleteWorktree, pendingDeleteId, activeWorktreeId, openWorktrees]);
+  }, [deleteWorktree, pendingDeleteId, activeWorktreeId, openWorktreeIds]);
 
   const handleRemoveProject = useCallback((project: Project) => {
     setPendingRemoveProject(project);
@@ -178,26 +284,41 @@ function App() {
   const handleMergeComplete = useCallback(
     (worktreeId: string, deletedWorktree: boolean) => {
       if (deletedWorktree) {
-        // Remove from open worktrees
-        setOpenWorktrees((prev) => prev.filter((w) => w.id !== worktreeId));
+        setOpenWorktreeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(worktreeId);
+          return next;
+        });
         if (activeWorktreeId === worktreeId) {
-          const remaining = openWorktrees.filter((w) => w.id !== worktreeId);
-          setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+          const remaining = Array.from(openWorktreeIds).filter(id => id !== worktreeId);
+          setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1] : null);
         }
-        // Refresh projects to update sidebar
         refreshProjects();
       }
       setPendingMergeId(null);
     },
-    [activeWorktreeId, openWorktrees, refreshProjects]
+    [activeWorktreeId, openWorktreeIds, refreshProjects]
   );
 
   const confirmRemoveProject = useCallback(async () => {
     if (!pendingRemoveProject) return;
     try {
-      // Close any open worktrees from this project
       const projectWorktreeIds = new Set(pendingRemoveProject.worktrees.map((w) => w.id));
-      setOpenWorktrees((prev) => prev.filter((w) => !projectWorktreeIds.has(w.id)));
+      setOpenWorktreeIds((prev) => {
+        const next = new Set(prev);
+        for (const id of projectWorktreeIds) {
+          next.delete(id);
+        }
+        return next;
+      });
+      // Clean up drawer states for project worktrees
+      setDrawerStates((prev) => {
+        const next = new Map(prev);
+        for (const id of projectWorktreeIds) {
+          next.delete(id);
+        }
+        return next;
+      });
       if (activeWorktreeId && projectWorktreeIds.has(activeWorktreeId)) {
         setActiveWorktreeId(null);
       }
@@ -209,14 +330,65 @@ function App() {
     }
   }, [removeProject, pendingRemoveProject, activeWorktreeId]);
 
+  // Drawer tab handlers
+  const handleSelectDrawerTab = useCallback((tabId: string) => {
+    if (!activeWorktreeId) return;
+    setDrawerStates((prev) => {
+      const current = prev.get(activeWorktreeId);
+      if (!current) return prev;
+      const next = new Map(prev);
+      next.set(activeWorktreeId, { ...current, activeTabId: tabId });
+      return next;
+    });
+  }, [activeWorktreeId]);
+
+  const handleCloseDrawerTab = useCallback((tabId: string) => {
+    if (!activeWorktreeId) return;
+    setDrawerStates((prev) => {
+      const current = prev.get(activeWorktreeId);
+      if (!current) return prev;
+
+      const remaining = current.tabs.filter(t => t.id !== tabId);
+      const next = new Map(prev);
+
+      if (remaining.length === 0) {
+        next.set(activeWorktreeId, { ...current, isOpen: false, tabs: [], activeTabId: null });
+      } else {
+        const newActiveTabId = current.activeTabId === tabId
+          ? remaining[remaining.length - 1].id
+          : current.activeTabId;
+        next.set(activeWorktreeId, { ...current, tabs: remaining, activeTabId: newActiveTabId });
+      }
+      return next;
+    });
+  }, [activeWorktreeId]);
+
+  const handleAddDrawerTab = useCallback(() => {
+    if (!activeWorktreeId) return;
+    setDrawerStates((prev) => {
+      const current = prev.get(activeWorktreeId) ?? createDefaultDrawerState();
+      const newCounter = current.tabCounter + 1;
+      const newTab: DrawerTab = {
+        id: `${activeWorktreeId}-drawer-${newCounter}`,
+        label: `Terminal ${newCounter}`,
+      };
+      const next = new Map(prev);
+      next.set(activeWorktreeId, {
+        ...current,
+        tabs: [...current.tabs, newTab],
+        activeTabId: newTab.id,
+        tabCounter: newCounter,
+      });
+      return next;
+    });
+  }, [activeWorktreeId]);
+
   const pendingWorktree = pendingDeleteId
-    ? openWorktrees.find((w) => w.id === pendingDeleteId) ||
-      projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingDeleteId)
+    ? projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingDeleteId)
     : null;
 
   const pendingMergeWorktree = pendingMergeId
-    ? openWorktrees.find((w) => w.id === pendingMergeId) ||
-      projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingMergeId)
+    ? projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingMergeId)
     : null;
 
   return (
@@ -256,52 +428,112 @@ function App() {
 
       {/* Main content */}
       <PanelGroup
-        orientation="horizontal"
+        orientation="vertical"
         className="flex-1"
         onLayoutChange={() => { window.dispatchEvent(new Event('resize')); }}
       >
-        {/* Sidebar */}
-        <Panel defaultSize="15%" minSize="10%" maxSize="30%">
-          <div className="h-full w-full">
-            <Sidebar
-              projects={projects}
-              selectedWorktreeId={activeWorktreeId}
-              openWorktreeIds={new Set(openWorktrees.map((w) => w.id))}
-              loadingWorktrees={loadingWorktrees}
-              expandedProjects={expandedProjects}
-              onToggleProject={toggleProject}
-              onSelectWorktree={handleSelectWorktree}
-              onAddProject={handleAddProject}
-              onAddWorktree={handleAddWorktree}
-              onDeleteWorktree={(worktree) => handleDeleteWorktree(worktree.id)}
-              onRemoveProject={handleRemoveProject}
-            />
-          </div>
+        <Panel defaultSize={activeDrawerState?.isOpen ? "70%" : "100%"} minSize="30%">
+          <PanelGroup
+            orientation="horizontal"
+            className="h-full"
+            onLayoutChange={() => { window.dispatchEvent(new Event('resize')); }}
+          >
+            {/* Sidebar */}
+            <Panel defaultSize="15%" minSize="10%" maxSize="30%">
+              <div className="h-full w-full">
+                <Sidebar
+                  projects={projects}
+                  activeWorktreeId={activeWorktreeId}
+                  openWorktreeIds={openWorktreeIds}
+                  loadingWorktrees={loadingWorktrees}
+                  expandedProjects={expandedProjects}
+                  onToggleProject={toggleProject}
+                  onSelectWorktree={handleSelectWorktree}
+                  onAddProject={handleAddProject}
+                  onAddWorktree={handleAddWorktree}
+                  onDeleteWorktree={(worktree) => handleDeleteWorktree(worktree.id)}
+                  onRemoveProject={handleRemoveProject}
+                />
+              </div>
+            </Panel>
+
+            <PanelResizeHandle className="w-px bg-zinc-800 hover:bg-zinc-600 transition-colors focus:outline-none cursor-col-resize" />
+
+            {/* Main Pane */}
+            <Panel defaultSize="65%" minSize="30%">
+              <div className="h-full w-full">
+                <MainPane
+                  openWorktreeIds={openWorktreeIds}
+                  activeWorktree={activeWorktree}
+                  terminalConfig={config.main}
+                  onCloseWorktree={handleCloseWorktree}
+                  onDeleteWorktree={handleDeleteWorktree}
+                  onMergeWorktree={handleMergeWorktree}
+                />
+              </div>
+            </Panel>
+
+            <PanelResizeHandle className="w-px bg-zinc-800 hover:bg-zinc-600 transition-colors focus:outline-none cursor-col-resize" />
+
+            {/* Right Panel */}
+            <Panel defaultSize="20%" minSize="15%" maxSize="40%">
+              <div className="h-full w-full">
+                <RightPanel changedFiles={changedFiles} />
+              </div>
+            </Panel>
+          </PanelGroup>
         </Panel>
 
-        <PanelResizeHandle className="w-px bg-zinc-800 hover:bg-zinc-600 transition-colors focus:outline-none cursor-col-resize" />
-
-        {/* Main Pane */}
-        <Panel defaultSize="65%" minSize="30%">
-          <div className="h-full w-full">
-            <MainPane
-              openWorktrees={openWorktrees}
-              activeWorktreeId={activeWorktreeId}
-              terminalConfig={config.main}
-              onSelectTab={handleSelectTab}
-              onCloseTab={handleCloseTab}
-              onDeleteWorktree={handleDeleteWorktree}
-              onMergeWorktree={handleMergeWorktree}
-            />
-          </div>
-        </Panel>
-
-        <PanelResizeHandle className="w-px bg-zinc-800 hover:bg-zinc-600 transition-colors focus:outline-none cursor-col-resize" />
-
-        {/* Right Panel */}
-        <Panel defaultSize="20%" minSize="15%" maxSize="40%">
-          <div className="h-full w-full">
-            <RightPanel worktree={activeWorktree} changedFiles={changedFiles} terminalConfig={config.terminal} />
+        {/* Drawer Panel - always rendered to keep terminals alive, but visually hidden when closed */}
+        <PanelResizeHandle
+          className={`h-px transition-colors focus:outline-none cursor-row-resize ${
+            activeDrawerState?.isOpen
+              ? 'bg-zinc-700 hover:bg-zinc-500'
+              : 'bg-transparent pointer-events-none'
+          }`}
+        />
+        <Panel
+          defaultSize={activeDrawerState?.isOpen ? "30%" : "0%"}
+          minSize={activeDrawerState?.isOpen ? "15%" : "0%"}
+          maxSize={activeDrawerState?.isOpen ? "70%" : "0%"}
+        >
+          <div className={activeDrawerState?.isOpen ? 'h-full' : 'h-0 overflow-hidden'}>
+            <Drawer
+              isOpen={activeDrawerState?.isOpen ?? false}
+              worktreeId={activeWorktreeId}
+              tabs={activeDrawerState?.tabs ?? []}
+              activeTabId={activeDrawerState?.activeTabId ?? null}
+              onSelectTab={handleSelectDrawerTab}
+              onCloseTab={handleCloseDrawerTab}
+              onAddTab={handleAddDrawerTab}
+            >
+              {/* Render ALL terminals for ALL worktrees to keep them alive */}
+              {Array.from(drawerStates.entries()).flatMap(([worktreeId, state]) =>
+                state.tabs.map((tab) => (
+                  <div
+                    key={tab.id}
+                    className={`absolute inset-0 ${
+                      worktreeId === activeWorktreeId &&
+                      activeDrawerState?.isOpen &&
+                      tab.id === activeDrawerState?.activeTabId
+                        ? 'visible z-10'
+                        : 'invisible z-0 pointer-events-none'
+                    }`}
+                  >
+                    <DrawerTerminal
+                      id={tab.id}
+                      worktreeId={worktreeId}
+                      isActive={
+                        worktreeId === activeWorktreeId &&
+                        (activeDrawerState?.isOpen ?? false) &&
+                        tab.id === activeDrawerState?.activeTabId
+                      }
+                      terminalConfig={config.terminal}
+                    />
+                  </div>
+                ))
+              )}
+            </Drawer>
           </div>
         </Panel>
       </PanelGroup>
