@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { listen } from '@tauri-apps/api/event';
 import { Sidebar } from './components/Sidebar/Sidebar';
@@ -11,6 +11,8 @@ import { useConfig } from './hooks/useConfig';
 import { selectFolder } from './lib/tauri';
 import { Project, Workspace } from './types';
 
+const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
+
 function App() {
   const { projects, addProject, removeProject, createWorkspace, deleteWorkspace } = useWorkspaces();
   const { config } = useConfig();
@@ -19,6 +21,48 @@ function App() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingRemoveProject, setPendingRemoveProject] = useState<Project | null>(null);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<Set<string>>(new Set());
+
+  // Expanded projects - persisted to localStorage
+  // We use a separate key to track if we've ever saved, so we can distinguish
+  // "user collapsed all" from "first run"
+  const hasInitialized = useRef(localStorage.getItem(EXPANDED_PROJECTS_KEY) !== null);
+
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(EXPANDED_PROJECTS_KEY);
+      if (saved) {
+        return new Set(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load expanded projects:', e);
+    }
+    return new Set();
+  });
+
+  // Expand all projects by default on first run only
+  useEffect(() => {
+    if (!hasInitialized.current && projects.length > 0) {
+      hasInitialized.current = true;
+      setExpandedProjects(new Set(projects.map((p) => p.id)));
+    }
+  }, [projects]);
+
+  // Persist expanded projects to localStorage
+  useEffect(() => {
+    localStorage.setItem(EXPANDED_PROJECTS_KEY, JSON.stringify([...expandedProjects]));
+  }, [expandedProjects]);
+
+  const toggleProject = useCallback((projectId: string) => {
+    setExpandedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  }, []);
 
   // Listen for workspace ready events (when Claude has started)
   useEffect(() => {
@@ -57,6 +101,9 @@ function App() {
     async (projectId: string) => {
       const project = projects.find((p) => p.id === projectId);
       if (!project) return;
+
+      // Expand the project when adding a workspace
+      setExpandedProjects((prev) => new Set([...prev, projectId]));
 
       try {
         const workspace = await createWorkspace(project.path);
@@ -181,6 +228,8 @@ function App() {
               projects={projects}
               selectedWorkspaceId={activeWorkspaceId}
               loadingWorkspaces={loadingWorkspaces}
+              expandedProjects={expandedProjects}
+              onToggleProject={toggleProject}
               onSelectWorkspace={handleSelectWorkspace}
               onAddProject={handleAddProject}
               onAddWorkspace={handleAddWorkspace}

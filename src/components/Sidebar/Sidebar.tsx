@@ -8,6 +8,8 @@ interface SidebarProps {
   projects: Project[];
   selectedWorkspaceId: string | null;
   loadingWorkspaces: Set<string>;
+  expandedProjects: Set<string>;
+  onToggleProject: (projectId: string) => void;
   onSelectWorkspace: (workspace: Workspace) => void;
   onAddProject: () => void;
   onAddWorkspace: (projectId: string) => void;
@@ -19,16 +21,14 @@ export function Sidebar({
   projects,
   selectedWorkspaceId,
   loadingWorkspaces,
+  expandedProjects,
+  onToggleProject,
   onSelectWorkspace,
   onAddProject,
   onAddWorkspace,
   onDeleteWorkspace,
   onRemoveProject,
 }: SidebarProps) {
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
-    new Set(projects.map((p) => p.id))
-  );
-
   const [contextMenu, setContextMenu] = useState<{
     project: Project;
     x: number;
@@ -67,18 +67,6 @@ export function Sidebar({
     }
   };
 
-  const toggleProject = (projectId: string) => {
-    setExpandedProjects((prev) => {
-      const next = new Set(prev);
-      if (next.has(projectId)) {
-        next.delete(projectId);
-      } else {
-        next.add(projectId);
-      }
-      return next;
-    });
-  };
-
   return (
     <div className="flex flex-col h-full bg-zinc-900 border-r border-zinc-800 select-none">
       {/* Drag region for macOS traffic lights */}
@@ -101,7 +89,7 @@ export function Sidebar({
             <div key={project.id} className="mb-2">
               <div
                 className="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-zinc-800 text-zinc-300"
-                onClick={() => toggleProject(project.id)}
+                onClick={() => onToggleProject(project.id)}
                 onContextMenu={(e) => handleProjectContextMenu(e, project)}
               >
                 {expandedProjects.has(project.id) ? (
@@ -156,7 +144,9 @@ export function Sidebar({
                           <GitBranch size={12} />
                           <span className="truncate flex-1">{workspace.name}</span>
                           {isLoading ? (
-                            <Loader2 size={12} className="animate-spin text-blue-400" title="Starting Claude..." />
+                            <span title="Starting Claude...">
+                              <Loader2 size={12} className="animate-spin text-blue-400" />
+                            </span>
                           ) : (
                             <button
                               onClick={(e) => {
