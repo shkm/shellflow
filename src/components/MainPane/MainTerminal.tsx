@@ -10,6 +10,13 @@ import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import '@xterm/xterm/css/xterm.css';
 
+// Fix for xterm.js not handling 5-part colon-separated RGB sequences.
+// Neovim sends 38:2:R:G:B but xterm.js expects 38:2:CS:R:G:B (with colorspace).
+// This adds an empty colorspace to fix the parsing.
+function fixColorSequences(data: string): string {
+  return data.replace(/([34]8:2):(\d+):(\d+):(\d+)(?!:\d)/g, '$1::$2:$3:$4');
+}
+
 // Debounce helper
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
   let timeout: ReturnType<typeof setTimeout>;
@@ -38,7 +45,7 @@ export function MainTerminal({ worktreeId, isActive, terminalConfig }: MainTermi
   // Handle PTY output by writing directly to terminal
   const handleOutput = useCallback((data: string) => {
     if (terminalRef.current) {
-      terminalRef.current.write(data);
+      terminalRef.current.write(fixColorSequences(data));
     }
   }, []);
 
