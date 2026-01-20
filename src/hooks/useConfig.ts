@@ -5,6 +5,7 @@ import { MergeStrategy } from '../types';
 export interface TerminalConfig {
   fontFamily: string;
   fontSize: number;
+  fontLigatures: boolean;
 }
 
 export interface MainConfig extends TerminalConfig {
@@ -29,10 +30,12 @@ const defaultConfig: Config = {
     command: 'claude',
     fontFamily: "Menlo, Monaco, 'Courier New', monospace",
     fontSize: 13,
+    fontLigatures: false,
   },
   terminal: {
     fontFamily: "Menlo, Monaco, 'Courier New', monospace",
     fontSize: 13,
+    fontLigatures: false,
   },
   merge: {
     strategy: 'merge',

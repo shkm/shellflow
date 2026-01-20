@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { listen } from '@tauri-apps/api/event';
 import { Loader2 } from 'lucide-react';
 import { usePty } from '../../hooks/usePty';
@@ -115,15 +116,25 @@ export function MainTerminal({ worktreeId, isActive, terminalConfig }: MainTermi
     terminal.loadAddon(webLinksAddon);
     terminal.open(containerRef.current);
 
-    // Load WebGL addon for GPU-accelerated rendering
-    try {
-      const webglAddon = new WebglAddon();
-      webglAddon.onContextLoss(() => {
-        webglAddon.dispose();
-      });
-      terminal.loadAddon(webglAddon);
-    } catch (e) {
-      console.warn('WebGL addon failed to load, using canvas renderer:', e);
+    // Load ligatures addon if enabled (incompatible with WebGL)
+    if (terminalConfig.fontLigatures) {
+      try {
+        const ligaturesAddon = new LigaturesAddon();
+        terminal.loadAddon(ligaturesAddon);
+      } catch (e) {
+        console.warn('Ligatures addon failed to load:', e);
+      }
+    } else {
+      // Load WebGL addon for GPU-accelerated rendering (only when ligatures disabled)
+      try {
+        const webglAddon = new WebglAddon();
+        webglAddon.onContextLoss(() => {
+          webglAddon.dispose();
+        });
+        terminal.loadAddon(webglAddon);
+      } catch (e) {
+        console.warn('WebGL addon failed to load, using canvas renderer:', e);
+      }
     }
 
     terminalRef.current = terminal;

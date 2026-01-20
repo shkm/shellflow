@@ -157,12 +157,14 @@ Settings are stored in `~/.config/onemanband/config.jsonc`. The file is created 
     "command": "claude",
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
     "fontSize": 13,
+    "fontLigatures": false, // Enable for ligature fonts (disables WebGL)
   },
 
   // Shell terminal (bottom-right pane)
   "terminal": {
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
     "fontSize": 13,
+    "fontLigatures": false, // Enable for ligature fonts (disables WebGL)
   },
 
   "worktree": {

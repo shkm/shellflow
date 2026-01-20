@@ -54,6 +54,8 @@ pub struct MainConfig {
     pub font_family: String,
     #[serde(rename = "fontSize")]
     pub font_size: u16,
+    #[serde(rename = "fontLigatures")]
+    pub font_ligatures: bool,
 }
 
 impl Default for MainConfig {
@@ -62,6 +64,7 @@ impl Default for MainConfig {
             command: "claude".to_string(),
             font_family: "Menlo, Monaco, 'Courier New', monospace".to_string(),
             font_size: 13,
+            font_ligatures: false,
         }
     }
 }
@@ -115,6 +118,8 @@ pub struct TerminalConfig {
     pub font_family: String,
     #[serde(rename = "fontSize")]
     pub font_size: u16,
+    #[serde(rename = "fontLigatures")]
+    pub font_ligatures: bool,
 }
 
 impl Default for TerminalConfig {
@@ -122,6 +127,7 @@ impl Default for TerminalConfig {
         Self {
             font_family: "Menlo, Monaco, 'Courier New', monospace".to_string(),
             font_size: 13,
+            font_ligatures: false,
         }
     }
 }
