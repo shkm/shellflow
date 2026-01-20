@@ -1,6 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Project, Worktree, FileChange } from '../types';
+import {
+  Project,
+  Worktree,
+  FileChange,
+  MergeFeasibility,
+  MergeWorkflowOptions,
+  MergeWorkflowResult,
+  CleanupOptions,
+} from '../types';
 
 // Project commands
 export async function addProject(path: string): Promise<Project> {
@@ -65,4 +73,31 @@ export async function selectFolder(): Promise<string | null> {
     title: 'Select Git Repository',
   });
   return selected as string | null;
+}
+
+// Merge workflow commands
+export async function checkMergeFeasibility(
+  worktreePath: string
+): Promise<MergeFeasibility> {
+  return invoke<MergeFeasibility>('check_merge_feasibility', { worktreePath });
+}
+
+export async function executeMergeWorkflow(
+  worktreeId: string,
+  options: MergeWorkflowOptions
+): Promise<MergeWorkflowResult> {
+  return invoke<MergeWorkflowResult>('execute_merge_workflow', {
+    worktreeId,
+    options,
+  });
+}
+
+export async function cleanupWorktree(
+  worktreeId: string,
+  options: CleanupOptions
+): Promise<void> {
+  return invoke<void>('cleanup_worktree', {
+    worktreeId,
+    options,
+  });
 }

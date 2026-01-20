@@ -5,7 +5,10 @@ mod state;
 mod watcher;
 mod worktree;
 
+use config::MergeStrategy;
+use git::MergeFeasibility;
 use log::info;
+use serde::{Deserialize, Serialize};
 use state::{AppState, FileChange, Project, Worktree};
 use std::path::Path;
 use std::sync::Arc;
@@ -251,6 +254,269 @@ fn stop_watching(worktree_id: String) {
     watcher::stop_watching(&worktree_id);
 }
 
+// Merge workflow commands
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeWorkflowOptions {
+    pub strategy: MergeStrategy,
+    pub delete_worktree: bool,
+    pub delete_local_branch: bool,
+    pub delete_remote_branch: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeWorkflowResult {
+    pub success: bool,
+    pub branch_name: String,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeProgress {
+    pub phase: String,
+    pub message: String,
+}
+
+#[tauri::command]
+fn check_merge_feasibility(worktree_path: &str) -> Result<MergeFeasibility> {
+    let path = Path::new(worktree_path);
+    git::check_merge_feasibility(path).map_err(map_err)
+}
+
+#[tauri::command]
+fn execute_merge_workflow(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    worktree_id: &str,
+    options: MergeWorkflowOptions,
+) -> Result<MergeWorkflowResult> {
+    // Find worktree and project
+    let (worktree_path, project_path) = {
+        let persisted = state.persisted.read();
+        let mut found = None;
+
+        for project in &persisted.projects {
+            if let Some(worktree) = project.worktrees.iter().find(|w| w.id == worktree_id) {
+                found = Some((worktree.path.clone(), project.path.clone()));
+                break;
+            }
+        }
+
+        found.ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+    };
+
+    let worktree_path = Path::new(&worktree_path);
+    let project_path = Path::new(&project_path);
+
+    // Emit progress: starting merge
+    let _ = app.emit(
+        "merge-progress",
+        MergeProgress {
+            phase: "merging".to_string(),
+            message: format!(
+                "{}...",
+                if options.strategy == MergeStrategy::Rebase {
+                    "Rebasing"
+                } else {
+                    "Merging"
+                }
+            ),
+        },
+    );
+
+    // Execute the merge/rebase
+    let branch_name =
+        git::execute_merge_workflow(worktree_path, project_path, options.strategy).map_err(
+            |e| {
+                let _ = app.emit(
+                    "merge-progress",
+                    MergeProgress {
+                        phase: "error".to_string(),
+                        message: e.to_string(),
+                    },
+                );
+                e.to_string()
+            },
+        )?;
+
+    // Delete worktree if requested
+    if options.delete_worktree {
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "cleanup".to_string(),
+                message: "Removing worktree...".to_string(),
+            },
+        );
+
+        // Stop watching first
+        watcher::stop_watching(worktree_id);
+
+        // Delete the worktree
+        let mut persisted = state.persisted.write();
+        for project in &mut persisted.projects {
+            if project.worktrees.iter().any(|w| w.id == worktree_id) {
+                worktree::delete_worktree(project, worktree_id).map_err(map_err)?;
+                break;
+            }
+        }
+        drop(persisted);
+        state.save().map_err(map_err)?;
+    }
+
+    // Delete local branch if requested
+    if options.delete_local_branch {
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "cleanup".to_string(),
+                message: "Deleting local branch...".to_string(),
+            },
+        );
+
+        if let Err(e) = git::delete_local_branch(project_path, &branch_name) {
+            info!("Failed to delete local branch: {}", e);
+            // Don't fail the whole operation for branch deletion
+        }
+    }
+
+    // Delete remote branch if requested
+    if options.delete_remote_branch {
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "cleanup".to_string(),
+                message: "Deleting remote branch...".to_string(),
+            },
+        );
+
+        if let Err(e) = git::delete_remote_branch(project_path, &branch_name) {
+            info!("Failed to delete remote branch: {}", e);
+            // Don't fail the whole operation for branch deletion
+        }
+    }
+
+    // Emit completion
+    let _ = app.emit(
+        "merge-progress",
+        MergeProgress {
+            phase: "complete".to_string(),
+            message: "Merge complete!".to_string(),
+        },
+    );
+
+    Ok(MergeWorkflowResult {
+        success: true,
+        branch_name,
+        error: None,
+    })
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupOptions {
+    pub delete_worktree: bool,
+    pub delete_local_branch: bool,
+    pub delete_remote_branch: bool,
+}
+
+#[tauri::command]
+fn cleanup_worktree(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    worktree_id: &str,
+    options: CleanupOptions,
+) -> Result<()> {
+    // Find worktree and project
+    let (_worktree_path, project_path, branch_name) = {
+        let persisted = state.persisted.read();
+        let mut found = None;
+
+        for project in &persisted.projects {
+            if let Some(worktree) = project.worktrees.iter().find(|w| w.id == worktree_id) {
+                found = Some((
+                    worktree.path.clone(),
+                    project.path.clone(),
+                    worktree.branch.clone(),
+                ));
+                break;
+            }
+        }
+
+        found.ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+    };
+
+    let project_path = Path::new(&project_path);
+
+    // Delete worktree if requested
+    if options.delete_worktree {
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "cleanup".to_string(),
+                message: "Removing worktree...".to_string(),
+            },
+        );
+
+        // Stop watching first
+        watcher::stop_watching(worktree_id);
+
+        // Delete the worktree
+        let mut persisted = state.persisted.write();
+        for project in &mut persisted.projects {
+            if project.worktrees.iter().any(|w| w.id == worktree_id) {
+                worktree::delete_worktree(project, worktree_id).map_err(map_err)?;
+                break;
+            }
+        }
+        drop(persisted);
+        state.save().map_err(map_err)?;
+    }
+
+    // Delete local branch if requested
+    if options.delete_local_branch {
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "cleanup".to_string(),
+                message: "Deleting local branch...".to_string(),
+            },
+        );
+
+        if let Err(e) = git::delete_local_branch(project_path, &branch_name) {
+            info!("Failed to delete local branch: {}", e);
+        }
+    }
+
+    // Delete remote branch if requested
+    if options.delete_remote_branch {
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "cleanup".to_string(),
+                message: "Deleting remote branch...".to_string(),
+            },
+        );
+
+        if let Err(e) = git::delete_remote_branch(project_path, &branch_name) {
+            info!("Failed to delete remote branch: {}", e);
+        }
+    }
+
+    // Emit completion
+    let _ = app.emit(
+        "merge-progress",
+        MergeProgress {
+            phase: "complete".to_string(),
+            message: "Cleanup complete!".to_string(),
+        },
+    );
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -277,6 +543,9 @@ pub fn run() {
             start_watching,
             stop_watching,
             get_config,
+            check_merge_feasibility,
+            execute_merge_workflow,
+            cleanup_worktree,
         ])
         .on_window_event(|_window, event| {
             if let tauri::WindowEvent::Destroyed = event {

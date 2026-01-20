@@ -1,4 +1,4 @@
-import { X, Terminal, Trash2 } from 'lucide-react';
+import { X, Terminal, Trash2, GitMerge } from 'lucide-react';
 import { Worktree } from '../../types';
 import { MainTab } from './MainTab';
 import { DragRegion } from '../DragRegion';
@@ -11,6 +11,7 @@ interface MainPaneProps {
   onSelectTab: (worktreeId: string) => void;
   onCloseTab: (worktreeId: string) => void;
   onDeleteWorktree: (worktreeId: string) => void;
+  onMergeWorktree: (worktreeId: string) => void;
 }
 
 export function MainPane({
@@ -20,6 +21,7 @@ export function MainPane({
   onSelectTab,
   onCloseTab,
   onDeleteWorktree,
+  onMergeWorktree,
 }: MainPaneProps) {
   if (openWorktrees.length === 0) {
     return (
@@ -64,13 +66,22 @@ export function MainPane({
           ))}
         </div>
         {activeWorktreeId && (
-          <button
-            onClick={() => onDeleteWorktree(activeWorktreeId)}
-            className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 flex-shrink-0"
-            title="Delete worktree"
-          >
-            <Trash2 size={16} />
-          </button>
+          <>
+            <button
+              onClick={() => onMergeWorktree(activeWorktreeId)}
+              className="p-2 text-zinc-500 hover:text-blue-400 hover:bg-zinc-800 flex-shrink-0"
+              title="Merge branch"
+            >
+              <GitMerge size={16} />
+            </button>
+            <button
+              onClick={() => onDeleteWorktree(activeWorktreeId)}
+              className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 flex-shrink-0"
+              title="Delete worktree"
+            >
+              <Trash2 size={16} />
+            </button>
+          </>
         )}
       </DragRegion>
 

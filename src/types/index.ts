@@ -27,3 +27,42 @@ export interface FilesChanged {
   worktree_path: string;
   files: FileChange[];
 }
+
+// Merge workflow types
+export type MergeStrategy = 'merge' | 'rebase';
+
+export interface MergeFeasibility {
+  canMerge: boolean;
+  hasUncommittedChanges: boolean;
+  isUpToDate: boolean;
+  canFastForward: boolean;
+  commitsAhead: number;
+  commitsBehind: number;
+  currentBranch: string;
+  targetBranch: string;
+  error: string | null;
+}
+
+export interface MergeWorkflowOptions {
+  strategy: MergeStrategy;
+  deleteWorktree: boolean;
+  deleteLocalBranch: boolean;
+  deleteRemoteBranch: boolean;
+}
+
+export interface MergeWorkflowResult {
+  success: boolean;
+  branchName: string;
+  error: string | null;
+}
+
+export interface MergeProgress {
+  phase: 'merging' | 'cleanup' | 'complete' | 'error';
+  message: string;
+}
+
+export interface CleanupOptions {
+  deleteWorktree: boolean;
+  deleteLocalBranch: boolean;
+  deleteRemoteBranch: boolean;
+}

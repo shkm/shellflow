@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { MergeStrategy } from '../types';
 
 export interface TerminalConfig {
   fontFamily: string;
@@ -10,9 +11,17 @@ export interface MainConfig extends TerminalConfig {
   command: string;
 }
 
+export interface MergeConfig {
+  strategy: MergeStrategy;
+  deleteWorktree: boolean;
+  deleteLocalBranch: boolean;
+  deleteRemoteBranch: boolean;
+}
+
 export interface Config {
   main: MainConfig;
   terminal: TerminalConfig;
+  merge: MergeConfig;
 }
 
 const defaultConfig: Config = {
@@ -24,6 +33,12 @@ const defaultConfig: Config = {
   terminal: {
     fontFamily: "Menlo, Monaco, 'Courier New', monospace",
     fontSize: 13,
+  },
+  merge: {
+    strategy: 'merge',
+    deleteWorktree: true,
+    deleteLocalBranch: false,
+    deleteRemoteBranch: false,
   },
 };
 

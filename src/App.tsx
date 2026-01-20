@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { MainPane } from './components/MainPane/MainPane';
 import { RightPanel } from './components/RightPanel/RightPanel';
 import { ConfirmModal } from './components/ConfirmModal';
+import { MergeModal } from './components/MergeModal';
 import { useWorktrees } from './hooks/useWorktrees';
 import { useGitStatus } from './hooks/useGitStatus';
 import { useConfig } from './hooks/useConfig';
@@ -14,12 +15,13 @@ import { Project, Worktree } from './types';
 const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
 
 function App() {
-  const { projects, addProject, removeProject, createWorktree, deleteWorktree } = useWorktrees();
+  const { projects, addProject, removeProject, createWorktree, deleteWorktree, refresh: refreshProjects } = useWorktrees();
   const { config } = useConfig();
   const [openWorktrees, setOpenWorktrees] = useState<Worktree[]>([]);
   const [activeWorktreeId, setActiveWorktreeId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingRemoveProject, setPendingRemoveProject] = useState<Project | null>(null);
+  const [pendingMergeId, setPendingMergeId] = useState<string | null>(null);
   const [loadingWorktrees, setLoadingWorktrees] = useState<Set<string>>(new Set());
 
   // Expanded projects - persisted to localStorage
@@ -169,6 +171,27 @@ function App() {
     setPendingRemoveProject(project);
   }, []);
 
+  const handleMergeWorktree = useCallback((worktreeId: string) => {
+    setPendingMergeId(worktreeId);
+  }, []);
+
+  const handleMergeComplete = useCallback(
+    (worktreeId: string, deletedWorktree: boolean) => {
+      if (deletedWorktree) {
+        // Remove from open worktrees
+        setOpenWorktrees((prev) => prev.filter((w) => w.id !== worktreeId));
+        if (activeWorktreeId === worktreeId) {
+          const remaining = openWorktrees.filter((w) => w.id !== worktreeId);
+          setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+        }
+        // Refresh projects to update sidebar
+        refreshProjects();
+      }
+      setPendingMergeId(null);
+    },
+    [activeWorktreeId, openWorktrees, refreshProjects]
+  );
+
   const confirmRemoveProject = useCallback(async () => {
     if (!pendingRemoveProject) return;
     try {
@@ -189,6 +212,11 @@ function App() {
   const pendingWorktree = pendingDeleteId
     ? openWorktrees.find((w) => w.id === pendingDeleteId) ||
       projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingDeleteId)
+    : null;
+
+  const pendingMergeWorktree = pendingMergeId
+    ? openWorktrees.find((w) => w.id === pendingMergeId) ||
+      projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingMergeId)
     : null;
 
   return (
@@ -214,6 +242,15 @@ function App() {
           confirmLabel="Remove"
           onConfirm={confirmRemoveProject}
           onCancel={() => setPendingRemoveProject(null)}
+        />
+      )}
+
+      {pendingMergeWorktree && (
+        <MergeModal
+          worktree={pendingMergeWorktree}
+          defaultConfig={config.merge}
+          onClose={() => setPendingMergeId(null)}
+          onMergeComplete={handleMergeComplete}
         />
       )}
 
@@ -254,6 +291,7 @@ function App() {
               onSelectTab={handleSelectTab}
               onCloseTab={handleCloseTab}
               onDeleteWorktree={handleDeleteWorktree}
+              onMergeWorktree={handleMergeWorktree}
             />
           </div>
         </Panel>

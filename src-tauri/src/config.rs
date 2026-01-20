@@ -7,6 +7,42 @@ pub struct Config {
     pub main: MainConfig,
     pub terminal: TerminalConfig,
     pub worktree: WorktreeConfig,
+    pub merge: MergeConfig,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum MergeStrategy {
+    #[default]
+    Merge,
+    Rebase,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MergeConfig {
+    /// Merge strategy: "merge" or "rebase"
+    pub strategy: MergeStrategy,
+    /// Delete the worktree after successful merge (default: true)
+    #[serde(rename = "deleteWorktree")]
+    pub delete_worktree: bool,
+    /// Delete the local branch after successful merge (default: false)
+    #[serde(rename = "deleteLocalBranch")]
+    pub delete_local_branch: bool,
+    /// Delete the remote branch after successful merge (default: false)
+    #[serde(rename = "deleteRemoteBranch")]
+    pub delete_remote_branch: bool,
+}
+
+impl Default for MergeConfig {
+    fn default() -> Self {
+        Self {
+            strategy: MergeStrategy::Merge,
+            delete_worktree: true,
+            delete_local_branch: false,
+            delete_remote_branch: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -137,6 +173,18 @@ pub fn load_config() -> Config {
       // Glob patterns to exclude from copying
       "except": [".claude", ".worktrees"]
     }
+  },
+
+  // Merge/rebase workflow settings
+  "merge": {
+    // Strategy: "merge" or "rebase"
+    "strategy": "merge",
+    // Delete worktree after successful merge
+    "deleteWorktree": true,
+    // Delete local branch after successful merge
+    "deleteLocalBranch": false,
+    // Delete remote branch after successful merge
+    "deleteRemoteBranch": false
   }
 }
 "#;
@@ -212,7 +260,7 @@ fn parse_jsonc(content: &str) -> Option<Config> {
 
 fn remove_trailing_commas(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
-    let mut chars: Vec<char> = s.chars().collect();
+    let chars: Vec<char> = s.chars().collect();
     let mut i = 0;
 
     while i < chars.len() {
