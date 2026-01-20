@@ -2,7 +2,8 @@
 
 A GUI git worktree orchestrator, primarily for AI-driven development. Heavily inspired by [Conductor](https://docs.conductor.build) and [Worktrunk](https://worktrunk.dev), with more focus on simplicity.
 
-> I vibe-coded the crap out of this.
+> Currently early and everything is subject to change/break between verisons.
+> Also, I vibe-coded the crap out of this.
 
 ## Features
 
