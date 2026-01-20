@@ -27,7 +27,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["dmg", "deb", "rpm", "appimage", "nsis"],
     "createUpdaterArtifacts": false,
     "icon": [
       "icons/web/icon-192.png",
