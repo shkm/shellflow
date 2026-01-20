@@ -31,6 +31,7 @@ Heavily inspired by [Conductor](https://docs.conductor.build) and [Worktrunk](ht
 
 > [!WARNING]
 > Currently early and everything is subject to change/break between versions.
+> Also I used a whole lot of AI to build this.
 
 ## Features
 
@@ -44,12 +45,12 @@ Heavily inspired by [Conductor](https://docs.conductor.build) and [Worktrunk](ht
 
 Download the latest release for your platform from the [Releases](https://github.com/shkm/One-Man-Band/releases) page.
 
-| Platform | Download |
-|----------|----------|
+| Platform              | Download         |
+| --------------------- | ---------------- |
 | macOS (Apple Silicon) | `.dmg` (aarch64) |
-| macOS (Intel) | `.dmg` (x64) |
-| Linux | `.AppImage` |
-| Windows | `.exe` |
+| macOS (Intel)         | `.dmg` (x64)     |
+| Linux                 | `.AppImage`      |
+| Windows               | `.exe`           |
 
 ## Technology Stack
 
@@ -127,15 +128,15 @@ Settings are stored in `~/.config/onemanband/config.jsonc`. The file is created 
 {
   // Main terminal pane (runs your AI coding tool)
   "main": {
-    "command": "claude",  // Command to run: "claude", "aider", etc.
+    "command": "claude", // Command to run: "claude", "aider", etc.
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
-    "fontSize": 13
+    "fontSize": 13,
   },
 
   // Shell terminal (bottom-right pane)
   "terminal": {
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
-    "fontSize": 13
+    "fontSize": 13,
   },
 
   // Worktree settings
@@ -149,9 +150,9 @@ Settings are stored in `~/.config/onemanband/config.jsonc`. The file is created 
       // Copy gitignored files (e.g., .env, node_modules)
       "gitignored": false,
       // Glob patterns to exclude from copying
-      "except": [".claude"]
-    }
-  }
+      "except": [".claude"],
+    },
+  },
 }
 ```
 
