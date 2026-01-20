@@ -50,6 +50,7 @@ impl Default for PersistedState {
     }
 }
 
+#[allow(dead_code)]
 pub struct PtySession {
     pub worktree_id: String,
     pub child_pid: u32,

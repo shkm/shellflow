@@ -9,8 +9,6 @@ use thiserror::Error;
 pub enum GitError {
     #[error("Git error: {0}")]
     Git(#[from] git2::Error),
-    #[error("Not a git repository: {0}")]
-    NotARepository(String),
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     #[error("Merge conflict: {0}")]
@@ -100,13 +98,6 @@ pub fn create_worktree(
     )?;
 
     Ok(())
-}
-
-pub fn list_worktrees(repo_path: &Path) -> Result<Vec<String>, GitError> {
-    let repo = Repository::open(repo_path)?;
-    let worktrees = repo.worktrees()?;
-
-    Ok(worktrees.iter().filter_map(|w| w.map(String::from)).collect())
 }
 
 pub fn delete_worktree(repo_path: &Path, worktree_name: &str) -> Result<(), GitError> {

@@ -15,8 +15,6 @@ pub enum WorktreeError {
     Io(#[from] std::io::Error),
     #[error("Not a git repository")]
     NotARepository,
-    #[error("Project not found: {0}")]
-    ProjectNotFound(String),
     #[error("Worktree not found: {0}")]
     WorktreeNotFound(String),
 }
