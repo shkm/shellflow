@@ -54,6 +54,19 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
   const handleOutput = useCallback((data: string) => {
     if (terminalRef.current) {
       terminalRef.current.write(fixColorSequences(data));
+
+      // Output activity detection: larger chunks indicate the process is working
+      // (small chunks are typically user input echoed back)
+      if (data.length > 10) {
+        onThinkingChangeRef.current?.(true);
+        // Clear activity state after output stops
+        if (outputActivityTimeoutRef.current) {
+          clearTimeout(outputActivityTimeoutRef.current);
+        }
+        outputActivityTimeoutRef.current = setTimeout(() => {
+          onThinkingChangeRef.current?.(false);
+        }, 500);
+      }
     }
   }, []);
 
@@ -121,6 +134,9 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
   useEffect(() => {
     onThinkingChangeRef.current = onThinkingChange;
   }, [onThinkingChange]);
+
+  // Track output activity to detect when process is working
+  const outputActivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize terminal and spawn PTY
   useEffect(() => {
@@ -284,6 +300,9 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       terminalRef.current = null;
       fitAddonRef.current = null;
       initializedRef.current = false;
+      if (outputActivityTimeoutRef.current) {
+        clearTimeout(outputActivityTimeoutRef.current);
+      }
       killRef.current();
     };
   }, [worktreeId]);
