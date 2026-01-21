@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+/// Default configuration file content (embedded at compile time)
+pub const DEFAULT_CONFIG: &str = include_str!("default_config.jsonc");
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
@@ -8,6 +11,7 @@ pub struct Config {
     pub terminal: TerminalConfig,
     pub worktree: WorktreeConfig,
     pub merge: MergeConfig,
+    pub mappings: MappingsConfig,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
@@ -132,6 +136,24 @@ impl Default for TerminalConfig {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MappingsConfig {
+    #[serde(rename = "toggleDrawer")]
+    pub toggle_drawer: String,
+    #[serde(rename = "toggleRightPanel")]
+    pub toggle_right_panel: String,
+}
+
+impl Default for MappingsConfig {
+    fn default() -> Self {
+        Self {
+            toggle_drawer: "ctrl+`".to_string(),
+            toggle_right_panel: "cmd+b".to_string(),
+        }
+    }
+}
+
 pub fn get_config_path() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("/tmp"))
@@ -190,53 +212,7 @@ pub fn load_config_for_project(project_path: Option<&str>) -> Config {
         if let Some(parent) = global_path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        let default_config = r#"{
-  // One Man Band Configuration
-
-  // Main terminal pane
-  "main": {
-    // Command to run (e.g., "claude", "aider", "cursor")
-    "command": "claude",
-    "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
-    "fontSize": 13
-  },
-
-  // Shell terminal (bottom-right pane)
-  "terminal": {
-    "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
-    "fontSize": 13
-  },
-
-  // Worktree settings
-  "worktree": {
-    // Directory for worktrees. Final path: {directory}/{workspace_name}
-    // Supports placeholder: {{ repo_directory }} (the repo directory)
-    // Default: "{{ repo_directory }}/.worktrees"
-    "directory": null,
-
-    // Copy settings for new worktrees
-    "copy": {
-      // Copy gitignored files (e.g., .env, node_modules)
-      "gitIgnored": false,
-      // Glob patterns to exclude from copying
-      "except": [".claude", ".worktrees"]
-    }
-  },
-
-  // Merge/rebase workflow settings
-  "merge": {
-    // Strategy: "merge" or "rebase"
-    "strategy": "merge",
-    // Delete worktree after successful merge
-    "deleteWorktree": true,
-    // Delete local branch after successful merge
-    "deleteLocalBranch": false,
-    // Delete remote branch after successful merge
-    "deleteRemoteBranch": false
-  }
-}
-"#;
-        let _ = std::fs::write(&global_path, default_config);
+        let _ = std::fs::write(&global_path, DEFAULT_CONFIG);
         Value::Object(serde_json::Map::new())
     };
 

@@ -14,6 +14,7 @@ import { useGitStatus } from './hooks/useGitStatus';
 import { useConfig } from './hooks/useConfig';
 import { selectFolder, shutdown } from './lib/tauri';
 import { sendOsNotification } from './lib/notifications';
+import { matchesShortcut } from './lib/keyboard';
 import { Project, Worktree } from './types';
 
 const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
@@ -460,11 +461,12 @@ function App() {
 
   // Keyboard shortcuts
   useEffect(() => {
+    const { mappings } = config;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!activeWorktreeId) return;
 
-      // Ctrl+` to toggle drawer
-      if (e.ctrlKey && e.key === '`') {
+      if (matchesShortcut(e, mappings.toggleDrawer)) {
         e.preventDefault();
         handleToggleDrawer();
       }
@@ -476,7 +478,6 @@ function App() {
       }
 
       // Cmd+W to close active terminal tab (when drawer is open)
-      // Always preventDefault to avoid closing the window
       if ((e.metaKey || e.ctrlKey) && e.key === 'w' && isDrawerOpen) {
         e.preventDefault();
         if (activeDrawerTabId) {
@@ -484,8 +485,7 @@ function App() {
         }
       }
 
-      // Cmd+B to toggle right panel
-      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+      if (matchesShortcut(e, mappings.toggleRightPanel)) {
         e.preventDefault();
         handleToggleRightPanel();
       }
@@ -493,7 +493,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeWorktreeId, isDrawerOpen, activeDrawerTabId, handleToggleDrawer, handleAddDrawerTab, handleCloseDrawerTab, handleToggleRightPanel]);
+  }, [activeWorktreeId, isDrawerOpen, activeDrawerTabId, config, handleToggleDrawer, handleAddDrawerTab, handleCloseDrawerTab, handleToggleRightPanel]);
 
   // Worktree handlers
   const handleAddProject = useCallback(async () => {

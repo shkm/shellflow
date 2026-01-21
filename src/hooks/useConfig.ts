@@ -19,10 +19,16 @@ export interface MergeConfig {
   deleteRemoteBranch: boolean;
 }
 
+export interface MappingsConfig {
+  toggleDrawer: string;
+  toggleRightPanel: string;
+}
+
 export interface Config {
   main: MainConfig;
   terminal: TerminalConfig;
   merge: MergeConfig;
+  mappings: MappingsConfig;
 }
 
 const defaultConfig: Config = {
@@ -42,6 +48,10 @@ const defaultConfig: Config = {
     deleteWorktree: true,
     deleteLocalBranch: false,
     deleteRemoteBranch: false,
+  },
+  mappings: {
+    toggleDrawer: 'ctrl+`',
+    toggleRightPanel: 'cmd+b',
   },
 };
 

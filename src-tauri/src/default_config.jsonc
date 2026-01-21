@@ -1,0 +1,40 @@
+{
+  // One Man Band Default Configuration
+  // https://github.com/shkm/one-man-band/blob/main/src-tauri/src/default_config.jsonc
+
+  "main": {
+    "command": "claude",
+    "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
+    "fontSize": 13,
+    "fontLigatures": false
+  },
+
+  "terminal": {
+    "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
+    "fontSize": 13,
+    "fontLigatures": false
+  },
+
+  "worktree": {
+    // Supports placeholder: {{ repo_directory }}
+    "directory": "{{ repo_directory }}/.worktrees",
+    "copy": {
+      "gitIgnored": false,
+      "except": [".claude", ".worktrees"]
+    }
+  },
+
+  "merge": {
+    "strategy": "merge",
+    "deleteWorktree": true,
+    "deleteLocalBranch": false,
+    "deleteRemoteBranch": false
+  },
+
+  // Format: "mod+key" where mod is ctrl, cmd, alt, shift
+  // "cmd" = Cmd on macOS, Ctrl on other platforms
+  "mappings": {
+    "toggleDrawer": "ctrl+`",
+    "toggleRightPanel": "cmd+b"
+  }
+}
