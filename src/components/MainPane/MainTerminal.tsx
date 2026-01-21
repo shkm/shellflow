@@ -9,6 +9,7 @@ import { Loader2, RotateCcw } from 'lucide-react';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { attachKeyboardHandlers } from '../../lib/terminal';
 import '@xterm/xterm/css/xterm.css';
 
 // Fix for xterm.js not handling 5-part colon-separated RGB sequences.
@@ -189,6 +190,9 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
 
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
+
+    // Attach custom keyboard handlers (e.g., Shift+Enter for newline)
+    attachKeyboardHandlers(terminal, (data) => writeRef.current(data));
 
     // Attach onData handler immediately so terminal query responses work
     const onDataDisposable = terminal.onData((data) => {
