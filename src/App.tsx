@@ -798,7 +798,8 @@ function App() {
   const handleToggleTask = useCallback(() => {
     if (!activeWorktreeId || !activeSelectedTask) return;
 
-    const runningTask = runningTasks.get(activeWorktreeId);
+    const worktreeTasks = runningTasks.get(activeWorktreeId) ?? [];
+    const runningTask = worktreeTasks.find(t => t.taskName === activeSelectedTask);
     if (runningTask?.status === 'running') {
       handleStopTask();
     } else {
