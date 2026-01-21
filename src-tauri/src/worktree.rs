@@ -1,7 +1,6 @@
 use crate::git;
 use crate::state::{Project, Worktree};
 use log::info;
-use rand::seq::SliceRandom;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use thiserror::Error;
@@ -17,26 +16,29 @@ pub enum WorktreeError {
     NotARepository,
     #[error("Worktree not found: {0}")]
     WorktreeNotFound(String),
+    #[error("Could not generate unique branch name after {0} attempts")]
+    NameGenerationFailed(u32),
 }
 
-// Fun random name generator for worktrees
-const ADJECTIVES: &[&str] = &[
-    "fuzzy", "quick", "lazy", "happy", "sleepy", "brave", "calm", "eager",
-    "gentle", "jolly", "keen", "lively", "merry", "noble", "proud", "swift",
-    "witty", "zesty", "agile", "bold", "cosmic", "daring", "epic", "fierce",
-];
-
-const ANIMALS: &[&str] = &[
-    "tiger", "bear", "fox", "wolf", "eagle", "hawk", "owl", "panda",
-    "koala", "otter", "seal", "whale", "dolphin", "falcon", "raven", "lynx",
-    "badger", "ferret", "marten", "stoat", "heron", "crane", "swan", "robin",
-];
-
+/// Generate a random worktree name using petname (adjective-animal format)
 pub fn generate_worktree_name() -> String {
-    let mut rng = rand::thread_rng();
-    let adj = ADJECTIVES.choose(&mut rng).unwrap_or(&"quick");
-    let animal = ANIMALS.choose(&mut rng).unwrap_or(&"fox");
-    format!("{}-{}", adj, animal)
+    petname::petname(2, "-").unwrap_or_else(|| "quick-fox".to_string())
+}
+
+/// Generate a unique worktree name that doesn't conflict with existing branches
+pub fn generate_unique_worktree_name(repo_path: &Path) -> Result<String, WorktreeError> {
+    const MAX_ATTEMPTS: u32 = 100;
+
+    for _ in 0..MAX_ATTEMPTS {
+        let name = generate_worktree_name();
+        match git::branch_exists(repo_path, &name) {
+            Ok(false) => return Ok(name),
+            Ok(true) => continue, // Branch exists, try another name
+            Err(e) => return Err(WorktreeError::Git(e)),
+        }
+    }
+
+    Err(WorktreeError::NameGenerationFailed(MAX_ATTEMPTS))
 }
 
 /// Resolve worktree directory with placeholder support.
@@ -88,11 +90,14 @@ pub fn create_worktree(
     let total_start = Instant::now();
     info!("[worktree::create_worktree] Starting...");
 
-    let worktree_name = name.unwrap_or_else(generate_worktree_name);
+    let project_path = Path::new(&project.path);
+    let worktree_name = match name {
+        Some(n) => n,
+        None => generate_unique_worktree_name(project_path)?,
+    };
     info!("[worktree::create_worktree] worktree_name: {}", worktree_name);
 
     // Create worktree directory
-    let project_path = Path::new(&project.path);
     let worktree_base = resolve_worktree_directory(worktree_directory, project_path);
     let worktree_path = worktree_base.join(&worktree_name);
 

@@ -74,6 +74,13 @@ pub fn get_default_branch(repo: &Repository) -> Result<String, GitError> {
     Ok("main".to_string())
 }
 
+/// Check if a branch with the given name exists
+pub fn branch_exists(repo_path: &Path, branch_name: &str) -> Result<bool, GitError> {
+    let repo = Repository::open(repo_path)?;
+    let exists = repo.find_branch(branch_name, BranchType::Local).is_ok();
+    Ok(exists)
+}
+
 pub fn create_worktree(
     repo_path: &Path,
     worktree_path: &Path,
