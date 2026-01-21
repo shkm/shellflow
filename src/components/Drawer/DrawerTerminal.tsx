@@ -201,21 +201,23 @@ export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, term
     ptyIdRef.current = ptyId;
   }, [resize, ptyId]);
 
-  // Debounced resize handler
-  const debouncedResize = useMemo(
-    () =>
-      debounce(() => {
-        const terminal = terminalRef.current;
-        const fitAddon = fitAddonRef.current;
-        if (!terminal || !fitAddon || !ptyIdRef.current) return;
+  // Immediate resize handler (for panel toggle completion)
+  const immediateResize = useCallback(() => {
+    const terminal = terminalRef.current;
+    const fitAddon = fitAddonRef.current;
+    if (!terminal || !fitAddon || !ptyIdRef.current) return;
 
-        fitAddon.fit();
-        resizeRef.current(terminal.cols, terminal.rows);
-      }, 100),
-    []
+    fitAddon.fit();
+    resizeRef.current(terminal.cols, terminal.rows);
+  }, []);
+
+  // Debounced resize handler (for drag operations)
+  const debouncedResize = useMemo(
+    () => debounce(immediateResize, 100),
+    [immediateResize]
   );
 
-  // ResizeObserver for container size changes - only observe when active to avoid unnecessary work
+  // ResizeObserver for container size changes (debounced for smooth dragging)
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !ptyId || !isActive) return;
@@ -228,13 +230,25 @@ export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, term
     return () => resizeObserver.disconnect();
   }, [ptyId, isActive, debouncedResize]);
 
+  // Listen for panel toggle completion to resize immediately
+  useEffect(() => {
+    if (!ptyId || !isActive) return;
+
+    const handlePanelResizeComplete = () => {
+      immediateResize();
+    };
+
+    window.addEventListener('panel-resize-complete', handlePanelResizeComplete);
+    return () => window.removeEventListener('panel-resize-complete', handlePanelResizeComplete);
+  }, [ptyId, isActive, immediateResize]);
+
   // Fit on active change
   useEffect(() => {
     if (isActive && ptyId) {
-      const timeout = setTimeout(debouncedResize, 50);
+      const timeout = setTimeout(immediateResize, 50);
       return () => clearTimeout(timeout);
     }
-  }, [isActive, ptyId, debouncedResize]);
+  }, [isActive, ptyId, immediateResize]);
 
   // Focus terminal when shouldAutoFocus is true
   useEffect(() => {

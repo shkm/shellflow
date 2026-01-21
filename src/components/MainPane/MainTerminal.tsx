@@ -311,37 +311,55 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
     ptyIdRef.current = ptyId;
   }, [resize, ptyId]);
 
-  // Debounced resize handler
+  // Immediate resize handler (for panel toggle completion)
+  const immediateResize = useCallback(() => {
+    const terminal = terminalRef.current;
+    const fitAddon = fitAddonRef.current;
+    if (!terminal || !fitAddon || !ptyIdRef.current) return;
+    if (Date.now() - spawnedAtRef.current < 1000) return;
+
+    fitAddon.fit();
+    resizeRef.current(terminal.cols, terminal.rows);
+  }, []);
+
+  // Debounced resize handler (for drag operations)
   const debouncedResize = useMemo(
-    () =>
-      debounce(() => {
-        const terminal = terminalRef.current;
-        const fitAddon = fitAddonRef.current;
-        if (!terminal || !fitAddon || !ptyIdRef.current) return;
-
-        if (Date.now() - spawnedAtRef.current < 1000) return;
-
-        fitAddon.fit();
-        resizeRef.current(terminal.cols, terminal.rows);
-      }, 150),
-    []
+    () => debounce(immediateResize, 150),
+    [immediateResize]
   );
 
   // Fit on active change
   useEffect(() => {
     if (isActive && ptyId) {
-      const timeout = setTimeout(debouncedResize, 50);
+      const timeout = setTimeout(immediateResize, 50);
       return () => clearTimeout(timeout);
     }
-  }, [isActive, ptyId, debouncedResize]);
+  }, [isActive, ptyId, immediateResize]);
 
-  // Window resize handler - only listen when active to avoid unnecessary work
+  // ResizeObserver for container size changes (debounced for smooth dragging)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !ptyId || !isActive) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      debouncedResize();
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [ptyId, isActive, debouncedResize]);
+
+  // Listen for panel toggle completion to resize immediately
   useEffect(() => {
     if (!ptyId || !isActive) return;
 
-    window.addEventListener('resize', debouncedResize);
-    return () => window.removeEventListener('resize', debouncedResize);
-  }, [ptyId, isActive, debouncedResize]);
+    const handlePanelResizeComplete = () => {
+      immediateResize();
+    };
+
+    window.addEventListener('panel-resize-complete', handlePanelResizeComplete);
+    return () => window.removeEventListener('panel-resize-complete', handlePanelResizeComplete);
+  }, [ptyId, isActive, immediateResize]);
 
   // Focus terminal when shouldAutoFocus is true
   useEffect(() => {
