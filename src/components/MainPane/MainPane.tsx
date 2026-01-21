@@ -9,6 +9,7 @@ interface MainPaneProps {
   shouldAutoFocus: boolean;
   onFocus: (worktreeId: string) => void;
   onWorktreeNotification?: (worktreeId: string, title: string, body: string) => void;
+  onWorktreeThinkingChange?: (worktreeId: string, isThinking: boolean) => void;
 }
 
 export function MainPane({
@@ -18,6 +19,7 @@ export function MainPane({
   shouldAutoFocus,
   onFocus,
   onWorktreeNotification,
+  onWorktreeThinkingChange,
 }: MainPaneProps) {
   if (openWorktreeIds.size === 0 || !activeWorktreeId) {
     return (
@@ -47,6 +49,7 @@ export function MainPane({
             terminalConfig={terminalConfig}
             onFocus={() => onFocus(worktreeId)}
             onNotification={(title, body) => onWorktreeNotification?.(worktreeId, title, body)}
+            onThinkingChange={(isThinking) => onWorktreeThinkingChange?.(worktreeId, isThinking)}
           />
         </div>
       ))}

@@ -80,6 +80,7 @@ function App() {
   const [pendingMergeId, setPendingMergeId] = useState<string | null>(null);
   const [loadingWorktrees, setLoadingWorktrees] = useState<Set<string>>(new Set());
   const [notifiedWorktreeIds, setNotifiedWorktreeIds] = useState<Set<string>>(new Set());
+  const [thinkingWorktreeIds, setThinkingWorktreeIds] = useState<Set<string>>(new Set());
 
   // Panel refs
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
@@ -276,6 +277,21 @@ function App() {
       });
     }
   }, [activeWorktreeId, notifiedWorktreeIds]);
+
+  // Worktree thinking state handler (for showing loading indicator when Claude is thinking)
+  const handleWorktreeThinkingChange = useCallback((worktreeId: string, isThinking: boolean) => {
+    setThinkingWorktreeIds((prev) => {
+      if (isThinking) {
+        if (prev.has(worktreeId)) return prev;
+        return new Set([...prev, worktreeId]);
+      } else {
+        if (!prev.has(worktreeId)) return prev;
+        const next = new Set(prev);
+        next.delete(worktreeId);
+        return next;
+      }
+    });
+  }, []);
 
   // Sync state when right panel is collapsed/expanded via dragging
   const handleRightPanelResize = useCallback((size: { inPixels: number }) => {
@@ -702,6 +718,7 @@ function App() {
               openWorktreeIds={openWorktreeIds}
               loadingWorktrees={loadingWorktrees}
               notifiedWorktreeIds={notifiedWorktreeIds}
+              thinkingWorktreeIds={thinkingWorktreeIds}
               expandedProjects={expandedProjects}
               isDrawerOpen={activeDrawerState?.isOpen ?? false}
               isRightPanelOpen={activeRightPanelState?.isOpen ?? false}
@@ -736,6 +753,7 @@ function App() {
                 shouldAutoFocus={activeFocusState === 'main'}
                 onFocus={handleMainPaneFocused}
                 onWorktreeNotification={handleWorktreeNotification}
+                onWorktreeThinkingChange={handleWorktreeThinkingChange}
               />
             </Panel>
 

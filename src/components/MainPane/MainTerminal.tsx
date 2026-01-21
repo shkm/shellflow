@@ -33,9 +33,10 @@ interface MainTerminalProps {
   terminalConfig: TerminalConfig;
   onFocus?: () => void;
   onNotification?: (title: string, body: string) => void;
+  onThinkingChange?: (isThinking: boolean) => void;
 }
 
-export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, onFocus, onNotification }: MainTerminalProps) {
+export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, onFocus, onNotification, onThinkingChange }: MainTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -110,6 +111,12 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
   useEffect(() => {
     onNotificationRef.current = onNotification;
   }, [onNotification]);
+
+  // Store onThinkingChange in ref so handlers can access the latest version
+  const onThinkingChangeRef = useRef(onThinkingChange);
+  useEffect(() => {
+    onThinkingChangeRef.current = onThinkingChange;
+  }, [onThinkingChange]);
 
   // Initialize terminal and spawn PTY
   useEffect(() => {
@@ -203,8 +210,20 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       return true;
     });
 
-    // OSC 9: ConEmu-style notifications (data is the body)
+    // OSC 9: ConEmu-style sequences
+    // - OSC 9 ; 4 ; state ; progress - Progress reporting (state: 0=hidden, 1=default, 2=error, 3=indeterminate, 4=warning)
+    // - OSC 9 ; text - Notification (just the body)
     const osc9Disposable = terminal.parser.registerOscHandler(9, (data) => {
+      // Check for progress reporting: "4;state" or "4;state;progress"
+      if (data.startsWith('4;')) {
+        const parts = data.split(';');
+        const state = parseInt(parts[1], 10);
+        // State 0 means hidden/done, anything else means busy/thinking
+        const isThinking = state !== 0 && !isNaN(state);
+        onThinkingChangeRef.current?.(isThinking);
+        return true;
+      }
+      // Otherwise treat as notification
       onNotificationRef.current?.('', data);
       return true;
     });
@@ -212,6 +231,17 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
     // Bell (BEL character)
     const bellDisposable = terminal.onBell(() => {
       onNotificationRef.current?.('', 'Bell');
+    });
+
+    // Claude-specific: detect thinking state from terminal title
+    // Claude Code sets title with braille spinner chars (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏) when thinking
+    // Only trigger if: spinner is at start of title, OR title contains "claude" (case-insensitive)
+    const SPINNER_CHARS = new Set(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']);
+    const titleChangeDisposable = terminal.onTitleChange((title) => {
+      const startsWithSpinner = SPINNER_CHARS.has(title[0]);
+      const hasClaudeWithSpinner = title.toLowerCase().includes('claude') &&
+        [...title].some(char => SPINNER_CHARS.has(char));
+      onThinkingChangeRef.current?.(startsWithSpinner || hasClaudeWithSpinner);
     });
 
     // Fit terminal and spawn main process with correct size
@@ -242,6 +272,7 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       osc777Disposable.dispose();
       osc9Disposable.dispose();
       bellDisposable.dispose();
+      titleChangeDisposable.dispose();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;

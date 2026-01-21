@@ -10,6 +10,7 @@ interface SidebarProps {
   openWorktreeIds: Set<string>;
   loadingWorktrees: Set<string>;
   notifiedWorktreeIds: Set<string>;
+  thinkingWorktreeIds: Set<string>;
   expandedProjects: Set<string>;
   isDrawerOpen: boolean;
   isRightPanelOpen: boolean;
@@ -31,6 +32,7 @@ export function Sidebar({
   openWorktreeIds,
   loadingWorktrees,
   notifiedWorktreeIds,
+  thinkingWorktreeIds,
   expandedProjects,
   isDrawerOpen,
   isRightPanelOpen,
@@ -153,6 +155,7 @@ export function Sidebar({
                   ) : (
                     project.worktrees.map((worktree) => {
                       const isLoading = loadingWorktrees.has(worktree.id);
+                      const isThinking = thinkingWorktreeIds.has(worktree.id);
                       const isOpen = openWorktreeIds.has(worktree.id);
                       const isSelected = activeWorktreeId === worktree.id;
                       return (
@@ -173,35 +176,45 @@ export function Sidebar({
                             <span className="absolute right-1" title="Starting...">
                               <Loader2 size={12} className="animate-spin text-blue-400" />
                             </span>
-                          ) : notifiedWorktreeIds.has(worktree.id) && !isSelected ? (
-                            <span className="absolute right-1" title="New notification">
-                              <BellDot size={12} className="text-blue-400" />
-                            </span>
                           ) : (
-                            <div className={`absolute right-1 hidden group-hover/worktree:flex items-center gap-0.5 rounded ${isSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteWorktree(worktree.id);
-                                }}
-                                className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-red-400"
-                                title="Delete Worktree"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                              {isOpen && (
+                            <>
+                              {/* Action buttons - show on hover */}
+                              <div className={`absolute right-1 hidden group-hover/worktree:flex items-center gap-0.5 rounded ${isSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    onCloseWorktree(worktree.id);
+                                    onDeleteWorktree(worktree.id);
                                   }}
-                                  className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-zinc-300"
-                                  title="Close Worktree"
+                                  className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-red-400"
+                                  title="Delete Worktree"
                                 >
-                                  <X size={12} />
+                                  <Trash2 size={12} />
                                 </button>
+                                {isOpen && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onCloseWorktree(worktree.id);
+                                    }}
+                                    className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-zinc-300"
+                                    title="Close Worktree"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                )}
+                              </div>
+                              {/* Status indicators - hide on hover */}
+                              {isThinking && !isSelected && (
+                                <span className="absolute right-1 group-hover/worktree:hidden" title="Thinking...">
+                                  <Loader2 size={12} className="animate-spin text-violet-400" />
+                                </span>
                               )}
-                            </div>
+                              {notifiedWorktreeIds.has(worktree.id) && !isSelected && !isThinking && (
+                                <span className="absolute right-1 group-hover/worktree:hidden" title="New notification">
+                                  <BellDot size={12} className="text-blue-400" />
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       );
