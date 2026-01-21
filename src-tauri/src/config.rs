@@ -183,6 +183,10 @@ pub struct MappingsConfig {
     pub terminal_copy: Shortcut,
     #[serde(rename = "terminalPaste")]
     pub terminal_paste: Shortcut,
+    #[serde(rename = "workspacePrev")]
+    pub workspace_prev: Shortcut,
+    #[serde(rename = "workspaceNext")]
+    pub workspace_next: Shortcut,
 }
 
 impl Default for MappingsConfig {
@@ -197,6 +201,14 @@ impl Default for MappingsConfig {
             terminal_paste: Shortcut::Platform(PlatformShortcut {
                 mac: Some("cmd+v".to_string()),
                 other: Some("ctrl+shift+v".to_string()),
+            }),
+            workspace_prev: Shortcut::Platform(PlatformShortcut {
+                mac: Some("cmd+k".to_string()),
+                other: Some("ctrl+shift+k".to_string()),
+            }),
+            workspace_next: Shortcut::Platform(PlatformShortcut {
+                mac: Some("cmd+j".to_string()),
+                other: Some("ctrl+shift+j".to_string()),
             }),
         }
     }

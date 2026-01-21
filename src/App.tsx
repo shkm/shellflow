@@ -489,11 +489,32 @@ function App() {
         e.preventDefault();
         handleToggleRightPanel();
       }
+
+      // Workspace navigation - cycle through active workspaces in sidebar order
+      const openInSidebarOrder = projects
+        .flatMap(p => p.worktrees)
+        .filter(w => openWorktreeIds.has(w.id))
+        .map(w => w.id);
+      if (openInSidebarOrder.length > 1 && activeWorktreeId) {
+        const currentIndex = openInSidebarOrder.indexOf(activeWorktreeId);
+        if (currentIndex !== -1) {
+          if (matchesShortcut(e, mappings.workspacePrev)) {
+            e.preventDefault();
+            const prevIndex = currentIndex === 0 ? openInSidebarOrder.length - 1 : currentIndex - 1;
+            setActiveWorktreeId(openInSidebarOrder[prevIndex]);
+          }
+          if (matchesShortcut(e, mappings.workspaceNext)) {
+            e.preventDefault();
+            const nextIndex = currentIndex === openInSidebarOrder.length - 1 ? 0 : currentIndex + 1;
+            setActiveWorktreeId(openInSidebarOrder[nextIndex]);
+          }
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeWorktreeId, isDrawerOpen, activeDrawerTabId, config, handleToggleDrawer, handleAddDrawerTab, handleCloseDrawerTab, handleToggleRightPanel]);
+  }, [activeWorktreeId, isDrawerOpen, activeDrawerTabId, config, openWorktreeIds, projects, handleToggleDrawer, handleAddDrawerTab, handleCloseDrawerTab, handleToggleRightPanel]);
 
   // Worktree handlers
   const handleAddProject = useCallback(async () => {

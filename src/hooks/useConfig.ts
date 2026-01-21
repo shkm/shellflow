@@ -41,6 +41,8 @@ export interface MappingsConfig {
   toggleRightPanel: Shortcut;
   terminalCopy: Shortcut;
   terminalPaste: Shortcut;
+  workspacePrev: Shortcut;
+  workspaceNext: Shortcut;
 }
 
 export interface Config {
@@ -73,6 +75,8 @@ const defaultConfig: Config = {
     toggleRightPanel: 'cmd+b',
     terminalCopy: { mac: 'cmd+c', other: 'ctrl+shift+c' },
     terminalPaste: { mac: 'cmd+v', other: 'ctrl+shift+v' },
+    workspacePrev: { mac: 'cmd+k', other: 'ctrl+shift+k' },
+    workspaceNext: { mac: 'cmd+j', other: 'ctrl+shift+j' },
   },
 };
 
