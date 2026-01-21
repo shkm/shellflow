@@ -77,15 +77,15 @@ So that's why I built One Man Band (see what I did there?). Now I can run Claude
 
 ## Keyboard Shortcuts
 
-| Shortcut                                   | Action                               |
-| ------------------------------------------ | ------------------------------------ |
-| `Ctrl+\``                                  | Toggle drawer (terminal panel)       |
-| `Cmd+B`                                    | Toggle right sidebar (changed files) |
-| `Cmd+1-9` (macOS) / `Ctrl+1-9` (other)     | Switch to worktree 1-9               |
-| `Cmd+J` (macOS) / `Ctrl+Shift+J` (other)   | Next worktree                        |
-| `Cmd+K` (macOS) / `Ctrl+Shift+K` (other)   | Previous worktree                    |
-| `Cmd+C` (macOS) / `Ctrl+Shift+C` (other)   | Copy selected text in terminal       |
-| `Cmd+V` (macOS) / `Ctrl+Shift+V` (other)   | Paste text in terminal               |
+| Shortcut                                 | Action                               |
+| ---------------------------------------- | ------------------------------------ |
+| `Ctrl+\``                                | Toggle drawer (terminal panel)       |
+| `Cmd+B`                                  | Toggle right sidebar (changed files) |
+| `Cmd+1-9` (macOS) / `Ctrl+1-9` (other)   | Switch to worktree 1-9               |
+| `Cmd+J` (macOS) / `Ctrl+Shift+J` (other) | Next worktree                        |
+| `Cmd+K` (macOS) / `Ctrl+Shift+K` (other) | Previous worktree                    |
+| `Cmd+C` (macOS) / `Ctrl+Shift+C` (other) | Copy selected text in terminal       |
+| `Cmd+V` (macOS) / `Ctrl+Shift+V` (other) | Paste text in terminal               |
 
 These shortcuts can be customized via `mappings` in the [config](#configuration). Shortcuts support flexible configuration:
 
@@ -190,6 +190,12 @@ You can override settings per-project by creating config files in the project di
 ### Attribution
 
 Drum icon is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) [VectorPortal](https://vectorportal.com).
+
+### Inspiration
+
+- [Conductor](https://docs.conductor.build) — Similar concept, different goals
+- [Worktrunk](https://worktrunk.dev) — Terminal-based worktree manager
+- [Zed](https://zed.dev) — For the style and key mappings
 
 ## License
 
