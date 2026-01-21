@@ -1,4 +1,4 @@
-import { FolderGit2, Plus, ChevronRight, ChevronDown, GitBranch, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot, Settings, Circle } from 'lucide-react';
+import { FolderGit2, Plus, ChevronRight, ChevronDown, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot, Settings, Circle } from 'lucide-react';
 import { Project, Worktree, RunningTask } from '../../types';
 import { TaskConfig } from '../../hooks/useConfig';
 import { useState, useMemo } from 'react';
@@ -252,11 +252,11 @@ export function Sidebar({
               </div>
 
               {expandedProjects.has(project.id) && (
-                <div className="ml-4 mt-1 space-y-0.5 border-l border-zinc-800 pl-2">
+                <div className="mt-1 space-y-0.5 bg-zinc-800/30 py-1">
                   {project.worktrees.length === 0 ? (
                     <button
                       onClick={() => onAddWorktree(project.id)}
-                      className="flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-500 hover:text-zinc-300"
+                      className="flex items-center gap-1.5 pl-7 pr-2 py-1 text-xs text-zinc-500 hover:text-zinc-300"
                     >
                       <Plus size={12} />
                       Add worktree
@@ -274,7 +274,7 @@ export function Sidebar({
                         <div
                           key={worktree.id}
                           onClick={() => onSelectWorktree(worktree)}
-                          className={`group/worktree relative flex items-center gap-1.5 px-2 py-1 rounded text-sm ${
+                          className={`group/worktree relative flex items-center py-1 pr-2 text-sm ${
                             isSelected
                               ? 'bg-zinc-700 text-zinc-100'
                               : isOpen
@@ -282,23 +282,21 @@ export function Sidebar({
                                 : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
                           }`}
                         >
-                          {/* Shortcut number indicator - shown when modifier key is held */}
-                          {isModifierKeyHeld && shortcutNumber !== null ? (
-                            <span className="flex-shrink-0 w-3 text-xs text-zinc-400 text-center font-medium">{shortcutNumber}</span>
-                          ) : (
-                            <GitBranch size={12} className={`flex-shrink-0 ${isOpen ? 'text-zinc-400' : 'text-zinc-600'}`} />
-                          )}
-                          {/* Task running indicator - always visible when tasks are running */}
-                          {runningTaskCounts.has(worktree.id) && (
-                            <span title={`${runningTaskCounts.get(worktree.id)} task${runningTaskCounts.get(worktree.id)! > 1 ? 's' : ''} running`} className="flex-shrink-0 relative">
-                              <Circle size={6} className="fill-emerald-400 text-emerald-400" />
-                              {runningTaskCounts.get(worktree.id)! > 1 && (
-                                <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-zinc-400">
-                                  {runningTaskCounts.get(worktree.id)}
-                                </span>
-                              )}
-                            </span>
-                          )}
+                          {/* Left indicator column - fixed width to align text with folder icon */}
+                          <div className="w-7 flex-shrink-0 flex items-center justify-center">
+                            {isModifierKeyHeld && shortcutNumber !== null ? (
+                              <span className="text-xs text-zinc-400 font-medium">{shortcutNumber}</span>
+                            ) : runningTaskCounts.has(worktree.id) ? (
+                              <span title={`${runningTaskCounts.get(worktree.id)} task${runningTaskCounts.get(worktree.id)! > 1 ? 's' : ''} running`} className="relative">
+                                <Circle size={6} className="fill-emerald-400 text-emerald-400" />
+                                {runningTaskCounts.get(worktree.id)! > 1 && (
+                                  <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-zinc-400">
+                                    {runningTaskCounts.get(worktree.id)}
+                                  </span>
+                                )}
+                              </span>
+                            ) : null}
+                          </div>
                           <span className="truncate">{worktree.name}</span>
                           {isLoading ? (
                             <span className="absolute right-1" title="Starting...">
