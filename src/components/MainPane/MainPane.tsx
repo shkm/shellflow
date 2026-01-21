@@ -1,11 +1,12 @@
 import { Terminal } from 'lucide-react';
 import { MainTerminal } from './MainTerminal';
-import { TerminalConfig } from '../../hooks/useConfig';
+import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 
 interface MainPaneProps {
   openWorktreeIds: Set<string>;
   activeWorktreeId: string | null;
   terminalConfig: TerminalConfig;
+  mappings: MappingsConfig;
   shouldAutoFocus: boolean;
   onFocus: (worktreeId: string) => void;
   onWorktreeNotification?: (worktreeId: string, title: string, body: string) => void;
@@ -16,6 +17,7 @@ export function MainPane({
   openWorktreeIds,
   activeWorktreeId,
   terminalConfig,
+  mappings,
   shouldAutoFocus,
   onFocus,
   onWorktreeNotification,
@@ -47,6 +49,7 @@ export function MainPane({
             isActive={worktreeId === activeWorktreeId}
             shouldAutoFocus={worktreeId === activeWorktreeId && shouldAutoFocus}
             terminalConfig={terminalConfig}
+            mappings={mappings}
             onFocus={() => onFocus(worktreeId)}
             onNotification={(title, body) => onWorktreeNotification?.(worktreeId, title, body)}
             onThinkingChange={(isThinking) => onWorktreeThinkingChange?.(worktreeId, isThinking)}

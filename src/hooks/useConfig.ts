@@ -19,9 +19,28 @@ export interface MergeConfig {
   deleteRemoteBranch: boolean;
 }
 
+/** Platform-specific shortcut mapping */
+export interface PlatformShortcut {
+  mac?: string;
+  other?: string;
+}
+
+/** A shortcut entry: either a universal string or platform-specific object */
+export type ShortcutEntry = string | PlatformShortcut;
+
+/**
+ * A shortcut configuration that can be:
+ * - A simple string (universal)
+ * - A platform-specific object { mac?: string, other?: string }
+ * - An array of strings and/or platform-specific objects
+ */
+export type Shortcut = string | PlatformShortcut | ShortcutEntry[];
+
 export interface MappingsConfig {
-  toggleDrawer: string;
-  toggleRightPanel: string;
+  toggleDrawer: Shortcut;
+  toggleRightPanel: Shortcut;
+  terminalCopy: Shortcut;
+  terminalPaste: Shortcut;
 }
 
 export interface Config {
@@ -52,6 +71,8 @@ const defaultConfig: Config = {
   mappings: {
     toggleDrawer: 'ctrl+`',
     toggleRightPanel: 'cmd+b',
+    terminalCopy: { mac: 'cmd+c', other: 'ctrl+shift+c' },
+    terminalPaste: { mac: 'cmd+v', other: 'ctrl+shift+v' },
   },
 };
 

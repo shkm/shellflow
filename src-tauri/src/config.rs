@@ -136,20 +136,68 @@ impl Default for TerminalConfig {
     }
 }
 
+/// Platform-specific shortcut mapping.
+/// Allows different shortcuts for macOS vs other platforms.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PlatformShortcut {
+    #[serde(default)]
+    pub mac: Option<String>,
+    #[serde(default)]
+    pub other: Option<String>,
+}
+
+/// A single shortcut entry: either a universal string or platform-specific.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum ShortcutEntry {
+    Universal(String),
+    Platform(PlatformShortcut),
+}
+
+/// A shortcut configuration that can be:
+/// - A simple string (universal)
+/// - A platform-specific object
+/// - An array of strings and/or platform-specific objects
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum Shortcut {
+    Single(String),
+    Platform(PlatformShortcut),
+    Multiple(Vec<ShortcutEntry>),
+}
+
+impl Default for Shortcut {
+    fn default() -> Self {
+        Shortcut::Single(String::new())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MappingsConfig {
     #[serde(rename = "toggleDrawer")]
-    pub toggle_drawer: String,
+    pub toggle_drawer: Shortcut,
     #[serde(rename = "toggleRightPanel")]
-    pub toggle_right_panel: String,
+    pub toggle_right_panel: Shortcut,
+    #[serde(rename = "terminalCopy")]
+    pub terminal_copy: Shortcut,
+    #[serde(rename = "terminalPaste")]
+    pub terminal_paste: Shortcut,
 }
 
 impl Default for MappingsConfig {
     fn default() -> Self {
         Self {
-            toggle_drawer: "ctrl+`".to_string(),
-            toggle_right_panel: "cmd+b".to_string(),
+            toggle_drawer: Shortcut::Single("ctrl+`".to_string()),
+            toggle_right_panel: Shortcut::Single("cmd+b".to_string()),
+            terminal_copy: Shortcut::Platform(PlatformShortcut {
+                mac: Some("cmd+c".to_string()),
+                other: Some("ctrl+shift+c".to_string()),
+            }),
+            terminal_paste: Shortcut::Platform(PlatformShortcut {
+                mac: Some("cmd+v".to_string()),
+                other: Some("ctrl+shift+v".to_string()),
+            }),
         }
     }
 }

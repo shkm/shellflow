@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/shkm/one-man-band/main/src-tauri/src/config.schema.json",
   // One Man Band Default Configuration
   // https://github.com/shkm/one-man-band/blob/main/src-tauri/src/default_config.jsonc
 
@@ -31,10 +32,17 @@
     "deleteRemoteBranch": false
   },
 
-  // Format: "mod+key" where mod is ctrl, cmd, alt, shift
+  // Keyboard mappings. Each mapping can be:
+  // - A string: "cmd+c" (universal shortcut)
+  // - A platform object: { "mac": "cmd+c", "other": "ctrl+shift+c" }
+  // - An array mixing both: ["ctrl+x", { "mac": "cmd+x", "other": "ctrl+shift+x" }]
+  //
+  // Modifier keys: ctrl, cmd, alt, shift (combine with +)
   // "cmd" = Cmd on macOS, Ctrl on other platforms
   "mappings": {
     "toggleDrawer": "ctrl+`",
-    "toggleRightPanel": "cmd+b"
+    "toggleRightPanel": "cmd+b",
+    "terminalCopy": { "mac": "cmd+c", "other": "ctrl+shift+c" },
+    "terminalPaste": { "mac": "cmd+v", "other": "ctrl+shift+v" }
   }
 }

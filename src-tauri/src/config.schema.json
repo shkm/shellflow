@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/shkm/one-man-band/config.schema.json",
+  "title": "One Man Band Configuration",
+  "description": "Configuration file for One Man Band - a Tauri desktop app for orchestrating git worktrees",
+  "type": "object",
+  "properties": {
+    "main": {
+      "type": "object",
+      "description": "Configuration for the main terminal pane",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to run in the main terminal pane",
+          "default": "claude"
+        },
+        "fontFamily": {
+          "type": "string",
+          "description": "Font family for the main terminal",
+          "default": "Menlo, Monaco, 'Courier New', monospace"
+        },
+        "fontSize": {
+          "type": "integer",
+          "description": "Font size in points for the main terminal",
+          "minimum": 6,
+          "maximum": 72,
+          "default": 13
+        },
+        "fontLigatures": {
+          "type": "boolean",
+          "description": "Enable font ligatures (disables WebGL rendering)",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "terminal": {
+      "type": "object",
+      "description": "Configuration for drawer terminals (shell tabs)",
+      "properties": {
+        "fontFamily": {
+          "type": "string",
+          "description": "Font family for drawer terminals",
+          "default": "Menlo, Monaco, 'Courier New', monospace"
+        },
+        "fontSize": {
+          "type": "integer",
+          "description": "Font size in points for drawer terminals",
+          "minimum": 6,
+          "maximum": 72,
+          "default": 13
+        },
+        "fontLigatures": {
+          "type": "boolean",
+          "description": "Enable font ligatures (disables WebGL rendering)",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "worktree": {
+      "type": "object",
+      "description": "Configuration for git worktree management",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "description": "Directory where worktrees are created. Supports placeholder: {{ repo_directory }}",
+          "default": "{{ repo_directory }}/.worktrees"
+        },
+        "copy": {
+          "type": "object",
+          "description": "Configuration for copying files to new worktrees",
+          "properties": {
+            "gitIgnored": {
+              "type": "boolean",
+              "description": "Copy gitignored files from the project to new worktrees",
+              "default": false
+            },
+            "except": {
+              "type": "array",
+              "description": "Glob patterns to exclude from copying",
+              "items": {
+                "type": "string"
+              },
+              "default": [".claude", ".worktrees"]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "merge": {
+      "type": "object",
+      "description": "Configuration for merge operations",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["merge", "rebase"],
+          "description": "Merge strategy to use",
+          "default": "merge"
+        },
+        "deleteWorktree": {
+          "type": "boolean",
+          "description": "Delete the worktree after successful merge",
+          "default": true
+        },
+        "deleteLocalBranch": {
+          "type": "boolean",
+          "description": "Delete the local branch after successful merge",
+          "default": false
+        },
+        "deleteRemoteBranch": {
+          "type": "boolean",
+          "description": "Delete the remote branch after successful merge",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "mappings": {
+      "type": "object",
+      "description": "Keyboard shortcut mappings",
+      "properties": {
+        "toggleDrawer": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to toggle the drawer panel",
+          "default": "ctrl+`"
+        },
+        "toggleRightPanel": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to toggle the right panel",
+          "default": "cmd+b"
+        },
+        "terminalCopy": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to copy selected text in terminals",
+          "default": { "mac": "cmd+c", "other": "ctrl+shift+c" }
+        },
+        "terminalPaste": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to paste text in terminals",
+          "default": { "mac": "cmd+v", "other": "ctrl+shift+v" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "shortcutString": {
+      "type": "string",
+      "description": "A keyboard shortcut string. Format: 'mod+key' where mod is ctrl, cmd, alt, shift. 'cmd' = Cmd on macOS, Ctrl on other platforms.",
+      "pattern": "^((ctrl|cmd|alt|shift)\\+)*(\\S+)$",
+      "examples": ["ctrl+`", "cmd+c", "cmd+shift+p", "ctrl+shift+c"]
+    },
+    "platformShortcut": {
+      "type": "object",
+      "description": "Platform-specific shortcut mapping",
+      "properties": {
+        "mac": {
+          "type": "string",
+          "description": "Shortcut to use on macOS"
+        },
+        "other": {
+          "type": "string",
+          "description": "Shortcut to use on non-macOS platforms (Linux, Windows)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "shortcutEntry": {
+      "oneOf": [
+        { "$ref": "#/$defs/shortcutString" },
+        { "$ref": "#/$defs/platformShortcut" }
+      ],
+      "description": "A shortcut entry: either a universal string or platform-specific object"
+    },
+    "shortcut": {
+      "oneOf": [
+        { "$ref": "#/$defs/shortcutString" },
+        { "$ref": "#/$defs/platformShortcut" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shortcutEntry" },
+          "description": "An array of shortcut entries (strings and/or platform objects)"
+        }
+      ],
+      "description": "A shortcut configuration: string, platform object, or array of both"
+    }
+  }
+}

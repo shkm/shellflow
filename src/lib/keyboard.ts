@@ -1,5 +1,9 @@
+import type { Shortcut, PlatformShortcut, ShortcutEntry } from '../hooks/useConfig';
+
+const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
+
 /**
- * Check if a keyboard event matches a shortcut string.
+ * Check if a keyboard event matches a single shortcut string.
  *
  * Shortcut format: "mod+key" where mod is ctrl, cmd, alt, shift (combine with +)
  * - "cmd" = Cmd on macOS, Ctrl on other platforms
@@ -7,7 +11,7 @@
  *
  * Examples: "ctrl+`", "cmd+t", "cmd+shift+p"
  */
-export function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
+function matchesSingleShortcut(event: KeyboardEvent, shortcut: string): boolean {
   const parts = shortcut.toLowerCase().split('+');
   const key = parts.pop();
   const modifiers = new Set(parts);
@@ -17,9 +21,6 @@ export function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean
   // Check key match
   const eventKey = event.key.toLowerCase();
   if (eventKey !== key) return false;
-
-  // Check modifiers
-  const isMac = navigator.platform.toUpperCase().includes('MAC');
 
   // "cmd" means metaKey on Mac, ctrlKey elsewhere
   const wantsCmd = modifiers.has('cmd');
@@ -49,4 +50,62 @@ export function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean
   if (event.shiftKey !== wantsShift) return false;
 
   return true;
+}
+
+/**
+ * Check if an object is a PlatformShortcut (has mac or other keys).
+ */
+function isPlatformShortcut(obj: unknown): obj is PlatformShortcut {
+  return typeof obj === 'object' && obj !== null && ('mac' in obj || 'other' in obj);
+}
+
+/**
+ * Get the applicable shortcut string from a platform shortcut.
+ */
+function getPlatformShortcutString(ps: PlatformShortcut): string | undefined {
+  return isMac ? ps.mac : ps.other;
+}
+
+/**
+ * Resolve a ShortcutEntry to applicable shortcut strings for the current platform.
+ */
+function resolveShortcutEntry(entry: ShortcutEntry): string[] {
+  if (typeof entry === 'string') {
+    return [entry];
+  }
+  if (isPlatformShortcut(entry)) {
+    const s = getPlatformShortcutString(entry);
+    return s ? [s] : [];
+  }
+  return [];
+}
+
+/**
+ * Resolve a Shortcut config to all applicable shortcut strings for the current platform.
+ */
+function resolveShortcut(shortcut: Shortcut): string[] {
+  if (typeof shortcut === 'string') {
+    return [shortcut];
+  }
+  if (Array.isArray(shortcut)) {
+    return shortcut.flatMap(resolveShortcutEntry);
+  }
+  if (isPlatformShortcut(shortcut)) {
+    const s = getPlatformShortcutString(shortcut);
+    return s ? [s] : [];
+  }
+  return [];
+}
+
+/**
+ * Check if a keyboard event matches a shortcut configuration.
+ *
+ * The shortcut can be:
+ * - A string: "cmd+c" (universal)
+ * - A platform object: { mac: "cmd+c", other: "ctrl+shift+c" }
+ * - An array of strings and/or platform objects
+ */
+export function matchesShortcut(event: KeyboardEvent, shortcut: Shortcut): boolean {
+  const shortcuts = resolveShortcut(shortcut);
+  return shortcuts.some(s => matchesSingleShortcut(event, s));
 }

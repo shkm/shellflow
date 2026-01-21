@@ -786,6 +786,7 @@ function App() {
                 openWorktreeIds={openWorktreeIds}
                 activeWorktreeId={activeWorktreeId}
                 terminalConfig={config.main}
+                mappings={config.mappings}
                 shouldAutoFocus={activeFocusState === 'main'}
                 onFocus={handleMainPaneFocused}
                 onWorktreeNotification={handleWorktreeNotification}
@@ -848,6 +849,7 @@ function App() {
                             activeFocusState === 'drawer'
                           }
                           terminalConfig={config.terminal}
+                          mappings={config.mappings}
                           onClose={() => handleCloseDrawerTab(tab.id, worktreeId)}
                           onFocus={() => handleDrawerFocused(worktreeId)}
                         />

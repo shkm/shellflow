@@ -7,7 +7,7 @@ import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { listen } from '@tauri-apps/api/event';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { usePty } from '../../hooks/usePty';
-import { TerminalConfig } from '../../hooks/useConfig';
+import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { attachKeyboardHandlers } from '../../lib/terminal';
 import '@xterm/xterm/css/xterm.css';
@@ -33,12 +33,13 @@ interface MainTerminalProps {
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
+  mappings: MappingsConfig;
   onFocus?: () => void;
   onNotification?: (title: string, body: string) => void;
   onThinkingChange?: (isThinking: boolean) => void;
 }
 
-export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, onFocus, onNotification, onThinkingChange }: MainTerminalProps) {
+export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, mappings, onFocus, onNotification, onThinkingChange }: MainTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -207,8 +208,11 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Attach custom keyboard handlers (e.g., Shift+Enter for newline)
-    attachKeyboardHandlers(terminal, (data) => writeRef.current(data));
+    // Attach custom keyboard handlers (copy, paste, Shift+Enter for newline)
+    attachKeyboardHandlers(terminal, (data) => writeRef.current(data), {
+      copy: mappings.terminalCopy,
+      paste: mappings.terminalPaste,
+    });
 
     // Attach onData handler immediately so terminal query responses work
     const onDataDisposable = terminal.onData((data) => {

@@ -5,7 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { listen } from '@tauri-apps/api/event';
 import { usePty } from '../../hooks/usePty';
-import { TerminalConfig } from '../../hooks/useConfig';
+import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { attachKeyboardHandlers } from '../../lib/terminal';
 import '@xterm/xterm/css/xterm.css';
@@ -32,11 +32,12 @@ interface DrawerTerminalProps {
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
+  mappings: MappingsConfig;
   onClose?: () => void;
   onFocus?: () => void;
 }
 
-export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, terminalConfig, onClose, onFocus }: DrawerTerminalProps) {
+export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, terminalConfig, mappings, onClose, onFocus }: DrawerTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -139,8 +140,11 @@ export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, term
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Attach custom keyboard handlers (e.g., Shift+Enter for newline)
-    attachKeyboardHandlers(terminal, (data) => writeRef.current(data));
+    // Attach custom keyboard handlers (copy, paste, Shift+Enter for newline)
+    attachKeyboardHandlers(terminal, (data) => writeRef.current(data), {
+      copy: mappings.terminalCopy,
+      paste: mappings.terminalPaste,
+    });
 
     // Attach onData handler immediately
     const onDataDisposable = terminal.onData((data) => {

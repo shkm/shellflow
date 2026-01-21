@@ -77,12 +77,28 @@ So that's why I built One Man Band (see what I did there?). Now I can run Claude
 
 ## Keyboard Shortcuts
 
-| Shortcut  | Action                               |
-| --------- | ------------------------------------ |
-| `Ctrl+\`` | Toggle drawer (terminal panel)       |
-| `Cmd+B`   | Toggle right sidebar (changed files) |
+| Shortcut                                   | Action                               |
+| ------------------------------------------ | ------------------------------------ |
+| `Ctrl+\``                                  | Toggle drawer (terminal panel)       |
+| `Cmd+B`                                    | Toggle right sidebar (changed files) |
+| `Cmd+C` (macOS) / `Ctrl+Shift+C` (other)   | Copy selected text in terminal       |
+| `Cmd+V` (macOS) / `Ctrl+Shift+V` (other)   | Paste text in terminal               |
 
-Shortcuts can be customized via `mappings` in the [config](#configuration).
+These shortcuts can be customized via `mappings` in the [config](#configuration). Shortcuts support flexible configuration:
+
+```jsonc
+"mappings": {
+  // Simple string — same shortcut everywhere
+  // "cmd" = Cmd on macOS, Ctrl on other platforms
+  "toggleDrawer": "ctrl+`",
+
+  // Platform-specific object — different shortcuts per platform
+  "terminalCopy": { "mac": "cmd+c", "other": "ctrl+shift+c" },
+
+  // Array — multiple shortcuts for the same action
+  "someAction": ["ctrl+x", { "mac": "cmd+x", "other": "ctrl+shift+x" }]
+}
+```
 
 ## Installation
 
@@ -159,7 +175,7 @@ The built application will be available at:
 
 Settings are stored in `~/.config/onemanband/config.jsonc`. The file is created with defaults on first run.
 
-See [default_config.jsonc](src-tauri/src/default_config.jsonc) for all available options.
+See [default_config.jsonc](src-tauri/src/default_config.jsonc) for all available options, or use the [JSON schema](src-tauri/src/config.schema.json) for editor autocompletion.
 
 ### Project-specific overrides
 
