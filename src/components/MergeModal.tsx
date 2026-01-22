@@ -152,7 +152,7 @@ export function MergeModal({
       return (
         <div className="flex items-center gap-2 text-zinc-400">
           <CheckCircle size={16} />
-          Branch is up to date with {feasibility.targetBranch}
+          Nothing to merge — branch is up to date with {feasibility.targetBranch}
         </div>
       );
     }
