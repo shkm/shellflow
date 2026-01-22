@@ -175,6 +175,12 @@ function App() {
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [isModifierKeyHeld, setIsModifierKeyHeld] = useState(false);
 
+  // Centralized modal open tracking - modals register themselves on mount/unmount
+  const [modalCount, setModalCount] = useState(0);
+  const onModalOpen = useCallback(() => setModalCount(c => c + 1), []);
+  const onModalClose = useCallback(() => setModalCount(c => c - 1), []);
+  const isModalOpen = modalCount > 0;
+
   // Panel refs
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
   const lastRightPanelSize = useRef<number>(280); // Track last open size in pixels
@@ -1413,6 +1419,25 @@ function App() {
           }
         }
 
+        // Ctrl+Tab / Ctrl+Shift+Tab to cycle through drawer tabs (when drawer is open and focused)
+        if (e.ctrlKey && e.key === 'Tab' && isDrawerOpen && activeFocusState === 'drawer' && activeDrawerTabs.length > 1) {
+          e.preventDefault();
+          e.stopPropagation();
+          const currentIndex = activeDrawerTabs.findIndex(tab => tab.id === activeDrawerTabId);
+          if (currentIndex !== -1) {
+            let nextIndex: number;
+            if (e.shiftKey) {
+              // Ctrl+Shift+Tab: previous tab
+              nextIndex = currentIndex === 0 ? activeDrawerTabs.length - 1 : currentIndex - 1;
+            } else {
+              // Ctrl+Tab: next tab
+              nextIndex = currentIndex === activeDrawerTabs.length - 1 ? 0 : currentIndex + 1;
+            }
+            handleSelectDrawerTab(activeDrawerTabs[nextIndex].id);
+          }
+          return;
+        }
+
         if (matchesShortcut(e, mappings.toggleRightPanel)) {
           e.preventDefault();
           handleToggleRightPanel();
@@ -1516,6 +1541,8 @@ function App() {
           confirmLabel="Delete"
           onConfirm={confirmDeleteWorktree}
           onCancel={() => setPendingDeleteId(null)}
+          onModalOpen={onModalOpen}
+          onModalClose={onModalClose}
         />
       )}
 
@@ -1530,6 +1557,8 @@ function App() {
           confirmLabel="Remove"
           onConfirm={confirmRemoveProject}
           onCancel={() => setPendingRemoveProject(null)}
+          onModalOpen={onModalOpen}
+          onModalClose={onModalClose}
         />
       )}
 
@@ -1539,6 +1568,8 @@ function App() {
           defaultConfig={config.merge}
           onClose={() => setPendingMergeId(null)}
           onMergeComplete={handleMergeComplete}
+          onModalOpen={onModalOpen}
+          onModalClose={onModalClose}
         />
       )}
 
@@ -1552,6 +1583,8 @@ function App() {
           }}
           isLoading={isStashing}
           error={stashError}
+          onModalOpen={onModalOpen}
+          onModalClose={onModalClose}
         />
       )}
 
@@ -1563,6 +1596,8 @@ function App() {
           onSelect={handleTaskSwitcherSelect}
           onRun={handleTaskSwitcherRun}
           onClose={() => setIsTaskSwitcherOpen(false)}
+          onModalOpen={onModalOpen}
+          onModalClose={onModalClose}
         />
       )}
 
@@ -1581,7 +1616,7 @@ function App() {
               openProjectIds={openProjectIds}
               openWorktreeIds={openWorktreeIds}
               openWorktreesInOrder={openWorktreesInOrder}
-              isModifierKeyHeld={isModifierKeyHeld}
+              isModifierKeyHeld={isModifierKeyHeld && !isModalOpen}
               loadingWorktrees={loadingWorktrees}
               notifiedWorktreeIds={notifiedWorktreeIds}
               thinkingWorktreeIds={thinkingWorktreeIds}
