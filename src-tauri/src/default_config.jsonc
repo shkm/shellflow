@@ -19,6 +19,8 @@
   "worktree": {
     // Supports placeholder: {{ repo_directory }}
     "directory": "{{ repo_directory }}/.worktrees",
+    // Branch to create worktrees from: "auto" (default branch), "current", or { "name": "branchname" }
+    "baseBranch": "auto",
     "copy": {
       "gitIgnored": false,
       "except": [".claude", ".worktrees"]

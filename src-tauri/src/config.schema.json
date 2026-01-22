@@ -71,6 +71,29 @@
           "description": "Directory where worktrees are created. Supports placeholder: {{ repo_directory }}",
           "default": "{{ repo_directory }}/.worktrees"
         },
+        "baseBranch": {
+          "description": "Branch to create new worktrees from",
+          "default": "auto",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["auto", "current"],
+              "description": "'auto' uses default branch (main/master), 'current' uses checked out branch"
+            },
+            {
+              "type": "object",
+              "description": "Use a specific named branch",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Branch name to create worktrees from"
+                }
+              },
+              "required": ["name"],
+              "additionalProperties": false
+            }
+          ]
+        },
         "copy": {
           "type": "object",
           "description": "Configuration for copying files to new worktrees",

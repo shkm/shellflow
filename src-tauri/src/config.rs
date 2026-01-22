@@ -31,6 +31,27 @@ pub enum TaskKind {
     Daemon,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum BaseBranchMode {
+    #[default]
+    Auto,
+    Current,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum BaseBranch {
+    Mode(BaseBranchMode),
+    Named { name: String },
+}
+
+impl Default for BaseBranch {
+    fn default() -> Self {
+        BaseBranch::Mode(BaseBranchMode::Auto)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TaskConfig {
     pub name: String,
@@ -104,6 +125,13 @@ pub struct WorktreeConfig {
     /// Default: {{ repo_directory }}/.worktrees
     pub directory: Option<String>,
 
+    /// Branch to create new worktrees from.
+    /// - "auto" (default): Auto-detect default branch (main/master)
+    /// - "current": Use the currently checked out branch
+    /// - { "name": "branchname" }: Use a specific branch
+    #[serde(rename = "baseBranch")]
+    pub base_branch: BaseBranch,
+
     /// Configuration for copying files to new worktrees
     pub copy: CopyConfig,
 }
@@ -112,6 +140,7 @@ impl Default for WorktreeConfig {
     fn default() -> Self {
         Self {
             directory: None,
+            base_branch: BaseBranch::default(),
             copy: CopyConfig::default(),
         }
     }

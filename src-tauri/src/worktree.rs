@@ -1,3 +1,4 @@
+use crate::config::BaseBranch;
 use crate::git;
 use crate::state::{Project, Worktree};
 use log::info;
@@ -86,6 +87,7 @@ pub fn create_worktree(
     project: &mut Project,
     name: Option<String>,
     worktree_directory: Option<&str>,
+    base_branch: &BaseBranch,
 ) -> Result<Worktree, WorktreeError> {
     let total_start = Instant::now();
     info!("[worktree::create_worktree] Starting...");
@@ -107,7 +109,7 @@ pub fn create_worktree(
 
     // Create git worktree
     let start = Instant::now();
-    git::create_worktree(project_path, &worktree_path, &worktree_name)?;
+    git::create_worktree(project_path, &worktree_path, &worktree_name, base_branch)?;
     info!("[worktree::create_worktree] git::create_worktree took {:?}", start.elapsed());
 
     let worktree = Worktree {

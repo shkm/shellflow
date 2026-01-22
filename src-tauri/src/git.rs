@@ -1,4 +1,4 @@
-use crate::config::MergeStrategy;
+use crate::config::{BaseBranch, BaseBranchMode, MergeStrategy};
 use crate::state::{FileChange, FileStatus};
 use git2::{BranchType, Repository, Status, StatusOptions};
 use serde::{Deserialize, Serialize};
@@ -74,6 +74,18 @@ pub fn get_default_branch(repo: &Repository) -> Result<String, GitError> {
     Ok("main".to_string())
 }
 
+pub fn get_current_branch(repo: &Repository) -> Result<String, GitError> {
+    let head = repo.head()?;
+    head.shorthand()
+        .map(String::from)
+        .ok_or_else(|| {
+            GitError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "HEAD is not a branch",
+            ))
+        })
+}
+
 /// Check if a branch with the given name exists
 pub fn branch_exists(repo_path: &Path, branch_name: &str) -> Result<bool, GitError> {
     let repo = Repository::open(repo_path)?;
@@ -85,6 +97,7 @@ pub fn create_worktree(
     repo_path: &Path,
     worktree_path: &Path,
     branch_name: &str,
+    base_branch: &BaseBranch,
 ) -> Result<(), GitError> {
     use std::process::Command;
 
@@ -102,11 +115,22 @@ pub fn create_worktree(
         }
     }
 
-    // Get the default branch to branch from
-    let default_branch = {
+    // Resolve the base branch to branch from based on config
+    let source_branch = {
         let repo = Repository::open(repo_path)?;
-        get_default_branch(&repo)?
+        match base_branch {
+            BaseBranch::Mode(BaseBranchMode::Auto) => get_default_branch(&repo)?,
+            BaseBranch::Mode(BaseBranchMode::Current) => get_current_branch(&repo)?,
+            BaseBranch::Named { name } => {
+                // Verify the branch exists
+                if repo.find_branch(name, BranchType::Local).is_err() {
+                    return Err(GitError::BranchNotFound(name.clone()));
+                }
+                name.clone()
+            }
+        }
     };
+    log::info!("[git::create_worktree] Using source branch: {}", source_branch);
 
     // Use git CLI for worktree creation - handles locking properly
     let output = Command::new("git")
@@ -116,7 +140,7 @@ pub fn create_worktree(
             "-b",
             branch_name,
             &worktree_path.to_string_lossy(),
-            &default_branch,
+            &source_branch,
         ])
         .current_dir(repo_path)
         .output()?;

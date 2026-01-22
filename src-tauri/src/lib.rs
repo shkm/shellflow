@@ -91,6 +91,7 @@ fn create_worktree(
         project,
         name,
         cfg.worktree.directory.as_deref(),
+        &cfg.worktree.base_branch,
     )
     .map_err(map_err)?;
     info!("[create_worktree] worktree::create_worktree took {:?}", start.elapsed());
