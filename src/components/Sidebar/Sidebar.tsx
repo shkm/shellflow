@@ -204,20 +204,26 @@ export function Sidebar({
                 onClick={() => onSelectProject(project)}
                 onContextMenu={(e) => handleProjectContextMenu(e, project)}
               >
-                {/* Chevron for expand/collapse - separate click handler */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleProject(project.id);
-                  }}
-                  className="p-0.5 -m-0.5 rounded hover:bg-zinc-600"
-                >
-                  {expandedProjects.has(project.id) ? (
-                    <ChevronDown size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-zinc-400' : 'text-zinc-500'} />
+                {/* Shortcut indicator or chevron for expand/collapse - both use same box size */}
+                <div className="w-[14px] h-[14px] flex items-center justify-center">
+                  {isModifierKeyHeld && activeProjectId === project.id ? (
+                    <span className="text-xs text-zinc-300 font-medium">0</span>
                   ) : (
-                    <ChevronRight size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-zinc-400' : 'text-zinc-500'} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleProject(project.id);
+                      }}
+                      className="p-0.5 -m-0.5 rounded hover:bg-zinc-600"
+                    >
+                      {expandedProjects.has(project.id) ? (
+                        <ChevronDown size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-zinc-400' : 'text-zinc-500'} />
+                      ) : (
+                        <ChevronRight size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-zinc-400' : 'text-zinc-500'} />
+                      )}
+                    </button>
                   )}
-                </button>
+                </div>
                 <FolderGit2 size={14} className="flex-shrink-0" style={{ color: hasOpenWorktrees || isProjectOpen ? '#a1a1aa' : '#71717a' }} />
                 <span className="text-sm font-medium truncate">{project.name}</span>
                 <div className={`absolute right-1 hidden group-hover:flex items-center gap-0.5 rounded ${isProjectSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
@@ -460,7 +466,16 @@ export function Sidebar({
             </>
           ) : (
             <>
-              {/* Project-specific actions - just right panel toggle */}
+              {/* Project-specific actions - drawer toggle and right panel toggle */}
+              <button
+                onClick={onToggleDrawer}
+                className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${
+                  isDrawerOpen ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+                title="Toggle terminal (Ctrl+`)"
+              >
+                <Terminal size={16} />
+              </button>
               <button
                 onClick={onToggleRightPanel}
                 className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${

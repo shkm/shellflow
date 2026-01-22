@@ -3,12 +3,17 @@ import { MainTerminal } from './MainTerminal';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 
 interface MainPaneProps {
+  // Worktree terminals
   openWorktreeIds: Set<string>;
   activeWorktreeId: string | null;
+  // Project terminals
+  openProjectIds: Set<string>;
+  activeProjectId: string | null;
+  // Common props
   terminalConfig: TerminalConfig;
   mappings: MappingsConfig;
   shouldAutoFocus: boolean;
-  onFocus: (worktreeId: string) => void;
+  onFocus: (entityId: string) => void;
   onWorktreeNotification?: (worktreeId: string, title: string, body: string) => void;
   onWorktreeThinkingChange?: (worktreeId: string, isThinking: boolean) => void;
 }
@@ -16,6 +21,8 @@ interface MainPaneProps {
 export function MainPane({
   openWorktreeIds,
   activeWorktreeId,
+  openProjectIds,
+  activeProjectId,
   terminalConfig,
   mappings,
   shouldAutoFocus,
@@ -23,7 +30,11 @@ export function MainPane({
   onWorktreeNotification,
   onWorktreeThinkingChange,
 }: MainPaneProps) {
-  if (openWorktreeIds.size === 0 || !activeWorktreeId) {
+  // Determine the active entity (worktree takes precedence over project)
+  const activeEntityId = activeWorktreeId ?? activeProjectId;
+  const hasOpenEntities = openWorktreeIds.size > 0 || openProjectIds.size > 0;
+
+  if (!hasOpenEntities || !activeEntityId) {
     return (
       <div className="flex flex-col h-full bg-zinc-950 text-zinc-500 select-none items-center justify-center">
         <Terminal size={48} className="mb-4 opacity-50" />
@@ -35,24 +46,47 @@ export function MainPane({
 
   return (
     <div className="h-full bg-zinc-950 relative">
+      {/* Render worktree terminals */}
       {Array.from(openWorktreeIds).map((worktreeId) => (
         <div
           key={worktreeId}
           className={`absolute inset-0 ${
-            worktreeId === activeWorktreeId
+            worktreeId === activeEntityId
               ? 'visible z-10'
               : 'invisible z-0 pointer-events-none'
           }`}
         >
           <MainTerminal
-            worktreeId={worktreeId}
-            isActive={worktreeId === activeWorktreeId}
-            shouldAutoFocus={worktreeId === activeWorktreeId && shouldAutoFocus}
+            entityId={worktreeId}
+            type="main"
+            isActive={worktreeId === activeEntityId}
+            shouldAutoFocus={worktreeId === activeEntityId && shouldAutoFocus}
             terminalConfig={terminalConfig}
             mappings={mappings}
             onFocus={() => onFocus(worktreeId)}
             onNotification={(title, body) => onWorktreeNotification?.(worktreeId, title, body)}
             onThinkingChange={(isThinking) => onWorktreeThinkingChange?.(worktreeId, isThinking)}
+          />
+        </div>
+      ))}
+      {/* Render project terminals */}
+      {Array.from(openProjectIds).map((projectId) => (
+        <div
+          key={`project-${projectId}`}
+          className={`absolute inset-0 ${
+            !activeWorktreeId && projectId === activeEntityId
+              ? 'visible z-10'
+              : 'invisible z-0 pointer-events-none'
+          }`}
+        >
+          <MainTerminal
+            entityId={projectId}
+            type="project"
+            isActive={!activeWorktreeId && projectId === activeEntityId}
+            shouldAutoFocus={!activeWorktreeId && projectId === activeEntityId && shouldAutoFocus}
+            terminalConfig={terminalConfig}
+            mappings={mappings}
+            onFocus={() => onFocus(projectId)}
           />
         </div>
       ))}

@@ -29,7 +29,8 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
 }
 
 interface MainTerminalProps {
-  worktreeId: string;
+  entityId: string;
+  type?: 'main' | 'project';
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
@@ -39,7 +40,7 @@ interface MainTerminalProps {
   onThinkingChange?: (isThinking: boolean) => void;
 }
 
-export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalConfig, mappings, onFocus, onNotification, onThinkingChange }: MainTerminalProps) {
+export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocus, terminalConfig, mappings, onFocus, onNotification, onThinkingChange }: MainTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -54,11 +55,11 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
   // Handle PTY output by writing directly to terminal
   const handleOutput = useCallback((data: string) => {
     if (terminalRef.current) {
-      terminalRef.current.write(fixColorSequences(data));
+      // Only fix color sequences for main terminals (Claude uses them)
+      terminalRef.current.write(type === 'main' ? fixColorSequences(data) : data);
 
-      // Output activity detection: larger chunks indicate the process is working
-      // (small chunks are typically user input echoed back)
-      if (data.length > 10) {
+      // Output activity detection only for main terminals
+      if (type === 'main' && data.length > 10) {
         onThinkingChangeRef.current?.(true);
         // Clear activity state after output stops
         if (outputActivityTimeoutRef.current) {
@@ -69,7 +70,7 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
         }, 500);
       }
     }
-  }, []);
+  }, [type]);
 
   const { ptyId, spawn, write, resize, kill } = usePty(handleOutput);
 
@@ -225,53 +226,61 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
     };
     containerRef.current.addEventListener('focusin', handleFocus);
 
-    // Register notification handlers
-    // OSC 777: format is "notify;title;body"
-    const osc777Disposable = terminal.parser.registerOscHandler(777, (data) => {
-      const parts = data.split(';');
-      if (parts[0] === 'notify' && parts.length >= 3) {
-        const title = parts[1];
-        const body = parts.slice(2).join(';');
-        onNotificationRef.current?.(title, body);
-      }
-      return true;
-    });
+    // Disposables to clean up (only used for main type)
+    let osc777Disposable: { dispose: () => void } | null = null;
+    let osc9Disposable: { dispose: () => void } | null = null;
+    let bellDisposable: { dispose: () => void } | null = null;
+    let titleChangeDisposable: { dispose: () => void } | null = null;
 
-    // OSC 9: ConEmu-style sequences
-    // - OSC 9 ; 4 ; state ; progress - Progress reporting (state: 0=hidden, 1=default, 2=error, 3=indeterminate, 4=warning)
-    // - OSC 9 ; text - Notification (just the body)
-    const osc9Disposable = terminal.parser.registerOscHandler(9, (data) => {
-      // Check for progress reporting: "4;state" or "4;state;progress"
-      if (data.startsWith('4;')) {
+    // Register notification handlers only for main terminals
+    if (type === 'main') {
+      // OSC 777: format is "notify;title;body"
+      osc777Disposable = terminal.parser.registerOscHandler(777, (data) => {
         const parts = data.split(';');
-        const state = parseInt(parts[1], 10);
-        // State 0 means hidden/done, anything else means busy/thinking
-        const isThinking = state !== 0 && !isNaN(state);
-        onThinkingChangeRef.current?.(isThinking);
+        if (parts[0] === 'notify' && parts.length >= 3) {
+          const title = parts[1];
+          const body = parts.slice(2).join(';');
+          onNotificationRef.current?.(title, body);
+        }
         return true;
-      }
-      // Otherwise treat as notification
-      onNotificationRef.current?.('', data);
-      return true;
-    });
+      });
 
-    // Bell (BEL character)
-    const bellDisposable = terminal.onBell(() => {
-      onNotificationRef.current?.('', 'Bell');
-    });
+      // OSC 9: ConEmu-style sequences
+      // - OSC 9 ; 4 ; state ; progress - Progress reporting (state: 0=hidden, 1=default, 2=error, 3=indeterminate, 4=warning)
+      // - OSC 9 ; text - Notification (just the body)
+      osc9Disposable = terminal.parser.registerOscHandler(9, (data) => {
+        // Check for progress reporting: "4;state" or "4;state;progress"
+        if (data.startsWith('4;')) {
+          const parts = data.split(';');
+          const state = parseInt(parts[1], 10);
+          // State 0 means hidden/done, anything else means busy/thinking
+          const isThinking = state !== 0 && !isNaN(state);
+          onThinkingChangeRef.current?.(isThinking);
+          return true;
+        }
+        // Otherwise treat as notification
+        onNotificationRef.current?.('', data);
+        return true;
+      });
 
-    // Claude-specific: detect thinking state from terminal title
-    // Claude Code sets title with braille spinner chars (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏) when thinking
-    // Only trigger if: spinner is at start of title, OR title contains "claude" (case-insensitive)
-    const SPINNER_CHARS = new Set(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']);
-    const titleChangeDisposable = terminal.onTitleChange((title) => {
-      const startsWithSpinner = SPINNER_CHARS.has(title[0]);
-      const hasClaudeWithSpinner = title.toLowerCase().includes('claude') &&
-        [...title].some(char => SPINNER_CHARS.has(char));
-      onThinkingChangeRef.current?.(startsWithSpinner || hasClaudeWithSpinner);
-    });
+      // Bell (BEL character)
+      bellDisposable = terminal.onBell(() => {
+        onNotificationRef.current?.('', 'Bell');
+      });
 
-    // Fit terminal and spawn main process with correct size
+      // Claude-specific: detect thinking state from terminal title
+      // Claude Code sets title with braille spinner chars (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏) when thinking
+      // Only trigger if: spinner is at start of title, OR title contains "claude" (case-insensitive)
+      const SPINNER_CHARS = new Set(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']);
+      titleChangeDisposable = terminal.onTitleChange((title) => {
+        const startsWithSpinner = SPINNER_CHARS.has(title[0]);
+        const hasClaudeWithSpinner = title.toLowerCase().includes('claude') &&
+          [...title].some(char => SPINNER_CHARS.has(char));
+        onThinkingChangeRef.current?.(startsWithSpinner || hasClaudeWithSpinner);
+      });
+    }
+
+    // Fit terminal and spawn process with correct size
     const initPty = async () => {
       // Wait for next frame to ensure container is laid out
       await new Promise(resolve => requestAnimationFrame(resolve));
@@ -282,7 +291,12 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       const rows = terminal.rows;
 
       spawnedAtRef.current = Date.now();
-      await spawnRef.current(worktreeId, 'main', cols, rows);
+      await spawnRef.current(entityId, type, cols, rows);
+
+      // For project type, mark as ready immediately (no startup delay like main command)
+      if (type === 'project') {
+        setIsReady(true);
+      }
 
       // If component unmounted while spawning, kill the PTY immediately
       if (!isMounted) {
@@ -296,10 +310,10 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       isMounted = false;
       onDataDisposable.dispose();
       containerRef.current?.removeEventListener('focusin', handleFocus);
-      osc777Disposable.dispose();
-      osc9Disposable.dispose();
-      bellDisposable.dispose();
-      titleChangeDisposable.dispose();
+      osc777Disposable?.dispose();
+      osc9Disposable?.dispose();
+      bellDisposable?.dispose();
+      titleChangeDisposable?.dispose();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
@@ -309,7 +323,7 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
       }
       killRef.current();
     };
-  }, [worktreeId]);
+  }, [entityId, type]);
 
   // Restart handler for when the process exits
   const handleRestart = useCallback(async () => {
@@ -329,8 +343,13 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
     const cols = terminal.cols;
     const rows = terminal.rows;
     spawnedAtRef.current = Date.now();
-    await spawn(worktreeId, 'main', cols, rows);
-  }, [spawn, worktreeId]);
+    await spawn(entityId, type, cols, rows);
+
+    // For project type, mark as ready immediately
+    if (type === 'project') {
+      setIsReady(true);
+    }
+  }, [spawn, entityId, type]);
 
   // Store resize function in ref to avoid dependency issues
   const resizeRef = useRef(resize);
@@ -413,7 +432,7 @@ export function MainTerminal({ worktreeId, isActive, shouldAutoFocus, terminalCo
           <div className="flex flex-col items-center gap-4 text-zinc-400">
             <div className="flex flex-col items-center gap-1">
               <span className="text-zinc-200 font-medium">
-                {exitInfo?.command ?? 'Process'} exited
+                {exitInfo?.command ?? (type === 'project' ? 'Shell' : 'Process')} exited
               </span>
               {exitInfo?.exitCode !== null && exitInfo?.exitCode !== undefined && (
                 <span className="text-sm">
