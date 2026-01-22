@@ -241,19 +241,29 @@ fn spawn_terminal(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String> {
-    // Find worktree path
-    let worktree_path = {
+    // Find path - can be either a worktree or a project
+    let path = {
         let persisted = state.persisted.read();
-        persisted
+
+        // First try to find a worktree with this ID
+        let worktree_path = persisted
             .projects
             .iter()
             .flat_map(|p| &p.worktrees)
             .find(|w| w.id == worktree_id)
-            .map(|w| w.path.clone())
-            .ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+            .map(|w| w.path.clone());
+
+        // If not found, try to find a project with this ID
+        worktree_path.or_else(|| {
+            persisted
+                .projects
+                .iter()
+                .find(|p| p.id == worktree_id)
+                .map(|p| p.path.clone())
+        }).ok_or_else(|| format!("Worktree or project not found: {}", worktree_id))?
     };
 
-    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, "shell", cols, rows, None).map_err(map_err)
+    pty::spawn_pty(&app, &state, worktree_id, &path, "shell", cols, rows, None).map_err(map_err)
 }
 
 #[tauri::command]
@@ -319,8 +329,12 @@ fn spawn_project_shell(
             .ok_or_else(|| format!("Project not found: {}", project_id))?
     };
 
+    // Load config with project-specific overrides
+    let cfg = config::load_config_for_project(Some(&project_path));
+    let command = cfg.main.command;
+
     // Use project_id as the "worktree_id" for PTY tracking purposes
-    pty::spawn_pty(&app, &state, project_id, &project_path, "shell", cols, rows, None).map_err(map_err)
+    pty::spawn_pty(&app, &state, project_id, &project_path, &command, cols, rows, None).map_err(map_err)
 }
 
 #[tauri::command]
