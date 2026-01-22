@@ -261,3 +261,91 @@ fn chrono_lite_now() -> String {
         years, month, day, hour, min, sec
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_generate_worktree_name_format() {
+        let name = generate_worktree_name();
+        // Should be in adjective-animal format with hyphen separator
+        assert!(name.contains('-'), "Name should contain hyphen: {}", name);
+        let parts: Vec<&str> = name.split('-').collect();
+        assert_eq!(parts.len(), 2, "Name should have exactly 2 parts: {}", name);
+        assert!(!parts[0].is_empty(), "First part should not be empty");
+        assert!(!parts[1].is_empty(), "Second part should not be empty");
+    }
+
+    #[test]
+    fn test_generate_worktree_name_uniqueness() {
+        // Generate several names and ensure they're not all the same
+        let names: Vec<String> = (0..10).map(|_| generate_worktree_name()).collect();
+        let unique_count = names.iter().collect::<std::collections::HashSet<_>>().len();
+        // With random generation, we should get mostly unique names
+        assert!(unique_count > 1, "Names should have some variety");
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_default() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(None, &project_path);
+        assert_eq!(result, PathBuf::from("/home/user/myproject/.worktrees"));
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_with_placeholder() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(
+            Some("{{ repo_directory }}/.worktrees"),
+            &project_path,
+        );
+        assert_eq!(result, PathBuf::from("/home/user/myproject/.worktrees"));
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_no_spaces_placeholder() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(
+            Some("{{repo_directory}}/trees"),
+            &project_path,
+        );
+        assert_eq!(result, PathBuf::from("/home/user/myproject/trees"));
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_absolute_path() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(Some("/var/worktrees"), &project_path);
+        assert_eq!(result, PathBuf::from("/var/worktrees"));
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_tilde_expansion() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(Some("~/worktrees"), &project_path);
+        // Should expand ~ to home directory
+        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+        assert_eq!(result, home.join("worktrees"));
+    }
+
+    #[test]
+    fn test_chrono_lite_now_format() {
+        let timestamp = chrono_lite_now();
+        // Should be in ISO-8601 format: YYYY-MM-DDTHH:MM:SSZ
+        assert!(timestamp.len() == 20, "Timestamp should be 20 chars: {}", timestamp);
+        assert!(timestamp.ends_with('Z'), "Timestamp should end with Z");
+        assert!(timestamp.contains('T'), "Timestamp should contain T separator");
+
+        // Verify it can be parsed as expected format
+        let parts: Vec<&str> = timestamp.split('T').collect();
+        assert_eq!(parts.len(), 2);
+
+        let date_parts: Vec<&str> = parts[0].split('-').collect();
+        assert_eq!(date_parts.len(), 3);
+        assert!(date_parts[0].parse::<u32>().is_ok(), "Year should be numeric");
+        assert!(date_parts[1].parse::<u32>().is_ok(), "Month should be numeric");
+        assert!(date_parts[2].parse::<u32>().is_ok(), "Day should be numeric");
+    }
+}
