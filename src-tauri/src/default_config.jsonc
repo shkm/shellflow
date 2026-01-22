@@ -66,6 +66,7 @@
     "runTask": { "mac": "cmd+r", "other": "ctrl+shift+r" },
     "newWorkspace": { "mac": "cmd+n", "other": "ctrl+n" },
     "switchFocus": "ctrl+\\",
-    "taskSwitcher": { "mac": "cmd+;", "other": "ctrl+;" }
+    "taskSwitcher": { "mac": "cmd+;", "other": "ctrl+;" },
+    "expandDrawer": "shift+Escape"
   }
 }

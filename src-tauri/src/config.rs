@@ -235,6 +235,8 @@ pub struct MappingsConfig {
     pub switch_focus: Shortcut,
     #[serde(rename = "taskSwitcher")]
     pub task_switcher: Shortcut,
+    #[serde(rename = "expandDrawer")]
+    pub expand_drawer: Shortcut,
 }
 
 /// Helper struct to extract just mappings from DEFAULT_CONFIG without recursion
@@ -284,6 +286,8 @@ struct MappingsConfigRaw {
     switch_focus: Shortcut,
     #[serde(rename = "taskSwitcher")]
     task_switcher: Shortcut,
+    #[serde(rename = "expandDrawer")]
+    expand_drawer: Shortcut,
 }
 
 impl Default for MappingsConfig {
@@ -313,6 +317,7 @@ impl Default for MappingsConfig {
                     new_workspace: m.new_workspace,
                     switch_focus: m.switch_focus,
                     task_switcher: m.task_switcher,
+                    expand_drawer: m.expand_drawer,
                 };
             }
         }

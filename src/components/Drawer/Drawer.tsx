@@ -1,4 +1,4 @@
-import { X, Plus, Terminal, Play, Square } from 'lucide-react';
+import { X, Plus, Terminal, Play, Square, Maximize2, Minimize2 } from 'lucide-react';
 import { ReactNode } from 'react';
 
 export interface DrawerTab {
@@ -12,6 +12,7 @@ type TaskStatus = 'running' | 'stopping' | 'stopped';
 
 interface DrawerProps {
   isOpen: boolean;
+  isExpanded: boolean;
   worktreeId: string | null;
   tabs: DrawerTab[];
   activeTabId: string | null;
@@ -19,11 +20,13 @@ interface DrawerProps {
   onSelectTab: (tabId: string) => void;
   onCloseTab: (tabId: string) => void;
   onAddTab: () => void;
+  onToggleExpand: () => void;
   children?: ReactNode;
 }
 
 export function Drawer({
   isOpen,
+  isExpanded,
   worktreeId,
   tabs,
   activeTabId,
@@ -31,6 +34,7 @@ export function Drawer({
   onSelectTab,
   onCloseTab,
   onAddTab,
+  onToggleExpand,
   children,
 }: DrawerProps) {
   // Always render children to keep terminals alive, but hide UI when closed
@@ -72,13 +76,22 @@ export function Drawer({
               </div>
             ))}
           </div>
-          <button
-            onClick={onAddTab}
-            className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 flex-shrink-0"
-            title="New terminal (Cmd+T)"
-          >
-            <Plus size={16} />
-          </button>
+          <div className="flex items-stretch border-l border-zinc-800 flex-shrink-0">
+            <button
+              onClick={onAddTab}
+              className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+              title="New terminal (Cmd+T)"
+            >
+              <Plus size={16} />
+            </button>
+            <button
+              onClick={onToggleExpand}
+              className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+              title={isExpanded ? "Restore drawer (Shift+Esc)" : "Expand drawer (Shift+Esc)"}
+            >
+              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          </div>
         </div>
       )}
 

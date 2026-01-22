@@ -66,6 +66,7 @@ function App() {
 
   // Global panel open/closed state (shared across all worktrees)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDrawerExpanded, setIsDrawerExpanded] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
 
   // Per-worktree drawer tab state
@@ -173,7 +174,9 @@ function App() {
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
   const lastRightPanelSize = useRef<number>(280); // Track last open size in pixels
   const drawerPanelRef = useRef<PanelImperativeHandle>(null);
+  const mainPanelRef = useRef<PanelImperativeHandle>(null);
   const lastDrawerSize = useRef<number>(250); // Track last open size in pixels
+  const preExpandDrawerSize = useRef<number>(250); // Track drawer size before expansion
 
   // Derived values
   const activeWorktree = useMemo(() => {
@@ -348,6 +351,7 @@ function App() {
     if (!activeWorktreeId) return;
 
     const panel = drawerPanelRef.current;
+    const mainPanel = mainPanelRef.current;
     const willOpen = !isDrawerOpen;
 
     if (panel) {
@@ -355,6 +359,11 @@ function App() {
         panel.resize(lastDrawerSize.current);
       } else {
         panel.collapse();
+        // Restore main panel if it was collapsed due to expansion
+        if (isDrawerExpanded && mainPanel) {
+          mainPanel.resize(200); // Restore to a reasonable default
+        }
+        setIsDrawerExpanded(false);
       }
     }
 
@@ -399,7 +408,34 @@ function App() {
     });
 
     dispatchPanelResizeComplete();
-  }, [activeWorktreeId, isDrawerOpen, drawerTabs, drawerTabCounters, dispatchPanelResizeComplete]);
+  }, [activeWorktreeId, isDrawerOpen, isDrawerExpanded, drawerTabs, drawerTabCounters, dispatchPanelResizeComplete]);
+
+  // Toggle drawer expansion handler (maximize/restore within main area)
+  const handleToggleDrawerExpand = useCallback(() => {
+    if (!activeWorktreeId || !isDrawerOpen) return;
+
+    const drawerPanel = drawerPanelRef.current;
+    if (!drawerPanel) return;
+
+    if (isDrawerExpanded) {
+      // Restore to previous size
+      setIsDrawerExpanded(false);
+      // Use setTimeout to let maxSize update before resizing
+      setTimeout(() => {
+        drawerPanel.resize(preExpandDrawerSize.current);
+        dispatchPanelResizeComplete();
+      }, 0);
+    } else {
+      // Save current size and expand to cover main area
+      preExpandDrawerSize.current = lastDrawerSize.current;
+      setIsDrawerExpanded(true);
+      // Use setTimeout to let maxSize update before resizing
+      setTimeout(() => {
+        drawerPanel.resize("100%");
+        dispatchPanelResizeComplete();
+      }, 0);
+    }
+  }, [activeWorktreeId, isDrawerOpen, isDrawerExpanded, dispatchPanelResizeComplete]);
 
   // Toggle right panel handler
   const handleToggleRightPanel = useCallback(() => {
@@ -479,8 +515,8 @@ function App() {
 
   // Sync state when drawer is collapsed/expanded via dragging
   const handleDrawerResize = useCallback((size: { inPixels: number }) => {
-    // Track last open size (only when not collapsed)
-    if (size.inPixels >= 100) {
+    // Track last open size (only when not collapsed and not in expanded mode)
+    if (size.inPixels >= 100 && !isDrawerExpanded) {
       lastDrawerSize.current = size.inPixels;
     }
 
@@ -489,7 +525,7 @@ function App() {
       if (prev === !isCollapsed) return prev; // No change needed
       return !isCollapsed;
     });
-  }, []);
+  }, [isDrawerExpanded]);
 
   // Add new drawer tab handler
   const handleAddDrawerTab = useCallback(() => {
@@ -557,6 +593,11 @@ function App() {
     // If closing the last tab for the active worktree, collapse the drawer panel and focus main
     if (remaining.length === 0 && targetWorktreeId === activeWorktreeId) {
       drawerPanelRef.current?.collapse();
+      // Restore main panel if it was collapsed due to expansion
+      if (isDrawerExpanded) {
+        mainPanelRef.current?.resize(200);
+        setIsDrawerExpanded(false);
+      }
       setIsDrawerOpen(false);
       // Focus back to main pane when closing last drawer tab
       setFocusStates((prev) => {
@@ -588,7 +629,7 @@ function App() {
         return next;
       });
     }
-  }, [activeWorktreeId, drawerTabs, drawerActiveTabIds]);
+  }, [activeWorktreeId, isDrawerExpanded, drawerTabs, drawerActiveTabIds]);
 
   // Focus state handlers - track which pane has focus per worktree
   const handleMainPaneFocused = useCallback((worktreeId: string) => {
@@ -1292,6 +1333,12 @@ function App() {
         handleToggleDrawer();
       }
 
+      // Expand/collapse drawer (only when drawer is open)
+      if (isDrawerOpen && matchesShortcut(e, mappings.expandDrawer)) {
+        e.preventDefault();
+        handleToggleDrawerExpand();
+      }
+
       // Cmd+T to add new terminal tab (when drawer is open)
       if ((e.metaKey || e.ctrlKey) && e.key === 't' && isDrawerOpen) {
         e.preventDefault();
@@ -1369,7 +1416,7 @@ function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [activeWorktreeId, activeProjectId, isDrawerOpen, activeDrawerTabId, config, openWorktreesInOrder, handleToggleDrawer, handleAddDrawerTab, handleCloseDrawerTab, handleToggleRightPanel, handleToggleTask, handleSwitchFocus, handleAddWorktree, handleToggleTaskSwitcher]);
+  }, [activeWorktreeId, activeProjectId, isDrawerOpen, activeDrawerTabId, config, openWorktreesInOrder, handleToggleDrawer, handleToggleDrawerExpand, handleAddDrawerTab, handleCloseDrawerTab, handleToggleRightPanel, handleToggleTask, handleSwitchFocus, handleAddWorktree, handleToggleTaskSwitcher]);
 
   const pendingWorktree = pendingDeleteId
     ? projects.flatMap((p) => p.worktrees).find((w) => w.id === pendingDeleteId)
@@ -1535,7 +1582,7 @@ function App() {
                 orientation="vertical"
                 className="h-full"
               >
-                <Panel minSize="200px">
+                <Panel panelRef={mainPanelRef} minSize="0px" collapsible collapsedSize="0px">
                   <MainPane
                     openWorktreeIds={openWorktreeIds}
                     activeWorktreeId={activeWorktreeId}
@@ -1551,7 +1598,7 @@ function App() {
                 {/* Drawer Panel - collapsible */}
                 <PanelResizeHandle
                   className={`transition-colors focus:outline-none !cursor-row-resize ${
-                isDrawerOpen
+                isDrawerOpen && !isDrawerExpanded
                   ? 'h-px bg-zinc-700 hover:bg-zinc-500'
                   : 'h-0 pointer-events-none'
               }`}
@@ -1560,7 +1607,7 @@ function App() {
               panelRef={drawerPanelRef}
               defaultSize="0px"
               minSize="100px"
-              maxSize="70%"
+              maxSize={isDrawerExpanded ? "100%" : "70%"}
               collapsible
               collapsedSize="0px"
               onResize={handleDrawerResize}
@@ -1568,6 +1615,7 @@ function App() {
               <div className="h-full overflow-hidden">
                 <Drawer
                   isOpen={isDrawerOpen}
+                  isExpanded={isDrawerExpanded}
                   worktreeId={activeWorktreeId}
                   tabs={activeDrawerTabs}
                   activeTabId={activeDrawerTabId}
@@ -1575,6 +1623,7 @@ function App() {
                   onSelectTab={handleSelectDrawerTab}
                   onCloseTab={handleCloseDrawerTab}
                   onAddTab={handleAddDrawerTab}
+                  onToggleExpand={handleToggleDrawerExpand}
                 >
                   {/* Render ALL terminals for ALL worktrees to keep them alive */}
                   {Array.from(drawerTabs.entries()).flatMap(([worktreeId, tabs]) =>
