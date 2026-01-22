@@ -64,6 +64,9 @@ pub struct TaskConfig {
     pub silent: bool,
     /// Override shell to run command with (e.g., "/bin/bash", "fish")
     pub shell: Option<String>,
+    /// URL templates to display when task is running (supports minijinja)
+    #[serde(default)]
+    pub urls: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -27,6 +27,7 @@ export interface TaskConfig {
   kind?: TaskKind;
   silent?: boolean;
   shell?: string;
+  urls?: string[];
 }
 
 /** Platform-specific shortcut mapping */

@@ -411,15 +411,17 @@ fn spawn_task(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String> {
-    // Find entity path and project path (entity can be a worktree or a project)
-    let (entity_path, project_path) = {
+    use template::{expand_template, TemplateContext};
+
+    // Find entity path, project path, and branch (entity can be a worktree or a project)
+    let (entity_path, project_path, branch) = {
         let persisted = state.persisted.read();
         let mut found = None;
 
         // First, try to find a worktree with this ID
         for project in &persisted.projects {
             if let Some(worktree) = project.worktrees.iter().find(|w| w.id == entity_id) {
-                found = Some((worktree.path.clone(), project.path.clone()));
+                found = Some((worktree.path.clone(), project.path.clone(), worktree.branch.clone()));
                 break;
             }
         }
@@ -427,7 +429,10 @@ fn spawn_task(
         // If not found as worktree, try to find a project with this ID
         if found.is_none() {
             if let Some(project) = persisted.projects.iter().find(|p| p.id == entity_id) {
-                found = Some((project.path.clone(), project.path.clone()));
+                // For main project, get current branch from git
+                let repo = git2::Repository::open(&project.path).map_err(map_err)?;
+                let branch = git::get_current_branch(&repo).map_err(map_err)?;
+                found = Some((project.path.clone(), project.path.clone(), branch));
             }
         }
 
@@ -442,8 +447,69 @@ fn spawn_task(
         .find(|t| t.name == task_name)
         .ok_or_else(|| format!("Task not found: {}", task_name))?;
 
-    pty::spawn_pty(&app, &state, entity_id, &entity_path, &task.command, cols, rows, task.shell.as_deref())
+    // Render command template
+    let ctx = TemplateContext::new(&project_path).with_branch(&branch);
+    let command = expand_template(&task.command, &ctx).map_err(map_err)?;
+
+    pty::spawn_pty(&app, &state, entity_id, &entity_path, &command, cols, rows, task.shell.as_deref())
         .map_err(map_err)
+}
+
+#[tauri::command]
+fn get_task_urls(
+    state: State<'_, Arc<AppState>>,
+    entity_id: &str,
+    task_name: &str,
+) -> Result<Vec<String>> {
+    use template::{expand_template, TemplateContext};
+
+    // Find entity info (worktree or project) to get branch and paths
+    let (branch, project_path) = {
+        let persisted = state.persisted.read();
+        let mut found = None;
+
+        // First, try to find a worktree with this ID
+        for project in &persisted.projects {
+            if let Some(worktree) = project.worktrees.iter().find(|w| w.id == entity_id) {
+                found = Some((worktree.branch.clone(), project.path.clone()));
+                break;
+            }
+        }
+
+        // If not found as worktree, try to find a project with this ID
+        if found.is_none() {
+            if let Some(project) = persisted.projects.iter().find(|p| p.id == entity_id) {
+                // For main project, get current branch from git
+                let repo = git2::Repository::open(&project.path).map_err(map_err)?;
+                let branch = git::get_current_branch(&repo).map_err(map_err)?;
+                found = Some((branch, project.path.clone()));
+            }
+        }
+
+        found.ok_or_else(|| format!("Entity not found: {}", entity_id))?
+    };
+
+    // Load config and find the task
+    let cfg = config::load_config_for_project(Some(&project_path));
+    let task = cfg
+        .tasks
+        .iter()
+        .find(|t| t.name == task_name)
+        .ok_or_else(|| format!("Task not found: {}", task_name))?;
+
+    // Build template context
+    let ctx = TemplateContext::new(&project_path).with_branch(&branch);
+
+    // Render each URL template
+    let urls: Vec<String> = task
+        .urls
+        .iter()
+        .filter_map(|url_template| {
+            expand_template(url_template, &ctx).ok()
+        })
+        .collect();
+
+    Ok(urls)
 }
 
 #[tauri::command]
@@ -1154,6 +1220,7 @@ pub fn run() {
             spawn_terminal,
             spawn_project_shell,
             spawn_task,
+            get_task_urls,
             pty_write,
             pty_resize,
             pty_kill,

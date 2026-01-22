@@ -72,6 +72,13 @@ export async function spawnTask(
   return invoke<string>('spawn_task', { entityId, taskName, cols, rows });
 }
 
+export async function getTaskUrls(
+  entityId: string,
+  taskName: string
+): Promise<string[]> {
+  return invoke<string[]>('get_task_urls', { entityId, taskName });
+}
+
 export async function ptyWrite(ptyId: string, data: string): Promise<void> {
   return invoke('pty_write', { ptyId, data });
 }

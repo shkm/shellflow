@@ -253,7 +253,7 @@
         },
         "command": {
           "type": "string",
-          "description": "Shell command to run"
+          "description": "Shell command to run. Supports minijinja: {{ branch }}, {{ branch | hash_port }}, {{ branch | sanitize }}"
         },
         "kind": {
           "type": "string",
@@ -269,6 +269,17 @@
         "shell": {
           "type": "string",
           "description": "Override shell to run command with (e.g., '/bin/bash', 'fish')"
+        },
+        "urls": {
+          "type": "array",
+          "description": "URL templates to display when task is running. Supports minijinja: {{ branch }}, {{ branch | hash_port }}, {{ branch | sanitize }}",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["http://localhost:3000"],
+            ["http://localhost:{{ branch | hash_port }}"]
+          ]
         }
       },
       "required": ["name", "command"],
