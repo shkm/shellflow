@@ -16,6 +16,8 @@ interface MainPaneProps {
   onFocus: (entityId: string) => void;
   onWorktreeNotification?: (worktreeId: string, title: string, body: string) => void;
   onWorktreeThinkingChange?: (worktreeId: string, isThinking: boolean) => void;
+  onProjectNotification?: (projectId: string, title: string, body: string) => void;
+  onProjectThinkingChange?: (projectId: string, isThinking: boolean) => void;
 }
 
 export function MainPane({
@@ -29,6 +31,8 @@ export function MainPane({
   onFocus,
   onWorktreeNotification,
   onWorktreeThinkingChange,
+  onProjectNotification,
+  onProjectThinkingChange,
 }: MainPaneProps) {
   // Determine the active entity (worktree takes precedence over project)
   const activeEntityId = activeWorktreeId ?? activeProjectId;
@@ -87,6 +91,8 @@ export function MainPane({
             terminalConfig={terminalConfig}
             mappings={mappings}
             onFocus={() => onFocus(projectId)}
+            onNotification={(title, body) => onProjectNotification?.(projectId, title, body)}
+            onThinkingChange={(isThinking) => onProjectThinkingChange?.(projectId, isThinking)}
           />
         </div>
       ))}
