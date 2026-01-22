@@ -6,7 +6,6 @@ import {
   FileChange,
   MergeFeasibility,
   MergeWorkflowOptions,
-  MergeWorkflowResult,
   CleanupOptions,
 } from '../types';
 
@@ -110,8 +109,10 @@ export async function checkMergeFeasibility(
 export async function executeMergeWorkflow(
   worktreeId: string,
   options: MergeWorkflowOptions
-): Promise<MergeWorkflowResult> {
-  return invoke<MergeWorkflowResult>('execute_merge_workflow', {
+): Promise<void> {
+  // Fire and forget - the command runs in a background thread
+  // and emits 'merge-completed' event when done
+  await invoke<void>('execute_merge_workflow', {
     worktreeId,
     options,
   });

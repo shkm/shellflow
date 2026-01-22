@@ -415,14 +415,24 @@ fn check_merge_feasibility(worktree_path: &str) -> Result<MergeFeasibility> {
     git::check_merge_feasibility(path).map_err(map_err)
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeCompleted {
+    pub worktree_id: String,
+    pub success: bool,
+    pub branch_name: String,
+    pub deleted_worktree: bool,
+    pub error: Option<String>,
+}
+
 #[tauri::command]
 fn execute_merge_workflow(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
     worktree_id: &str,
     options: MergeWorkflowOptions,
-) -> Result<MergeWorkflowResult> {
-    // Find worktree and project
+) {
+    // Find worktree and project - extract all data we need before spawning thread
     let (worktree_path, project_path) = {
         let persisted = state.persisted.read();
         let mut found = None;
@@ -434,32 +444,54 @@ fn execute_merge_workflow(
             }
         }
 
-        found.ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+        match found {
+            Some(data) => data,
+            None => {
+                let _ = app.emit(
+                    "merge-completed",
+                    MergeCompleted {
+                        worktree_id: worktree_id.to_string(),
+                        success: false,
+                        branch_name: String::new(),
+                        deleted_worktree: false,
+                        error: Some(format!("Worktree not found: {}", worktree_id)),
+                    },
+                );
+                return;
+            }
+        }
     };
 
-    let worktree_path = Path::new(&worktree_path);
-    let project_path = Path::new(&project_path);
+    // Clone data for the background thread
+    let worktree_id = worktree_id.to_string();
+    let app_state = Arc::clone(&*state);
+    let delete_worktree = options.delete_worktree;
 
-    // Emit progress: starting merge
-    let _ = app.emit(
-        "merge-progress",
-        MergeProgress {
-            phase: "merging".to_string(),
-            message: format!(
-                "{}...",
-                if options.strategy == MergeStrategy::Rebase {
-                    "Rebasing"
-                } else {
-                    "Merging"
-                }
-            ),
-        },
-    );
+    // Spawn background thread to avoid blocking UI
+    std::thread::spawn(move || {
+        let worktree_path = Path::new(&worktree_path);
+        let project_path = Path::new(&project_path);
 
-    // Execute the merge/rebase
-    let branch_name =
-        git::execute_merge_workflow(worktree_path, project_path, options.strategy).map_err(
-            |e| {
+        // Emit progress: starting merge
+        let _ = app.emit(
+            "merge-progress",
+            MergeProgress {
+                phase: "merging".to_string(),
+                message: format!(
+                    "{}...",
+                    if options.strategy == MergeStrategy::Rebase {
+                        "Rebasing"
+                    } else {
+                        "Merging"
+                    }
+                ),
+            },
+        );
+
+        // Execute the merge/rebase
+        let branch_name = match git::execute_merge_workflow(worktree_path, project_path, options.strategy) {
+            Ok(name) => name,
+            Err(e) => {
                 let _ = app.emit(
                     "merge-progress",
                     MergeProgress {
@@ -467,81 +499,101 @@ fn execute_merge_workflow(
                         message: e.to_string(),
                     },
                 );
-                e.to_string()
-            },
-        )?;
+                let _ = app.emit(
+                    "merge-completed",
+                    MergeCompleted {
+                        worktree_id,
+                        success: false,
+                        branch_name: String::new(),
+                        deleted_worktree: false,
+                        error: Some(e.to_string()),
+                    },
+                );
+                return;
+            }
+        };
 
-    // Delete worktree if requested
-    if options.delete_worktree {
-        let _ = app.emit(
-            "merge-progress",
-            MergeProgress {
-                phase: "cleanup".to_string(),
-                message: "Removing worktree...".to_string(),
-            },
-        );
+        // Delete worktree if requested
+        if options.delete_worktree {
+            let _ = app.emit(
+                "merge-progress",
+                MergeProgress {
+                    phase: "cleanup".to_string(),
+                    message: "Removing worktree...".to_string(),
+                },
+            );
 
-        // Stop watching first
-        watcher::stop_watching(worktree_id);
+            // Stop watching first
+            watcher::stop_watching(&worktree_id);
 
-        // Delete the worktree
-        let mut persisted = state.persisted.write();
-        for project in &mut persisted.projects {
-            if project.worktrees.iter().any(|w| w.id == worktree_id) {
-                worktree::delete_worktree(project, worktree_id).map_err(map_err)?;
-                break;
+            // Delete the worktree
+            let mut persisted = app_state.persisted.write();
+            for project in &mut persisted.projects {
+                if project.worktrees.iter().any(|w| w.id == worktree_id) {
+                    if let Err(e) = worktree::delete_worktree(project, &worktree_id) {
+                        info!("Failed to delete worktree: {}", e);
+                    }
+                    break;
+                }
+            }
+            drop(persisted);
+            if let Err(e) = app_state.save() {
+                info!("Failed to save state: {}", e);
             }
         }
-        drop(persisted);
-        state.save().map_err(map_err)?;
-    }
 
-    // Delete local branch if requested
-    if options.delete_local_branch {
+        // Delete local branch if requested
+        if options.delete_local_branch {
+            let _ = app.emit(
+                "merge-progress",
+                MergeProgress {
+                    phase: "cleanup".to_string(),
+                    message: "Deleting local branch...".to_string(),
+                },
+            );
+
+            if let Err(e) = git::delete_local_branch(project_path, &branch_name) {
+                info!("Failed to delete local branch: {}", e);
+            }
+        }
+
+        // Delete remote branch if requested
+        if options.delete_remote_branch {
+            let _ = app.emit(
+                "merge-progress",
+                MergeProgress {
+                    phase: "cleanup".to_string(),
+                    message: "Deleting remote branch...".to_string(),
+                },
+            );
+
+            if let Err(e) = git::delete_remote_branch(project_path, &branch_name) {
+                info!("Failed to delete remote branch: {}", e);
+            }
+        }
+
+        // Emit completion
         let _ = app.emit(
             "merge-progress",
             MergeProgress {
-                phase: "cleanup".to_string(),
-                message: "Deleting local branch...".to_string(),
+                phase: "complete".to_string(),
+                message: "Merge complete!".to_string(),
             },
         );
 
-        if let Err(e) = git::delete_local_branch(project_path, &branch_name) {
-            info!("Failed to delete local branch: {}", e);
-            // Don't fail the whole operation for branch deletion
-        }
-    }
-
-    // Delete remote branch if requested
-    if options.delete_remote_branch {
         let _ = app.emit(
-            "merge-progress",
-            MergeProgress {
-                phase: "cleanup".to_string(),
-                message: "Deleting remote branch...".to_string(),
+            "merge-completed",
+            MergeCompleted {
+                worktree_id,
+                success: true,
+                branch_name,
+                deleted_worktree: delete_worktree,
+                error: None,
             },
         );
+    });
 
-        if let Err(e) = git::delete_remote_branch(project_path, &branch_name) {
-            info!("Failed to delete remote branch: {}", e);
-            // Don't fail the whole operation for branch deletion
-        }
-    }
-
-    // Emit completion
-    let _ = app.emit(
-        "merge-progress",
-        MergeProgress {
-            phase: "complete".to_string(),
-            message: "Merge complete!".to_string(),
-        },
-    );
-
-    Ok(MergeWorkflowResult {
-        success: true,
-        branch_name,
-        error: None,
-    })
+    info!("[execute_merge_workflow] spawned background thread");
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -558,93 +610,127 @@ fn cleanup_worktree(
     state: State<'_, Arc<AppState>>,
     worktree_id: &str,
     options: CleanupOptions,
-) -> Result<()> {
-    // Find worktree and project
-    let (_worktree_path, project_path, branch_name) = {
+) {
+    // Find worktree and project - extract all data we need before spawning thread
+    let (project_path, branch_name) = {
         let persisted = state.persisted.read();
         let mut found = None;
 
         for project in &persisted.projects {
             if let Some(worktree) = project.worktrees.iter().find(|w| w.id == worktree_id) {
-                found = Some((
-                    worktree.path.clone(),
-                    project.path.clone(),
-                    worktree.branch.clone(),
-                ));
+                found = Some((project.path.clone(), worktree.branch.clone()));
                 break;
             }
         }
 
-        found.ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+        match found {
+            Some(data) => data,
+            None => {
+                let _ = app.emit(
+                    "merge-completed",
+                    MergeCompleted {
+                        worktree_id: worktree_id.to_string(),
+                        success: false,
+                        branch_name: String::new(),
+                        deleted_worktree: false,
+                        error: Some(format!("Worktree not found: {}", worktree_id)),
+                    },
+                );
+                return;
+            }
+        }
     };
 
-    let project_path = Path::new(&project_path);
+    // Clone data for the background thread
+    let worktree_id = worktree_id.to_string();
+    let app_state = Arc::clone(&*state);
+    let delete_worktree = options.delete_worktree;
 
-    // Delete worktree if requested
-    if options.delete_worktree {
-        let _ = app.emit(
-            "merge-progress",
-            MergeProgress {
-                phase: "cleanup".to_string(),
-                message: "Removing worktree...".to_string(),
-            },
-        );
+    // Spawn background thread to avoid blocking UI
+    std::thread::spawn(move || {
+        let project_path = Path::new(&project_path);
 
-        // Stop watching first
-        watcher::stop_watching(worktree_id);
+        // Delete worktree if requested
+        if options.delete_worktree {
+            let _ = app.emit(
+                "merge-progress",
+                MergeProgress {
+                    phase: "cleanup".to_string(),
+                    message: "Removing worktree...".to_string(),
+                },
+            );
 
-        // Delete the worktree
-        let mut persisted = state.persisted.write();
-        for project in &mut persisted.projects {
-            if project.worktrees.iter().any(|w| w.id == worktree_id) {
-                worktree::delete_worktree(project, worktree_id).map_err(map_err)?;
-                break;
+            // Stop watching first
+            watcher::stop_watching(&worktree_id);
+
+            // Delete the worktree
+            let mut persisted = app_state.persisted.write();
+            for project in &mut persisted.projects {
+                if project.worktrees.iter().any(|w| w.id == worktree_id) {
+                    if let Err(e) = worktree::delete_worktree(project, &worktree_id) {
+                        info!("Failed to delete worktree: {}", e);
+                    }
+                    break;
+                }
+            }
+            drop(persisted);
+            if let Err(e) = app_state.save() {
+                info!("Failed to save state: {}", e);
             }
         }
-        drop(persisted);
-        state.save().map_err(map_err)?;
-    }
 
-    // Delete local branch if requested
-    if options.delete_local_branch {
+        // Delete local branch if requested
+        if options.delete_local_branch {
+            let _ = app.emit(
+                "merge-progress",
+                MergeProgress {
+                    phase: "cleanup".to_string(),
+                    message: "Deleting local branch...".to_string(),
+                },
+            );
+
+            if let Err(e) = git::delete_local_branch(project_path, &branch_name) {
+                info!("Failed to delete local branch: {}", e);
+            }
+        }
+
+        // Delete remote branch if requested
+        if options.delete_remote_branch {
+            let _ = app.emit(
+                "merge-progress",
+                MergeProgress {
+                    phase: "cleanup".to_string(),
+                    message: "Deleting remote branch...".to_string(),
+                },
+            );
+
+            if let Err(e) = git::delete_remote_branch(project_path, &branch_name) {
+                info!("Failed to delete remote branch: {}", e);
+            }
+        }
+
+        // Emit completion
         let _ = app.emit(
             "merge-progress",
             MergeProgress {
-                phase: "cleanup".to_string(),
-                message: "Deleting local branch...".to_string(),
+                phase: "complete".to_string(),
+                message: "Cleanup complete!".to_string(),
             },
         );
 
-        if let Err(e) = git::delete_local_branch(project_path, &branch_name) {
-            info!("Failed to delete local branch: {}", e);
-        }
-    }
-
-    // Delete remote branch if requested
-    if options.delete_remote_branch {
         let _ = app.emit(
-            "merge-progress",
-            MergeProgress {
-                phase: "cleanup".to_string(),
-                message: "Deleting remote branch...".to_string(),
+            "merge-completed",
+            MergeCompleted {
+                worktree_id,
+                success: true,
+                branch_name,
+                deleted_worktree: delete_worktree,
+                error: None,
             },
         );
+    });
 
-        if let Err(e) = git::delete_remote_branch(project_path, &branch_name) {
-            info!("Failed to delete remote branch: {}", e);
-        }
-    }
-
-    // Emit completion
-    let _ = app.emit(
-        "merge-progress",
-        MergeProgress {
-            phase: "complete".to_string(),
-            message: "Cleanup complete!".to_string(),
-        },
-    );
-
-    Ok(())
+    info!("[cleanup_worktree] spawned background thread");
 }
 
 // Shutdown command - gracefully terminates all PTY processes

@@ -64,6 +64,14 @@ export interface MergeWorkflowResult {
   error: string | null;
 }
 
+export interface MergeCompleted {
+  worktreeId: string;
+  success: boolean;
+  branchName: string;
+  deletedWorktree: boolean;
+  error: string | null;
+}
+
 export interface MergeProgress {
   phase: 'merging' | 'cleanup' | 'complete' | 'error';
   message: string;

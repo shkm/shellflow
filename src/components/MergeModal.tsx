@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { GitMerge, AlertCircle, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
-import { Worktree, MergeFeasibility, MergeStrategy, MergeProgress } from '../types';
+import { Worktree, MergeFeasibility, MergeStrategy, MergeProgress, MergeCompleted } from '../types';
 import { MergeConfig } from '../hooks/useConfig';
 import { checkMergeFeasibility, executeMergeWorkflow, cleanupWorktree } from '../lib/tauri';
 
@@ -59,6 +59,27 @@ export function MergeModal({
     };
   }, []);
 
+  // Listen for completion events
+  useEffect(() => {
+    const unlisten = listen<MergeCompleted>('merge-completed', (event) => {
+      const { worktreeId, success, deletedWorktree, error } = event.payload;
+
+      // Only handle events for this worktree
+      if (worktreeId !== worktree.id) return;
+
+      if (success) {
+        onMergeComplete(worktreeId, deletedWorktree);
+      } else {
+        setError(error || 'Unknown error');
+        setExecuting(false);
+      }
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [worktree.id, onMergeComplete]);
+
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   const handleMerge = useCallback(async () => {
@@ -66,24 +87,18 @@ export function MergeModal({
     setError(null);
 
     try {
-      const result = await executeMergeWorkflow(worktree.id, {
+      // Fire and forget - completion handled by merge-completed event listener
+      await executeMergeWorkflow(worktree.id, {
         strategy,
         deleteWorktree,
         deleteLocalBranch,
         deleteRemoteBranch,
       });
-
-      if (result.success) {
-        onMergeComplete(worktree.id, deleteWorktree);
-      } else {
-        setError(result.error || 'Unknown error');
-        setExecuting(false);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setExecuting(false);
     }
-  }, [worktree.id, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch, onMergeComplete]);
+  }, [worktree.id, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
 
   const handleCleanup = useCallback(async () => {
     // Only allow cleanup if at least one option is selected
@@ -96,18 +111,17 @@ export function MergeModal({
     setError(null);
 
     try {
+      // Fire and forget - completion handled by merge-completed event listener
       await cleanupWorktree(worktree.id, {
         deleteWorktree,
         deleteLocalBranch,
         deleteRemoteBranch,
       });
-
-      onMergeComplete(worktree.id, deleteWorktree);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setExecuting(false);
     }
-  }, [worktree.id, deleteWorktree, deleteLocalBranch, deleteRemoteBranch, onMergeComplete]);
+  }, [worktree.id, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
 
   const renderStatus = () => {
     if (loading) {
