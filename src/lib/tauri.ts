@@ -34,6 +34,14 @@ export async function deleteWorktree(worktreeId: string): Promise<void> {
   return invoke('delete_worktree', { worktreeId });
 }
 
+export async function executeDeleteWorktreeWorkflow(
+  worktreeId: string
+): Promise<void> {
+  // Fire and forget - the command runs in a background thread
+  // and emits 'delete-worktree-completed' event when done
+  await invoke<void>('execute_delete_worktree_workflow', { worktreeId });
+}
+
 // PTY commands
 export async function spawnMain(worktreeId: string): Promise<string> {
   return invoke<string>('spawn_main', { worktreeId });

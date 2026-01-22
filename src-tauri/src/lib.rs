@@ -175,6 +175,140 @@ fn delete_worktree(state: State<'_, Arc<AppState>>, worktree_id: &str) -> Result
     Err(format!("Worktree not found: {}", worktree_id))
 }
 
+#[tauri::command]
+fn execute_delete_worktree_workflow(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    worktree_id: &str,
+) {
+    // Extract worktree info before spawning thread
+    let worktree_info = {
+        let persisted = state.persisted.read();
+        let mut found = None;
+
+        for project in &persisted.projects {
+            if let Some(worktree) = project.worktrees.iter().find(|w| w.id == worktree_id) {
+                found = Some((
+                    worktree.name.clone(),
+                    worktree.path.clone(),
+                    project.path.clone(),
+                ));
+                break;
+            }
+        }
+
+        match found {
+            Some(data) => data,
+            None => {
+                let _ = app.emit(
+                    "delete-worktree-completed",
+                    DeleteWorktreeCompleted {
+                        worktree_id: worktree_id.to_string(),
+                        success: false,
+                        error: Some(format!("Worktree not found: {}", worktree_id)),
+                    },
+                );
+                return;
+            }
+        }
+    };
+
+    let worktree_id = worktree_id.to_string();
+    let app_state = Arc::clone(&*state);
+    let (worktree_name, worktree_path, project_path) = worktree_info;
+
+    // Spawn background thread to avoid blocking UI
+    std::thread::spawn(move || {
+        // Step 1: Stop file watcher
+        let _ = app.emit(
+            "delete-worktree-progress",
+            DeleteWorktreeProgress {
+                phase: "stop-watcher".to_string(),
+                message: "Stopping file watcher...".to_string(),
+            },
+        );
+        watcher::stop_watching(&worktree_id);
+
+        // Step 2: Remove git worktree (this also deletes the directory)
+        let _ = app.emit(
+            "delete-worktree-progress",
+            DeleteWorktreeProgress {
+                phase: "remove-worktree".to_string(),
+                message: "Removing worktree...".to_string(),
+            },
+        );
+        let project_path = Path::new(&project_path);
+        if let Err(e) = git::delete_worktree(project_path, &worktree_name) {
+            let _ = app.emit(
+                "delete-worktree-progress",
+                DeleteWorktreeProgress {
+                    phase: "error".to_string(),
+                    message: e.to_string(),
+                },
+            );
+            let _ = app.emit(
+                "delete-worktree-completed",
+                DeleteWorktreeCompleted {
+                    worktree_id,
+                    success: false,
+                    error: Some(e.to_string()),
+                },
+            );
+            return;
+        }
+
+        // Clean up directory if git didn't remove it
+        let worktree_path = Path::new(&worktree_path);
+        if worktree_path.exists() {
+            if let Err(e) = std::fs::remove_dir_all(worktree_path) {
+                info!("Failed to remove worktree directory: {}", e);
+            }
+        }
+
+        // Step 3: Save changes
+        let _ = app.emit(
+            "delete-worktree-progress",
+            DeleteWorktreeProgress {
+                phase: "save".to_string(),
+                message: "Saving...".to_string(),
+            },
+        );
+        {
+            let mut persisted = app_state.persisted.write();
+            for project in &mut persisted.projects {
+                if let Some(idx) = project.worktrees.iter().position(|w| w.id == worktree_id) {
+                    project.worktrees.remove(idx);
+                    break;
+                }
+            }
+        }
+
+        if let Err(e) = app_state.save() {
+            info!("Failed to save state after worktree deletion: {}", e);
+        }
+
+        // Emit completion
+        let _ = app.emit(
+            "delete-worktree-progress",
+            DeleteWorktreeProgress {
+                phase: "complete".to_string(),
+                message: "Done".to_string(),
+            },
+        );
+
+        let _ = app.emit(
+            "delete-worktree-completed",
+            DeleteWorktreeCompleted {
+                worktree_id,
+                success: true,
+                error: None,
+            },
+        );
+    });
+
+    info!("[execute_delete_worktree_workflow] spawned background thread");
+}
+
 /// Remove a worktree from state by its path (used when worktree folder is deleted externally)
 #[tauri::command]
 fn remove_stale_worktree(state: State<'_, Arc<AppState>>, worktree_path: &str) -> Result<()> {
@@ -440,6 +574,22 @@ pub struct MergeCompleted {
     pub error: Option<String>,
 }
 
+// Delete worktree workflow types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteWorktreeProgress {
+    pub phase: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteWorktreeCompleted {
+    pub worktree_id: String,
+    pub success: bool,
+    pub error: Option<String>,
+}
+
 #[tauri::command]
 fn execute_merge_workflow(
     app: AppHandle,
@@ -488,18 +638,16 @@ fn execute_merge_workflow(
         let project_path = Path::new(&project_path);
 
         // Emit progress: starting merge
+        let phase = if options.strategy == MergeStrategy::Rebase {
+            "rebase"
+        } else {
+            "merge"
+        };
         let _ = app.emit(
             "merge-progress",
             MergeProgress {
-                phase: "merging".to_string(),
-                message: format!(
-                    "{}...",
-                    if options.strategy == MergeStrategy::Rebase {
-                        "Rebasing"
-                    } else {
-                        "Merging"
-                    }
-                ),
+                phase: phase.to_string(),
+                message: format!("{}...", if phase == "rebase" { "Rebasing" } else { "Merging" }),
             },
         );
 
@@ -533,7 +681,7 @@ fn execute_merge_workflow(
             let _ = app.emit(
                 "merge-progress",
                 MergeProgress {
-                    phase: "cleanup".to_string(),
+                    phase: "delete-worktree".to_string(),
                     message: "Removing worktree...".to_string(),
                 },
             );
@@ -562,7 +710,7 @@ fn execute_merge_workflow(
             let _ = app.emit(
                 "merge-progress",
                 MergeProgress {
-                    phase: "cleanup".to_string(),
+                    phase: "delete-local-branch".to_string(),
                     message: "Deleting local branch...".to_string(),
                 },
             );
@@ -577,7 +725,7 @@ fn execute_merge_workflow(
             let _ = app.emit(
                 "merge-progress",
                 MergeProgress {
-                    phase: "cleanup".to_string(),
+                    phase: "delete-remote-branch".to_string(),
                     message: "Deleting remote branch...".to_string(),
                 },
             );
@@ -592,7 +740,7 @@ fn execute_merge_workflow(
             "merge-progress",
             MergeProgress {
                 phase: "complete".to_string(),
-                message: "Merge complete!".to_string(),
+                message: "Done".to_string(),
             },
         );
 
@@ -670,7 +818,7 @@ fn cleanup_worktree(
             let _ = app.emit(
                 "merge-progress",
                 MergeProgress {
-                    phase: "cleanup".to_string(),
+                    phase: "delete-worktree".to_string(),
                     message: "Removing worktree...".to_string(),
                 },
             );
@@ -699,7 +847,7 @@ fn cleanup_worktree(
             let _ = app.emit(
                 "merge-progress",
                 MergeProgress {
-                    phase: "cleanup".to_string(),
+                    phase: "delete-local-branch".to_string(),
                     message: "Deleting local branch...".to_string(),
                 },
             );
@@ -714,7 +862,7 @@ fn cleanup_worktree(
             let _ = app.emit(
                 "merge-progress",
                 MergeProgress {
-                    phase: "cleanup".to_string(),
+                    phase: "delete-remote-branch".to_string(),
                     message: "Deleting remote branch...".to_string(),
                 },
             );
@@ -729,7 +877,7 @@ fn cleanup_worktree(
             "merge-progress",
             MergeProgress {
                 phase: "complete".to_string(),
-                message: "Cleanup complete!".to_string(),
+                message: "Done".to_string(),
             },
         );
 
@@ -927,6 +1075,7 @@ pub fn run() {
             create_worktree,
             list_worktrees,
             delete_worktree,
+            execute_delete_worktree_workflow,
             remove_stale_worktree,
             rename_worktree,
             open_folder,

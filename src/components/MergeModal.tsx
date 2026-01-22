@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { GitMerge, AlertCircle, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { GitMerge, AlertCircle, CheckCircle, Loader2, AlertTriangle, Circle } from 'lucide-react';
 import { Worktree, MergeFeasibility, MergeStrategy, MergeProgress, MergeCompleted } from '../types';
 import { MergeConfig } from '../hooks/useConfig';
 import { checkMergeFeasibility, executeMergeWorkflow, cleanupWorktree } from '../lib/tauri';
@@ -12,6 +12,11 @@ interface MergeModalProps {
   onMergeComplete: (worktreeId: string, deletedWorktree: boolean) => void;
   onModalOpen?: () => void;
   onModalClose?: () => void;
+}
+
+interface Step {
+  phase: string;
+  label: string;
 }
 
 export function MergeModal({
@@ -26,13 +31,17 @@ export function MergeModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
-  const [progress, setProgress] = useState<MergeProgress | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<string | null>(null);
+  const [completedPhases, setCompletedPhases] = useState<Set<string>>(new Set());
 
   // Form state
   const [strategy, setStrategy] = useState<MergeStrategy>(defaultConfig.strategy);
   const [deleteWorktree, setDeleteWorktree] = useState(defaultConfig.deleteWorktree);
   const [deleteLocalBranch, setDeleteLocalBranch] = useState(defaultConfig.deleteLocalBranch);
   const [deleteRemoteBranch, setDeleteRemoteBranch] = useState(defaultConfig.deleteRemoteBranch);
+
+  // Track the steps that will be executed (captured when execution starts)
+  const [executionSteps, setExecutionSteps] = useState<Step[]>([]);
 
   // Register modal open/close for app-wide tracking
   useEffect(() => {
@@ -48,16 +57,55 @@ export function MergeModal({
       .finally(() => setLoading(false));
   }, [worktree.path]);
 
+  // Build the list of steps based on current options
+  const buildSteps = useCallback((isMerge: boolean, strat: MergeStrategy, delWorktree: boolean, delLocal: boolean, delRemote: boolean): Step[] => {
+    const steps: Step[] = [];
+    if (isMerge) {
+      steps.push({ phase: strat, label: strat === 'rebase' ? 'Rebase' : 'Merge' });
+    }
+    if (delWorktree) {
+      steps.push({ phase: 'delete-worktree', label: 'Delete worktree' });
+    }
+    if (delLocal) {
+      steps.push({ phase: 'delete-local-branch', label: 'Delete local branch' });
+    }
+    if (delRemote) {
+      steps.push({ phase: 'delete-remote-branch', label: 'Delete remote branch' });
+    }
+    return steps;
+  }, []);
+
   // Listen for progress events
   useEffect(() => {
     const unlisten = listen<MergeProgress>('merge-progress', (event) => {
-      setProgress(event.payload);
+      const { phase } = event.payload;
+
+      // Mark all phases complete on success
+      if (phase === 'complete') {
+        setCompletedPhases(new Set(executionSteps.map((s) => s.phase)));
+        setCurrentPhase(phase);
+        return;
+      }
+
+      if (phase === 'error') {
+        setCurrentPhase(phase);
+        return;
+      }
+
+      // Mark all previous phases as completed
+      const currentIndex = executionSteps.findIndex((s) => s.phase === phase);
+      if (currentIndex > 0) {
+        const previousPhases = executionSteps.slice(0, currentIndex).map((s) => s.phase);
+        setCompletedPhases(new Set(previousPhases));
+      }
+
+      setCurrentPhase(phase);
     });
 
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, []);
+  }, [executionSteps]);
 
   // Listen for completion events
   useEffect(() => {
@@ -83,6 +131,11 @@ export function MergeModal({
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   const handleMerge = useCallback(async () => {
+    // Capture the steps before starting
+    const steps = buildSteps(true, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch);
+    setExecutionSteps(steps);
+    setCompletedPhases(new Set());
+    setCurrentPhase(null);
     setExecuting(true);
     setError(null);
 
@@ -98,7 +151,7 @@ export function MergeModal({
       setError(err instanceof Error ? err.message : String(err));
       setExecuting(false);
     }
-  }, [worktree.id, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
+  }, [worktree.id, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch, buildSteps]);
 
   const handleCleanup = useCallback(async () => {
     // Only allow cleanup if at least one option is selected
@@ -107,6 +160,11 @@ export function MergeModal({
       return;
     }
 
+    // Capture the steps before starting
+    const steps = buildSteps(false, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch);
+    setExecutionSteps(steps);
+    setCompletedPhases(new Set());
+    setCurrentPhase(null);
     setExecuting(true);
     setError(null);
 
@@ -121,7 +179,7 @@ export function MergeModal({
       setError(err instanceof Error ? err.message : String(err));
       setExecuting(false);
     }
-  }, [worktree.id, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
+  }, [worktree.id, strategy, deleteWorktree, deleteLocalBranch, deleteRemoteBranch, buildSteps]);
 
   const renderStatus = () => {
     if (loading) {
@@ -196,24 +254,39 @@ export function MergeModal({
     return null;
   };
 
-  const renderProgress = () => {
-    if (!progress) return null;
+  const getStepIcon = (phase: string) => {
+    if (completedPhases.has(phase)) {
+      return <CheckCircle size={16} className="text-green-400" />;
+    }
+    if (currentPhase === phase) {
+      return <Loader2 size={16} className="animate-spin text-blue-400" />;
+    }
+    return <Circle size={16} className="text-zinc-600" />;
+  };
 
-    const getIcon = () => {
-      switch (progress.phase) {
-        case 'complete':
-          return <CheckCircle size={16} className="text-green-400" />;
-        case 'error':
-          return <AlertCircle size={16} className="text-red-400" />;
-        default:
-          return <Loader2 size={16} className="animate-spin" />;
-      }
-    };
+  const getStepTextClass = (phase: string) => {
+    if (completedPhases.has(phase)) {
+      return 'text-zinc-400';
+    }
+    if (currentPhase === phase) {
+      return 'text-zinc-100';
+    }
+    return 'text-zinc-600';
+  };
+
+  const renderProgress = () => {
+    if (executionSteps.length === 0) return null;
 
     return (
-      <div className="flex items-center gap-2 text-zinc-300 mt-4 p-3 bg-zinc-800/50 rounded">
-        {getIcon()}
-        {progress.message}
+      <div className="space-y-2 mt-4">
+        {executionSteps.map((step) => (
+          <div key={step.phase} className="flex items-center gap-3">
+            {getStepIcon(step.phase)}
+            <span className={`text-sm ${getStepTextClass(step.phase)}`}>
+              {step.label}
+            </span>
+          </div>
+        ))}
       </div>
     );
   };

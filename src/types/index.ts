@@ -73,7 +73,7 @@ export interface MergeCompleted {
 }
 
 export interface MergeProgress {
-  phase: 'merging' | 'cleanup' | 'complete' | 'error';
+  phase: 'merge' | 'rebase' | 'delete-worktree' | 'delete-local-branch' | 'delete-remote-branch' | 'complete' | 'error';
   message: string;
 }
 
@@ -81,6 +81,18 @@ export interface CleanupOptions {
   deleteWorktree: boolean;
   deleteLocalBranch: boolean;
   deleteRemoteBranch: boolean;
+}
+
+// Delete worktree workflow types
+export interface DeleteWorktreeProgress {
+  phase: 'stop-watcher' | 'remove-worktree' | 'save' | 'complete' | 'error';
+  message: string;
+}
+
+export interface DeleteWorktreeCompleted {
+  worktreeId: string;
+  success: boolean;
+  error: string | null;
 }
 
 // Task types

@@ -8,6 +8,7 @@ import { Drawer, DrawerTab } from './components/Drawer/Drawer';
 import { DrawerTerminal } from './components/Drawer/DrawerTerminal';
 import { TaskTerminal } from './components/Drawer/TaskTerminal';
 import { ConfirmModal } from './components/ConfirmModal';
+import { DeleteWorktreeModal } from './components/DeleteWorktreeModal';
 import { MergeModal } from './components/MergeModal';
 import { StashModal } from './components/StashModal';
 import { ShutdownScreen } from './components/ShutdownScreen';
@@ -30,6 +31,7 @@ type FocusedPane = 'main' | 'drawer';
 
 function App() {
   const { projects, addProject, removeProject, createWorktree, deleteWorktree, renameWorktree, refresh: refreshProjects } = useWorktrees();
+
 
   // Get project path first for config loading (derived below after activeWorktreeId is defined)
   const [activeWorktreeId, setActiveWorktreeId] = useState<string | null>(null);
@@ -1242,44 +1244,43 @@ function App() {
     setPendingDeleteId(worktreeId);
   }, []);
 
-  const confirmDeleteWorktree = useCallback(async () => {
-    if (!pendingDeleteId) return;
-    try {
+  const handleDeleteComplete = useCallback(
+    (worktreeId: string) => {
       // Mark the project as session-touched so it stays visible after deletion
-      const project = projects.find((p) => p.worktrees.some((w) => w.id === pendingDeleteId));
+      const project = projects.find((p) => p.worktrees.some((w) => w.id === worktreeId));
       if (project) {
         setSessionTouchedProjects((prev) => new Set([...prev, project.id]));
       }
 
-      await deleteWorktree(pendingDeleteId);
+      // Clean up UI state (backend already deleted the worktree)
       setOpenWorktreeIds((prev) => {
         const next = new Set(prev);
-        next.delete(pendingDeleteId);
+        next.delete(worktreeId);
         return next;
       });
       // Clean up drawer tabs and focus state for this worktree
       setDrawerTabs((prev) => {
         const next = new Map(prev);
-        next.delete(pendingDeleteId);
+        next.delete(worktreeId);
         return next;
       });
       setDrawerActiveTabIds((prev) => {
         const next = new Map(prev);
-        next.delete(pendingDeleteId);
+        next.delete(worktreeId);
         return next;
       });
       setDrawerTabCounters((prev) => {
         const next = new Map(prev);
-        next.delete(pendingDeleteId);
+        next.delete(worktreeId);
         return next;
       });
       setFocusStates((prev) => {
         const next = new Map(prev);
-        next.delete(pendingDeleteId);
+        next.delete(worktreeId);
         return next;
       });
-      if (activeWorktreeId === pendingDeleteId) {
-        const remaining = Array.from(openWorktreeIds).filter(id => id !== pendingDeleteId);
+      if (activeWorktreeId === worktreeId) {
+        const remaining = Array.from(openWorktreeIds).filter(id => id !== worktreeId);
         setActiveWorktreeId(remaining.length > 0 ? remaining[remaining.length - 1] : null);
         // Close drawer and right panel when no worktrees remain
         if (remaining.length === 0) {
@@ -1289,12 +1290,13 @@ function App() {
           rightPanelRef.current?.collapse();
         }
       }
-    } catch (err) {
-      console.error('Failed to delete worktree:', err);
-    } finally {
+
+      // Refresh projects list to reflect the deletion
+      refreshProjects();
       setPendingDeleteId(null);
-    }
-  }, [deleteWorktree, pendingDeleteId, activeWorktreeId, openWorktreeIds, projects]);
+    },
+    [activeWorktreeId, openWorktreeIds, projects, refreshProjects]
+  );
 
   const handleRemoveProject = useCallback((project: Project) => {
     setPendingRemoveProject(project);
@@ -1590,12 +1592,10 @@ function App() {
       <ShutdownScreen isVisible={isShuttingDown} />
 
       {pendingDeleteId && pendingWorktree && (
-        <ConfirmModal
-          title="Delete Worktree"
-          message={`Are you sure you want to delete "${pendingWorktree.name}"? This will remove the worktree and cannot be undone.`}
-          confirmLabel="Delete"
-          onConfirm={confirmDeleteWorktree}
-          onCancel={() => setPendingDeleteId(null)}
+        <DeleteWorktreeModal
+          worktree={pendingWorktree}
+          onClose={() => setPendingDeleteId(null)}
+          onDeleteComplete={handleDeleteComplete}
           onModalOpen={onModalOpen}
           onModalClose={onModalClose}
         />
