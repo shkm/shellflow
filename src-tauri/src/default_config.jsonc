@@ -39,14 +39,6 @@
   //
   // Modifier keys: ctrl, cmd, alt, shift (combine with +)
   // "cmd" = Cmd on macOS, Ctrl on other platforms
-  // Tasks that can be run via the task runner (Cmd+R / Ctrl+Shift+R)
-  "tasks": [
-    { "name": "Test (Frontend)", "command": "npm run test:run" },
-    { "name": "Test (Rust)", "command": "cd src-tauri && cargo test" },
-    { "name": "Test (All)", "command": "npm run test:run && cd src-tauri && cargo test" },
-    { "name": "Build", "command": "npm run build" }
-  ],
-
   "mappings": {
     "toggleDrawer": "ctrl+`",
     "toggleRightPanel": "cmd+b",
