@@ -173,6 +173,8 @@ function App() {
   const [loadingWorktrees, setLoadingWorktrees] = useState<Set<string>>(new Set());
   const [notifiedWorktreeIds, setNotifiedWorktreeIds] = useState<Set<string>>(new Set());
   const [thinkingWorktreeIds, setThinkingWorktreeIds] = useState<Set<string>>(new Set());
+  const [notifiedProjectIds, setNotifiedProjectIds] = useState<Set<string>>(new Set());
+  const [thinkingProjectIds, setThinkingProjectIds] = useState<Set<string>>(new Set());
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [isModifierKeyHeld, setIsModifierKeyHeld] = useState(false);
 
@@ -513,6 +515,45 @@ function App() {
         if (!prev.has(worktreeId)) return prev;
         const next = new Set(prev);
         next.delete(worktreeId);
+        return next;
+      }
+    });
+  }, []);
+
+  // Project notification handler
+  const handleProjectNotification = useCallback((projectId: string, title: string, body: string) => {
+    setNotifiedProjectIds((prev) => new Set([...prev, projectId]));
+    // Only send OS notification if this project is not active (or a worktree is active)
+    if (activeWorktreeId || projectId !== activeProjectId) {
+      const notificationTitle = title || (() => {
+        const project = projects.find(p => p.id === projectId);
+        return project?.name ?? 'One Man Band';
+      })();
+      sendOsNotification(notificationTitle, body);
+    }
+  }, [activeWorktreeId, activeProjectId, projects]);
+
+  // Clear notification when project becomes active
+  useEffect(() => {
+    if (!activeWorktreeId && activeProjectId && notifiedProjectIds.has(activeProjectId)) {
+      setNotifiedProjectIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activeProjectId);
+        return next;
+      });
+    }
+  }, [activeWorktreeId, activeProjectId, notifiedProjectIds]);
+
+  // Project thinking state handler
+  const handleProjectThinkingChange = useCallback((projectId: string, isThinking: boolean) => {
+    setThinkingProjectIds((prev) => {
+      if (isThinking) {
+        if (prev.has(projectId)) return prev;
+        return new Set([...prev, projectId]);
+      } else {
+        if (!prev.has(projectId)) return prev;
+        const next = new Set(prev);
+        next.delete(projectId);
         return next;
       }
     });
@@ -1488,8 +1529,8 @@ function App() {
         }
       }
 
-      // Worktree-specific shortcuts
-      if (activeWorktreeId) {
+      // Task shortcuts - work for both project and worktree views
+      if (activeEntityId) {
         // Run/stop task toggle
         if (matchesShortcut(e, mappings.runTask)) {
           e.preventDefault();
@@ -1601,11 +1642,11 @@ function App() {
         />
       )}
 
-      {isTaskSwitcherOpen && activeWorktreeId && (
+      {isTaskSwitcherOpen && activeEntityId && (
         <TaskSwitcher
           tasks={config.tasks}
           selectedTask={activeSelectedTask}
-          runningTasks={runningTasks.get(activeWorktreeId) ?? []}
+          runningTasks={runningTasks.get(activeEntityId) ?? []}
           onSelect={handleTaskSwitcherSelect}
           onRun={handleTaskSwitcherRun}
           onClose={() => setIsTaskSwitcherOpen(false)}
@@ -1633,6 +1674,8 @@ function App() {
               loadingWorktrees={loadingWorktrees}
               notifiedWorktreeIds={notifiedWorktreeIds}
               thinkingWorktreeIds={thinkingWorktreeIds}
+              notifiedProjectIds={notifiedProjectIds}
+              thinkingProjectIds={thinkingProjectIds}
               runningTaskCounts={runningTaskCounts}
               expandedProjects={expandedProjects}
               showActiveOnly={showActiveOnly}
@@ -1641,8 +1684,8 @@ function App() {
               isRightPanelOpen={isRightPanelOpen}
               tasks={config.tasks}
               selectedTask={activeSelectedTask}
-              runningTask={activeRunningTask ? { ...activeRunningTask, worktreeId: activeWorktreeId!, kind: config.tasks.find(t => t.name === activeRunningTask.taskName)?.kind ?? 'command' } : null}
-              allRunningTasks={activeWorktreeId ? runningTasks.get(activeWorktreeId) ?? [] : []}
+              runningTask={activeRunningTask && activeEntityId ? { ...activeRunningTask, worktreeId: activeEntityId, kind: config.tasks.find(t => t.name === activeRunningTask.taskName)?.kind ?? 'command' } : null}
+              allRunningTasks={activeEntityId ? runningTasks.get(activeEntityId) ?? [] : []}
               onToggleProject={toggleProject}
               onSelectProject={handleSelectProject}
               onSelectWorktree={handleSelectWorktree}
@@ -1685,6 +1728,8 @@ function App() {
                 onFocus={handleMainPaneFocused}
                 onWorktreeNotification={handleWorktreeNotification}
                 onWorktreeThinkingChange={handleWorktreeThinkingChange}
+                onProjectNotification={handleProjectNotification}
+                onProjectThinkingChange={handleProjectThinkingChange}
               />
             </Panel>
 

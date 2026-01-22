@@ -17,6 +17,8 @@ interface SidebarProps {
   loadingWorktrees: Set<string>;
   notifiedWorktreeIds: Set<string>;
   thinkingWorktreeIds: Set<string>;
+  notifiedProjectIds: Set<string>;
+  thinkingProjectIds: Set<string>;
   runningTaskCounts: Map<string, number>;
   expandedProjects: Set<string>;
   showActiveOnly: boolean;
@@ -58,6 +60,8 @@ export function Sidebar({
   loadingWorktrees,
   notifiedWorktreeIds,
   thinkingWorktreeIds,
+  notifiedProjectIds,
+  thinkingProjectIds,
   runningTaskCounts,
   expandedProjects,
   showActiveOnly,
@@ -194,7 +198,7 @@ export function Sidebar({
             return (
             <div key={project.id} className="mb-2">
               <div
-                className={`group relative flex items-center gap-1.5 px-2 py-1 rounded ${
+                className={`group relative flex items-center py-1 pr-2 rounded ${
                   isProjectSelected
                     ? 'bg-zinc-700 text-zinc-100'
                     : hasOpenWorktrees || isProjectOpen
@@ -204,10 +208,10 @@ export function Sidebar({
                 onClick={() => onSelectProject(project)}
                 onContextMenu={(e) => handleProjectContextMenu(e, project)}
               >
-                {/* Shortcut indicator or chevron for expand/collapse - both use same box size */}
-                <div className="w-[14px] h-[14px] flex items-center justify-center">
+                {/* Chevron/shortcut - shows "0" when cmd held, otherwise chevron */}
+                <div className="w-7 flex-shrink-0 flex items-center justify-center">
                   {isModifierKeyHeld && activeProjectId === project.id ? (
-                    <span className="text-xs text-zinc-300 font-medium">0</span>
+                    <span className="text-xs text-zinc-400 font-medium">0</span>
                   ) : (
                     <button
                       onClick={(e) => {
@@ -224,8 +228,19 @@ export function Sidebar({
                     </button>
                   )}
                 </div>
-                <FolderGit2 size={14} className="flex-shrink-0" style={{ color: hasOpenWorktrees || isProjectOpen ? '#a1a1aa' : '#71717a' }} />
+                {/* Running indicator - only shown when tasks are running */}
+                {runningTaskCounts.has(project.id) && (
+                  <span title={`${runningTaskCounts.get(project.id)} task${runningTaskCounts.get(project.id)! > 1 ? 's' : ''} running`} className="relative mr-1.5">
+                    <Circle size={6} className="fill-emerald-400 text-emerald-400" />
+                    {runningTaskCounts.get(project.id)! > 1 && (
+                      <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-zinc-400">
+                        {runningTaskCounts.get(project.id)}
+                      </span>
+                    )}
+                  </span>
+                )}
                 <span className="text-sm font-medium truncate">{project.name}</span>
+                {/* Action buttons - show on hover */}
                 <div className={`absolute right-1 hidden group-hover:flex items-center gap-0.5 rounded ${isProjectSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
                   {isProjectOpen && (
                     <button
@@ -257,6 +272,17 @@ export function Sidebar({
                     <MoreHorizontal size={14} />
                   </button>
                 </div>
+                {/* Status indicators - hide on hover */}
+                {thinkingProjectIds.has(project.id) && !isProjectSelected && (
+                  <span className="absolute right-1 group-hover:hidden" title="Thinking...">
+                    <Loader2 size={12} className="animate-spin text-violet-400" />
+                  </span>
+                )}
+                {notifiedProjectIds.has(project.id) && !isProjectSelected && !thinkingProjectIds.has(project.id) && (
+                  <span className="absolute right-1 group-hover:hidden" title="New notification">
+                    <BellDot size={12} className="text-blue-400" />
+                  </span>
+                )}
               </div>
 
               {expandedProjects.has(project.id) && (
