@@ -1,6 +1,7 @@
 use crate::config::BaseBranch;
 use crate::git;
 use crate::state::{Project, Worktree};
+use crate::template::{expand_template, TemplateContext};
 use log::info;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -19,6 +20,8 @@ pub enum WorktreeError {
     WorktreeNotFound(String),
     #[error("Could not generate unique branch name after {0} attempts")]
     NameGenerationFailed(u32),
+    #[error("Template error: {0}")]
+    Template(String),
 }
 
 /// Generate a random worktree name using petname (adjective-animal format)
@@ -42,32 +45,54 @@ pub fn generate_unique_worktree_name(repo_path: &Path) -> Result<String, Worktre
     Err(WorktreeError::NameGenerationFailed(MAX_ATTEMPTS))
 }
 
-/// Resolve worktree directory with placeholder support.
-/// Supported placeholders:
-/// - {{ repo_directory }} - the repository directory
+/// Resolve worktree directory with Jinja2 template support.
+///
+/// # Available Variables
+/// - `repo_directory` - the repository directory
+/// - `branch` - the branch name (if provided)
+/// - `worktree_name` - the worktree name (if provided)
+///
+/// # Available Filters
+/// - `sanitize` - replaces `/` and `\` with `-` for filesystem-safe names
+/// - `hash_port` - hashes a string to a deterministic port in range 10000-19999
 ///
 /// The final worktree path will be: {resolved_directory}/{worktree_name}
 /// Default: {{ repo_directory }}/.worktrees
+///
+/// # Examples
+/// ```text
+/// {{ repo_directory }}/.worktrees/{{ branch | sanitize }}
+/// ~/worktrees/{{ worktree_name }}
+/// ```
 pub fn resolve_worktree_directory(
     worktree_directory: Option<&str>,
     project_path: &Path,
-) -> PathBuf {
+    branch: Option<&str>,
+    worktree_name: Option<&str>,
+) -> Result<PathBuf, WorktreeError> {
     let repo_directory = project_path.to_string_lossy().to_string();
+    let template = worktree_directory.unwrap_or("{{ repo_directory }}/.worktrees");
 
-    let dir = worktree_directory.unwrap_or("{{ repo_directory }}/.worktrees");
+    let mut ctx = TemplateContext::new(&repo_directory);
+    if let Some(b) = branch {
+        ctx = ctx.with_branch(b);
+    }
+    if let Some(name) = worktree_name {
+        ctx = ctx.with_worktree_name(name);
+    }
 
-    let resolved = dir
-        .replace("{{ repo_directory }}", &repo_directory)
-        .replace("{{repo_directory}}", &repo_directory);
+    let resolved = expand_template(template, &ctx).map_err(WorktreeError::Template)?;
 
     // Expand ~ to home directory
-    if resolved.starts_with("~/") {
+    let path = if resolved.starts_with("~/") {
         dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("/tmp"))
             .join(&resolved[2..])
     } else {
         PathBuf::from(resolved)
-    }
+    };
+
+    Ok(path)
 }
 
 pub fn create_project(path: &Path) -> Result<Project, WorktreeError> {
@@ -100,8 +125,13 @@ pub fn create_worktree(
     };
     info!("[worktree::create_worktree] worktree_name: {}", worktree_name);
 
-    // Create worktree directory
-    let worktree_base = resolve_worktree_directory(worktree_directory, project_path);
+    // Create worktree directory using template expansion
+    let worktree_base = resolve_worktree_directory(
+        worktree_directory,
+        project_path,
+        Some(&worktree_name), // branch name is the same as worktree name
+        Some(&worktree_name),
+    )?;
     let worktree_path = worktree_base.join(&worktree_name);
 
     let start = Instant::now();
@@ -294,7 +324,7 @@ mod tests {
     #[test]
     fn test_resolve_worktree_directory_default() {
         let project_path = PathBuf::from("/home/user/myproject");
-        let result = resolve_worktree_directory(None, &project_path);
+        let result = resolve_worktree_directory(None, &project_path, None, None).unwrap();
         assert_eq!(result, PathBuf::from("/home/user/myproject/.worktrees"));
     }
 
@@ -304,7 +334,10 @@ mod tests {
         let result = resolve_worktree_directory(
             Some("{{ repo_directory }}/.worktrees"),
             &project_path,
-        );
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(result, PathBuf::from("/home/user/myproject/.worktrees"));
     }
 
@@ -314,24 +347,79 @@ mod tests {
         let result = resolve_worktree_directory(
             Some("{{repo_directory}}/trees"),
             &project_path,
-        );
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(result, PathBuf::from("/home/user/myproject/trees"));
     }
 
     #[test]
     fn test_resolve_worktree_directory_absolute_path() {
         let project_path = PathBuf::from("/home/user/myproject");
-        let result = resolve_worktree_directory(Some("/var/worktrees"), &project_path);
+        let result =
+            resolve_worktree_directory(Some("/var/worktrees"), &project_path, None, None).unwrap();
         assert_eq!(result, PathBuf::from("/var/worktrees"));
     }
 
     #[test]
     fn test_resolve_worktree_directory_tilde_expansion() {
         let project_path = PathBuf::from("/home/user/myproject");
-        let result = resolve_worktree_directory(Some("~/worktrees"), &project_path);
+        let result =
+            resolve_worktree_directory(Some("~/worktrees"), &project_path, None, None).unwrap();
         // Should expand ~ to home directory
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
         assert_eq!(result, home.join("worktrees"));
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_with_branch_sanitize() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(
+            Some("{{ repo_directory }}/.worktrees/{{ branch | sanitize }}"),
+            &project_path,
+            Some("feature/foo"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            result,
+            PathBuf::from("/home/user/myproject/.worktrees/feature-foo")
+        );
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_with_worktree_name() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(
+            Some("{{ repo_directory }}/.worktrees/{{ worktree_name }}"),
+            &project_path,
+            None,
+            Some("happy-dolphin"),
+        )
+        .unwrap();
+        assert_eq!(
+            result,
+            PathBuf::from("/home/user/myproject/.worktrees/happy-dolphin")
+        );
+    }
+
+    #[test]
+    fn test_resolve_worktree_directory_hash_port() {
+        let project_path = PathBuf::from("/home/user/myproject");
+        let result = resolve_worktree_directory(
+            Some("/tmp/worktrees/{{ branch | hash_port }}"),
+            &project_path,
+            Some("feature/foo"),
+            None,
+        )
+        .unwrap();
+        // The path should contain a port number
+        let path_str = result.to_string_lossy();
+        assert!(path_str.starts_with("/tmp/worktrees/"));
+        let port_str = path_str.strip_prefix("/tmp/worktrees/").unwrap();
+        let port: u16 = port_str.parse().expect("Should be a port number");
+        assert!((10000..20000).contains(&port));
     }
 
     #[test]

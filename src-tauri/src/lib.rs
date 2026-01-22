@@ -2,6 +2,7 @@ mod config;
 mod git;
 mod pty;
 mod state;
+mod template;
 mod watcher;
 mod worktree;
 
