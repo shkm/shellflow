@@ -175,6 +175,10 @@
         "mergeWorktreeWithConflicts": {
           "type": "string",
           "description": "Prompt template for resolving merge conflicts. Variables: {{ worktree_dir }}, {{ worktree_name }}, {{ branch }}, {{ target_branch }}, {{ conflicted_files }}"
+        },
+        "rebaseWorktreeWithConflicts": {
+          "type": "string",
+          "description": "Prompt template for resolving rebase conflicts. Variables: {{ worktree_dir }}, {{ worktree_name }}, {{ branch }}, {{ target_branch }}, {{ conflicted_files }}"
         }
       },
       "additionalProperties": false

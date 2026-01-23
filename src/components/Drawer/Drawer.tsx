@@ -16,6 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { SortableDrawerTab } from './SortableDrawerTab';
 import { MergeOptions } from '../MergeModal';
+import { MergeStrategy } from '../../lib/tauri';
 
 export interface DrawerTab {
   id: string;
@@ -28,6 +29,8 @@ export interface DrawerTab {
   actionPrompt?: string;
   /** For merge action tabs: the cleanup options selected by the user */
   mergeOptions?: MergeOptions;
+  /** For merge/rebase action tabs: the strategy being used */
+  strategy?: MergeStrategy;
 }
 
 interface TaskStatusInfo {

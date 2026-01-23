@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { GitMerge, AlertCircle, CheckCircle, Loader2, AlertTriangle, Circle, Sparkles } from 'lucide-react';
 import { Worktree, MergeFeasibility, MergeStrategy, MergeProgress, MergeCompleted } from '../types';
 import { MergeConfig } from '../hooks/useConfig';
-import { checkMergeFeasibility, executeMergeWorkflow, cleanupWorktree, abortMerge, MergeOptions } from '../lib/tauri';
+import { checkMergeFeasibility, executeMergeWorkflow, cleanupWorktree, abortMerge, abortRebase, MergeOptions } from '../lib/tauri';
 
 // Re-export for consumers
 export type { MergeOptions };
@@ -14,6 +14,8 @@ export interface ActionContext {
   branch: string;
   targetBranch: string;
   mergeOptions?: MergeOptions;
+  /** The strategy being used (merge or rebase) - determines which action type and abort command to use */
+  strategy?: MergeStrategy;
 }
 
 interface MergeModalProps {
@@ -315,18 +317,23 @@ export function MergeModal({
   // Close with abort - used when cancelling with an active conflict
   const handleClose = useCallback(async () => {
     if (hasConflict) {
-      // Abort the merge to clean up conflict state
-      await abortMerge(projectPath).catch(() => {
-        // Ignore errors - merge might not be in progress
+      // Abort the merge/rebase to clean up conflict state
+      const abortFn = strategy === 'rebase' ? abortRebase : abortMerge;
+      await abortFn(projectPath).catch(() => {
+        // Ignore errors - merge/rebase might not be in progress
       });
     }
     onClose();
-  }, [hasConflict, projectPath, onClose]);
+  }, [hasConflict, projectPath, onClose, strategy]);
 
   const handleResolveWithAI = useCallback(() => {
     if (!feasibility || !onTriggerAction) return;
-    // Pass projectPath as worktreeDir - that's where the merge conflicts are
-    onTriggerAction('merge_worktree_with_conflicts', {
+    // Choose action type based on strategy
+    const actionType = strategy === 'rebase'
+      ? 'rebase_worktree_with_conflicts'
+      : 'merge_worktree_with_conflicts';
+    // Pass projectPath as worktreeDir - that's where the conflicts are
+    onTriggerAction(actionType, {
       worktreeDir: projectPath,
       worktreeName: worktree.name,
       branch: feasibility.currentBranch,
@@ -336,10 +343,11 @@ export function MergeModal({
         deleteLocalBranch,
         deleteRemoteBranch,
       },
+      strategy,
     });
     // Close without aborting - user is going to resolve the conflicts
     onClose();
-  }, [feasibility, onTriggerAction, worktree.name, projectPath, onClose, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
+  }, [feasibility, onTriggerAction, worktree.name, projectPath, onClose, deleteWorktree, deleteLocalBranch, deleteRemoteBranch, strategy]);
 
   // Primary action is the main "confirm" action - changes based on state
   const primaryAction = useMemo(() => {

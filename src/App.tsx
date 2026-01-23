@@ -713,6 +713,7 @@ function App() {
         actionType,
         actionPrompt: expandedPrompt,
         mergeOptions: context.mergeOptions,
+        strategy: context.strategy,
       };
 
       // Add the tab
@@ -2148,6 +2149,7 @@ function App() {
                             actionType={tab.actionType}
                             actionPrompt={tab.actionPrompt}
                             mergeOptions={tab.mergeOptions}
+                            strategy={tab.strategy}
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&

@@ -140,6 +140,25 @@ All conflict information is provided above - do not run git status or other diag
 
 Read only the conflicted files listed, resolve each conflict appropriately based on the code context, stage the resolved files with `git add`, and complete the merge with `git commit`."#;
 
+/// Default prompt for rebasing a worktree with conflicts.
+/// Available template variables:
+/// - `worktree_dir` - Full path to the worktree
+/// - `worktree_name` - Name of the worktree
+/// - `branch` - Current branch (the feature branch)
+/// - `target_branch` - Target branch rebasing onto (e.g., main)
+/// - `conflicted_files` - List of files with rebase conflicts
+pub const DEFAULT_REBASE_WORKTREE_WITH_CONFLICTS_PROMPT: &str = r#"In the git worktree at "{{ worktree_dir }}", complete the rebase of branch "{{ branch }}" onto "{{ target_branch }}".
+
+The following files have conflicts:
+{% for file in conflicted_files %}- {{ file }}
+{% endfor %}
+
+All conflict information is provided above - do not run git status or other diagnostic commands.
+
+Read only the conflicted files listed, resolve each conflict appropriately based on the code context, stage the resolved files with `git add`, then run `git rebase --continue`.
+
+Note: Rebasing may involve multiple commits. After running `git rebase --continue`, check if there are more conflicts. If so, repeat the process until the rebase is complete."#;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ActionsConfig {
@@ -148,6 +167,9 @@ pub struct ActionsConfig {
     /// Prompt template for resolving merge conflicts in a worktree.
     #[serde(rename = "mergeWorktreeWithConflicts")]
     pub merge_worktree_with_conflicts: String,
+    /// Prompt template for resolving rebase conflicts in a worktree.
+    #[serde(rename = "rebaseWorktreeWithConflicts")]
+    pub rebase_worktree_with_conflicts: String,
 }
 
 impl Default for ActionsConfig {
@@ -155,6 +177,7 @@ impl Default for ActionsConfig {
         Self {
             command: "claude".to_string(),
             merge_worktree_with_conflicts: DEFAULT_MERGE_WORKTREE_WITH_CONFLICTS_PROMPT.to_string(),
+            rebase_worktree_with_conflicts: DEFAULT_REBASE_WORKTREE_WITH_CONFLICTS_PROMPT.to_string(),
         }
     }
 }

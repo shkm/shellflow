@@ -80,6 +80,14 @@ export async function stopMergeWatcher(worktreeId: string): Promise<void> {
   return invoke('stop_merge_watcher', { worktreeId });
 }
 
+export async function watchRebaseState(worktreeId: string): Promise<void> {
+  return invoke('watch_rebase_state', { worktreeId });
+}
+
+export async function stopRebaseWatcher(worktreeId: string): Promise<void> {
+  return invoke('stop_rebase_watcher', { worktreeId });
+}
+
 export async function spawnTask(
   entityId: string,
   taskName: string,
@@ -142,6 +150,10 @@ export async function abortMerge(projectPath: string): Promise<void> {
   return invoke<void>('abort_merge', { projectPath });
 }
 
+export async function abortRebase(projectPath: string): Promise<void> {
+  return invoke<void>('abort_rebase', { projectPath });
+}
+
 // Dialog helpers
 export async function selectFolder(): Promise<string | null> {
   const selected = await open({
@@ -159,12 +171,15 @@ export interface MergeOptions {
   deleteRemoteBranch: boolean;
 }
 
+export type MergeStrategy = 'merge' | 'rebase';
+
 export interface ActionPromptContext {
   worktreeDir: string;
   worktreeName: string;
   branch: string;
   targetBranch: string;
   mergeOptions?: MergeOptions;
+  strategy?: MergeStrategy;
 }
 
 export async function expandActionPrompt(

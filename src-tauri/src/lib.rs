@@ -477,6 +477,32 @@ fn stop_merge_watcher(worktree_id: &str) {
 }
 
 #[tauri::command]
+fn watch_rebase_state(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    worktree_id: &str,
+) -> Result<()> {
+    // Find project path (where the rebase is happening, not the worktree path)
+    let project_path = {
+        let persisted = state.persisted.read();
+        persisted
+            .projects
+            .iter()
+            .find(|p| p.worktrees.iter().any(|w| w.id == worktree_id))
+            .map(|p| p.path.clone())
+            .ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+    };
+
+    watcher::watch_rebase_state(app, worktree_id.to_string(), project_path);
+    Ok(())
+}
+
+#[tauri::command]
+fn stop_rebase_watcher(worktree_id: &str) {
+    watcher::stop_rebase_watcher(worktree_id);
+}
+
+#[tauri::command]
 fn spawn_task(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
@@ -693,6 +719,22 @@ fn expand_action_prompt(
             };
             (template.clone(), ctx)
         }
+        "rebase_worktree_with_conflicts" => {
+            let template = &cfg.actions.rebase_worktree_with_conflicts;
+
+            // Get conflicted files for context
+            let conflicted_files = git::get_conflicted_files(Path::new(&context.worktree_dir))
+                .unwrap_or_default();
+
+            let ctx = minijinja::context! {
+                worktree_dir => context.worktree_dir,
+                worktree_name => context.worktree_name,
+                branch => context.branch,
+                target_branch => context.target_branch,
+                conflicted_files => conflicted_files,
+            };
+            (template.clone(), ctx)
+        }
         _ => return Err(format!("Unknown action: {}", action_name)),
     };
 
@@ -728,6 +770,12 @@ fn stash_pop(project_path: &str, stash_id: &str) -> Result<()> {
 fn abort_merge(project_path: &str) -> Result<()> {
     let path = Path::new(project_path);
     git::abort_merge(path).map_err(map_err)
+}
+
+#[tauri::command]
+fn abort_rebase(project_path: &str) -> Result<()> {
+    let path = Path::new(project_path);
+    git::abort_rebase(path).map_err(map_err)
 }
 
 #[tauri::command]
@@ -1362,6 +1410,8 @@ pub fn run() {
             spawn_action,
             watch_merge_state,
             stop_merge_watcher,
+            watch_rebase_state,
+            stop_rebase_watcher,
             spawn_project_shell,
             spawn_task,
             get_task_urls,
@@ -1374,6 +1424,7 @@ pub fn run() {
             stash_changes,
             stash_pop,
             abort_merge,
+            abort_rebase,
             start_watching,
             stop_watching,
             get_config,

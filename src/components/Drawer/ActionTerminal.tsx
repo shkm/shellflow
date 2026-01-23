@@ -8,7 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { attachKeyboardHandlers } from '../../lib/terminal';
-import { spawnAction, ptyWrite, ptyResize, ptyKill, watchMergeState, stopMergeWatcher, cleanupWorktree, MergeOptions } from '../../lib/tauri';
+import { spawnAction, ptyWrite, ptyResize, ptyKill, watchMergeState, stopMergeWatcher, watchRebaseState, stopRebaseWatcher, cleanupWorktree, MergeOptions, MergeStrategy } from '../../lib/tauri';
 import '@xterm/xterm/css/xterm.css';
 
 // Fix for xterm.js not handling 5-part colon-separated RGB sequences.
@@ -41,6 +41,8 @@ interface ActionTerminalProps {
   mappings: MappingsConfig;
   /** Initial merge options from the modal (for merge actions) */
   mergeOptions?: MergeOptions;
+  /** The strategy being used (merge or rebase) */
+  strategy?: MergeStrategy;
   onPtyIdReady?: (ptyId: string) => void;
   onActionExit?: (exitCode: number) => void;
   onFocus?: () => void;
@@ -56,6 +58,7 @@ export function ActionTerminal({
   terminalConfig,
   mappings,
   mergeOptions: initialMergeOptions,
+  strategy,
   onPtyIdReady,
   onActionExit,
   onFocus,
@@ -285,29 +288,46 @@ export function ActionTerminal({
     return () => window.removeEventListener('pty-signal', handleSignal);
   }, []);
 
-  // Watch for merge completion when this is a merge action
+  // Watch for merge/rebase completion when this is a conflict resolution action
   useEffect(() => {
-    if (actionType !== 'merge_worktree_with_conflicts') return;
+    const isMergeAction = actionType === 'merge_worktree_with_conflicts';
+    const isRebaseAction = actionType === 'rebase_worktree_with_conflicts';
+
+    if (!isMergeAction && !isRebaseAction) return;
 
     let unlisten: (() => void) | null = null;
 
     const startWatching = async () => {
-      // Start watching for MERGE_HEAD deletion
-      await watchMergeState(worktreeId);
-
-      // Listen for merge-complete event
-      unlisten = await listen<{ worktreeId: string }>('merge-complete', (event) => {
-        if (event.payload.worktreeId === worktreeId) {
-          setIsMergeComplete(true);
-        }
-      });
+      if (isMergeAction) {
+        // Start watching for MERGE_HEAD deletion
+        await watchMergeState(worktreeId);
+        // Listen for merge-complete event
+        unlisten = await listen<{ worktreeId: string }>('merge-complete', (event) => {
+          if (event.payload.worktreeId === worktreeId) {
+            setIsMergeComplete(true);
+          }
+        });
+      } else if (isRebaseAction) {
+        // Start watching for rebase-merge/rebase-apply directory deletion
+        await watchRebaseState(worktreeId);
+        // Listen for rebase-complete event
+        unlisten = await listen<{ worktreeId: string }>('rebase-complete', (event) => {
+          if (event.payload.worktreeId === worktreeId) {
+            setIsMergeComplete(true);
+          }
+        });
+      }
     };
 
     startWatching().catch(console.error);
 
     return () => {
       unlisten?.();
-      stopMergeWatcher(worktreeId);
+      if (isMergeAction) {
+        stopMergeWatcher(worktreeId);
+      } else if (isRebaseAction) {
+        stopRebaseWatcher(worktreeId);
+      }
     };
   }, [actionType, worktreeId]);
 
@@ -384,7 +404,9 @@ export function ActionTerminal({
       {isMergeComplete && (
         <div className="px-3 py-2 bg-green-900/30 border-t border-green-700/50 text-sm">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <span className="text-green-300 font-medium">Merge complete!</span>
+            <span className="text-green-300 font-medium">
+              {strategy === 'rebase' ? 'Rebase complete!' : 'Merge complete!'}
+            </span>
             <button
               onClick={handleComplete}
               className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-sm font-medium"

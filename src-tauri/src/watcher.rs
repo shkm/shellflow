@@ -214,3 +214,77 @@ pub fn stop_merge_watcher(worktree_id: &str) {
         let _ = tx.send(());
     }
 }
+
+// Track active rebase watchers
+lazy_static::lazy_static! {
+    static ref REBASE_WATCHERS: Mutex<HashMap<String, Sender<()>>> = Mutex::new(HashMap::new());
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RebaseComplete {
+    pub worktree_id: String,
+    pub worktree_path: String,
+}
+
+/// Watch for rebase completion in a worktree.
+/// Detects when .git/rebase-merge and .git/rebase-apply are both gone (rebase finished).
+pub fn watch_rebase_state(app: AppHandle, worktree_id: String, worktree_path: String) {
+    // Check if already watching
+    if REBASE_WATCHERS.lock().contains_key(&worktree_id) {
+        return;
+    }
+
+    let git_dir = Path::new(&worktree_path).join(".git");
+    let rebase_merge_path = git_dir.join("rebase-merge");
+    let rebase_apply_path = git_dir.join("rebase-apply");
+
+    // Only start watching if a rebase is in progress
+    if !rebase_merge_path.exists() && !rebase_apply_path.exists() {
+        eprintln!("[RebaseWatcher] No rebase in progress at {:?}, not watching", worktree_path);
+        return;
+    }
+
+    eprintln!("[RebaseWatcher] Starting rebase watcher for {} at {:?}", worktree_id, worktree_path);
+
+    let (stop_tx, stop_rx) = channel::<()>();
+    REBASE_WATCHERS.lock().insert(worktree_id.clone(), stop_tx);
+
+    let worktree_id_clone = worktree_id.clone();
+    let worktree_path_clone = worktree_path.clone();
+
+    thread::spawn(move || {
+        let poll_interval = Duration::from_millis(500);
+
+        loop {
+            // Check for stop signal
+            if stop_rx.try_recv().is_ok() {
+                eprintln!("[RebaseWatcher] Stopping rebase watcher for {}", worktree_id_clone);
+                break;
+            }
+
+            // Check if rebase is still in progress
+            if !rebase_merge_path.exists() && !rebase_apply_path.exists() {
+                eprintln!("[RebaseWatcher] Rebase complete for {}", worktree_id_clone);
+                let _ = app.emit(
+                    "rebase-complete",
+                    RebaseComplete {
+                        worktree_id: worktree_id_clone.clone(),
+                        worktree_path: worktree_path_clone.clone(),
+                    },
+                );
+                break;
+            }
+
+            thread::sleep(poll_interval);
+        }
+
+        REBASE_WATCHERS.lock().remove(&worktree_id_clone);
+    });
+}
+
+pub fn stop_rebase_watcher(worktree_id: &str) {
+    if let Some(tx) = REBASE_WATCHERS.lock().remove(worktree_id) {
+        let _ = tx.send(());
+    }
+}
