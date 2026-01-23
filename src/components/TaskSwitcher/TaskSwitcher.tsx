@@ -29,15 +29,11 @@ export function TaskSwitcher({
 
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
-  // Filter tasks based on query (match name or command)
+  // Filter tasks based on query (match name only)
   const filteredTasks = useMemo(() => {
     if (!query.trim()) return tasks;
     const lowerQuery = query.toLowerCase();
-    return tasks.filter(
-      (task) =>
-        task.name.toLowerCase().includes(lowerQuery) ||
-        task.command.toLowerCase().includes(lowerQuery)
-    );
+    return tasks.filter((task) => task.name.toLowerCase().includes(lowerQuery));
   }, [tasks, query]);
 
   // Reset highlighted index when filtered tasks change
