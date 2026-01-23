@@ -3,11 +3,35 @@ use crate::state::FileChange;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::Mutex;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
+
+/// Resolve the actual git directory for a given repo/worktree path.
+/// For regular repos, this is <path>/.git
+/// For worktrees, .git is a file containing "gitdir: <actual-path>"
+fn resolve_git_dir(repo_path: &Path) -> Option<PathBuf> {
+    let git_path = repo_path.join(".git");
+
+    if git_path.is_dir() {
+        // Regular repo - .git is a directory
+        Some(git_path)
+    } else if git_path.is_file() {
+        // Worktree - .git is a file pointing to the actual git dir
+        if let Ok(content) = std::fs::read_to_string(&git_path) {
+            // Format: "gitdir: /path/to/actual/.git/worktrees/<name>"
+            if let Some(path) = content.strip_prefix("gitdir: ") {
+                let path = path.trim();
+                return Some(PathBuf::from(path));
+            }
+        }
+        None
+    } else {
+        None
+    }
+}
 
 #[derive(Clone, serde::Serialize)]
 pub struct FilesChanged {
@@ -156,14 +180,20 @@ pub struct MergeComplete {
 }
 
 /// Watch for merge completion in a worktree.
-/// Detects when .git/MERGE_HEAD is deleted (merge committed successfully).
+/// Detects when MERGE_HEAD is deleted (merge committed successfully).
 pub fn watch_merge_state(app: AppHandle, worktree_id: String, worktree_path: String) {
     // Check if already watching
     if MERGE_WATCHERS.lock().contains_key(&worktree_id) {
         return;
     }
 
-    let merge_head_path = Path::new(&worktree_path).join(".git").join("MERGE_HEAD");
+    // Resolve the actual git directory (handles both regular repos and worktrees)
+    let Some(git_dir) = resolve_git_dir(Path::new(&worktree_path)) else {
+        eprintln!("[MergeWatcher] Could not resolve git dir for {:?}", worktree_path);
+        return;
+    };
+
+    let merge_head_path = git_dir.join("MERGE_HEAD");
 
     // Only start watching if MERGE_HEAD exists (we're in a merge state)
     if !merge_head_path.exists() {
@@ -228,14 +258,19 @@ pub struct RebaseComplete {
 }
 
 /// Watch for rebase completion in a worktree.
-/// Detects when .git/rebase-merge and .git/rebase-apply are both gone (rebase finished).
+/// Detects when rebase-merge and rebase-apply are both gone (rebase finished).
 pub fn watch_rebase_state(app: AppHandle, worktree_id: String, worktree_path: String) {
     // Check if already watching
     if REBASE_WATCHERS.lock().contains_key(&worktree_id) {
         return;
     }
 
-    let git_dir = Path::new(&worktree_path).join(".git");
+    // Resolve the actual git directory (handles both regular repos and worktrees)
+    let Some(git_dir) = resolve_git_dir(Path::new(&worktree_path)) else {
+        eprintln!("[RebaseWatcher] Could not resolve git dir for {:?}", worktree_path);
+        return;
+    };
+
     let rebase_merge_path = git_dir.join("rebase-merge");
     let rebase_apply_path = git_dir.join("rebase-apply");
 
@@ -245,7 +280,7 @@ pub fn watch_rebase_state(app: AppHandle, worktree_id: String, worktree_path: St
         return;
     }
 
-    eprintln!("[RebaseWatcher] Starting rebase watcher for {} at {:?}", worktree_id, worktree_path);
+    eprintln!("[RebaseWatcher] Starting rebase watcher for {} at {:?}", worktree_id, git_dir);
 
     let (stop_tx, stop_rx) = channel::<()>();
     REBASE_WATCHERS.lock().insert(worktree_id.clone(), stop_tx);

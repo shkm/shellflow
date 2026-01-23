@@ -529,7 +529,7 @@ export function MergeModal({
               className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center gap-2"
             >
               <GitMerge size={14} />
-              Merge
+              {strategy === 'rebase' ? 'Rebase' : 'Merge'}
             </button>
           )}
           {showCleanupButton && (
