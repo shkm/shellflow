@@ -376,7 +376,7 @@ fn spawn_main(
         .with_worktree_name(&worktree_name);
     let command = template::expand_template(&cfg.main.command, &ctx).map_err(map_err)?;
 
-    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows, None).map_err(map_err)
+    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows, None, None).map_err(map_err)
 }
 
 #[tauri::command]
@@ -409,7 +409,7 @@ fn spawn_terminal(
         }).ok_or_else(|| format!("Worktree or project not found: {}", worktree_id))?
     };
 
-    pty::spawn_pty(&app, &state, worktree_id, &path, "shell", cols, rows, None).map_err(map_err)
+    pty::spawn_pty(&app, &state, worktree_id, &path, "shell", cols, rows, None, None).map_err(map_err)
 }
 
 #[tauri::command]
@@ -447,7 +447,7 @@ fn spawn_action(
     // Get user's shell to run the command through
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
 
-    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows, Some(&shell)).map_err(map_err)
+    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows, Some(&shell), None).map_err(map_err)
 }
 
 #[tauri::command]
@@ -559,7 +559,18 @@ fn spawn_task(
     }
     let command = template::expand_template(&task.command, &ctx).map_err(map_err)?;
 
-    pty::spawn_pty(&app, &state, entity_id, &entity_path, &command, cols, rows, task.shell.as_deref())
+    // Expand template variables in env vars
+    let expanded_env: std::collections::HashMap<String, String> = task
+        .env
+        .iter()
+        .map(|(key, value)| {
+            let expanded = template::expand_template(value, &ctx).unwrap_or_else(|_| value.clone());
+            (key.clone(), expanded)
+        })
+        .collect();
+    let env_vars = if expanded_env.is_empty() { None } else { Some(&expanded_env) };
+
+    pty::spawn_pty(&app, &state, entity_id, &entity_path, &command, cols, rows, task.shell.as_deref(), env_vars)
         .map_err(map_err)
 }
 
@@ -656,7 +667,7 @@ fn spawn_project_shell(
     let command = template::expand_template(&cfg.main.command, &ctx).map_err(map_err)?;
 
     // Use project_id as the "worktree_id" for PTY tracking purposes
-    pty::spawn_pty(&app, &state, project_id, &project_path, &command, cols, rows, None).map_err(map_err)
+    pty::spawn_pty(&app, &state, project_id, &project_path, &command, cols, rows, None, None).map_err(map_err)
 }
 
 #[tauri::command]

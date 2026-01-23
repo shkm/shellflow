@@ -128,6 +128,7 @@ pub fn spawn_pty(
     cols: Option<u16>,
     rows: Option<u16>,
     shell_override: Option<&str>,
+    env_vars: Option<&std::collections::HashMap<String, String>>,
 ) -> Result<String, PtyError> {
     let pty_system = native_pty_system();
 
@@ -232,6 +233,14 @@ pub fn spawn_pty(
     }
     // PWD is important for some shells
     cmd.env("PWD", worktree_path);
+
+    // Apply custom environment variables from task config
+    if let Some(env) = env_vars {
+        for (key, value) in env {
+            eprintln!("[PTY] Setting env {}={}", key, value);
+            cmd.env(key, value);
+        }
+    }
 
     // Log the environment we're setting
     eprintln!("[PTY] HOME={:?}", std::env::var("HOME"));

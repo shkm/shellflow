@@ -308,6 +308,18 @@
           "type": "string",
           "description": "Override shell to run command with (e.g., '/bin/bash', 'fish')"
         },
+        "env": {
+          "type": "object",
+          "description": "Environment variables to set when running the task. Values support minijinja: {{ branch }}, {{ branch | hash_port }}, {{ branch | sanitize }}",
+          "additionalProperties": {
+            "type": "string",
+            "description": "Environment variable value (supports templates)"
+          },
+          "examples": [
+            { "PORT": "3000" },
+            { "PORT": "{{ branch | hash_port }}", "NODE_ENV": "development" }
+          ]
+        },
         "urls": {
           "type": "object",
           "description": "Named URL templates to display when task is running. Key is the link label, value is the URL template. Supports minijinja: {{ branch }}, {{ branch | hash_port }}, {{ branch | sanitize }}",

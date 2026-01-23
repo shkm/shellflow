@@ -85,4 +85,20 @@
     "zoomOut": { "mac": "cmd+-", "other": "ctrl+-" },
     "zoomReset": { "mac": "cmd+shift+0", "other": "ctrl+shift+0" }
   }
+
+  // Example tasks (define in your project's .onemanband/config.jsonc):
+  // "tasks": [
+  //   {
+  //     "name": "Dev Server",
+  //     "command": "npm run dev",
+  //     "kind": "daemon",
+  //     "env": {
+  //       "PORT": "{{ branch | hash_port }}",
+  //       "NODE_ENV": "development"
+  //     },
+  //     "urls": {
+  //       "Dev": "http://localhost:{{ branch | hash_port }}"
+  //     }
+  //   }
+  // ]
 }

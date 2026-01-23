@@ -58,6 +58,10 @@ impl Default for BaseBranch {
 /// Example: { "Dev": "http://localhost:{{ branch | hash_port }}" }
 pub type UrlMap = std::collections::HashMap<String, String>;
 
+/// Environment variables map with template support.
+/// Example: { "PORT": "{{ branch | hash_port }}" }
+pub type EnvMap = std::collections::HashMap<String, String>;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TaskConfig {
     pub name: String,
@@ -69,6 +73,11 @@ pub struct TaskConfig {
     pub silent: bool,
     /// Override shell to run command with (e.g., "/bin/bash", "fish")
     pub shell: Option<String>,
+    /// Environment variables to set when running the task.
+    /// Values support minijinja templates: {{ branch }}, {{ branch | hash_port }}, etc.
+    /// Example: { "PORT": "{{ branch | hash_port }}" }
+    #[serde(default)]
+    pub env: EnvMap,
     /// Named URL templates to display when task is running.
     /// Key is the display label, value is the URL template (supports minijinja).
     /// Example: { "Dev": "http://localhost:{{ branch | hash_port }}" }
