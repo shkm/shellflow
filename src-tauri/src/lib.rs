@@ -1207,6 +1207,38 @@ fn open_folder(path: &str) -> Result<()> {
     Ok(())
 }
 
+/// Open a path with a specific application
+#[tauri::command]
+fn open_with_app(path: &str, app: &str) -> Result<()> {
+    use std::process::Command;
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .args(["-a", app, path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("cmd")
+            .args(["/c", "start", "", app, path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new(app)
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
 /// Rename a worktree's branch (the worktree's display name comes from its branch)
 #[tauri::command]
 fn rename_worktree(
@@ -1412,6 +1444,7 @@ pub fn run() {
             reorder_projects,
             reorder_worktrees,
             open_folder,
+            open_with_app,
             spawn_main,
             spawn_terminal,
             spawn_action,

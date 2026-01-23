@@ -76,6 +76,23 @@
       },
       "additionalProperties": false
     },
+    "apps": {
+      "type": "object",
+      "description": "External applications to open directories with",
+      "properties": {
+        "terminal": {
+          "type": "string",
+          "description": "Terminal application name (as recognized by the system)",
+          "default": "Ghostty"
+        },
+        "editor": {
+          "type": "string",
+          "description": "Code editor application name (as recognized by the system)",
+          "default": "Zed"
+        }
+      },
+      "additionalProperties": false
+    },
     "worktree": {
       "type": "object",
       "description": "Configuration for git worktree management",

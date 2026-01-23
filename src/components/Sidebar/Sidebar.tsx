@@ -1,4 +1,4 @@
-import { FolderGit2, Plus, ChevronRight, ChevronDown, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot, Settings, Circle, Folder, Check, ExternalLink } from 'lucide-react';
+import { FolderGit2, Plus, ChevronRight, ChevronDown, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot, Settings, Circle, Folder, Check, ExternalLink, SquareTerminal, Code } from 'lucide-react';
 import { Project, Worktree, RunningTask } from '../../types';
 import { TaskConfig } from '../../hooks/useConfig';
 import { useState, useMemo, useEffect } from 'react';
@@ -56,6 +56,8 @@ interface SidebarProps {
   runningTask: RunningTask | null;
   allRunningTasks: Array<{ taskName: string; status: string }>;
   terminalFontFamily: string;
+  terminalApp: string;
+  editorApp: string;
   showIdleCheck: boolean;
   onToggleProject: (projectId: string) => void;
   onSelectProject: (project: Project) => void;
@@ -108,6 +110,8 @@ export function Sidebar({
   runningTask,
   allRunningTasks,
   terminalFontFamily,
+  terminalApp,
+  editorApp,
   showIdleCheck,
   onToggleProject,
   onSelectProject,
@@ -673,6 +677,21 @@ export function Sidebar({
             >
               {folderName}
             </span>
+            <div className="flex-1" />
+            <button
+              onClick={() => invoke('open_with_app', { path: activeWorktree.path, app: terminalApp })}
+              className="p-1 rounded hover:bg-zinc-800 hover:text-zinc-300 flex-shrink-0 flex items-center justify-center"
+              title={`Open in ${terminalApp}`}
+            >
+              <SquareTerminal size={14} />
+            </button>
+            <button
+              onClick={() => invoke('open_with_app', { path: activeWorktree.path, app: editorApp })}
+              className="p-1 -mr-1 rounded hover:bg-zinc-800 hover:text-zinc-300 flex-shrink-0 flex items-center justify-center"
+              title={`Open in ${editorApp}`}
+            >
+              <Code size={14} />
+            </button>
           </div>
         );
       })()}

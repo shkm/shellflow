@@ -23,6 +23,7 @@ pub struct ConfigResult {
 pub struct Config {
     pub main: MainConfig,
     pub terminal: TerminalConfig,
+    pub apps: AppsConfig,
     pub worktree: WorktreeConfig,
     pub merge: MergeConfig,
     pub navigation: NavigationConfig,
@@ -319,6 +320,24 @@ impl Default for TerminalConfig {
             font_size: 13,
             font_ligatures: false,
             padding: 8,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AppsConfig {
+    /// Terminal application name (as recognized by the system)
+    pub terminal: String,
+    /// Code editor application name (as recognized by the system)
+    pub editor: String,
+}
+
+impl Default for AppsConfig {
+    fn default() -> Self {
+        Self {
+            terminal: "Ghostty".to_string(),
+            editor: "Zed".to_string(),
         }
     }
 }

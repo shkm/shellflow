@@ -63,6 +63,11 @@ export interface ActionsConfig {
   mergeWorktreeWithConflicts: string;
 }
 
+export interface AppsConfig {
+  terminal: string;
+  editor: string;
+}
+
 export interface MappingsConfig {
   toggleDrawer: Shortcut;
   toggleRightPanel: Shortcut;
@@ -93,6 +98,7 @@ export interface MappingsConfig {
 export interface Config {
   main: MainConfig;
   terminal: TerminalConfig;
+  apps: AppsConfig;
   merge: MergeConfig;
   navigation: NavigationConfig;
   mappings: MappingsConfig;
@@ -126,6 +132,10 @@ const defaultConfig: Config = {
     fontSize: 13,
     fontLigatures: false,
     padding: 8,
+  },
+  apps: {
+    terminal: 'Ghostty',
+    editor: 'Zed',
   },
   merge: {
     strategy: 'merge',

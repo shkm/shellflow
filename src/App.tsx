@@ -2216,6 +2216,8 @@ function App() {
               runningTask={activeRunningTask && activeEntityId ? { ...activeRunningTask, worktreeId: activeEntityId, kind: config.tasks.find(t => t.name === activeRunningTask.taskName)?.kind ?? 'command' } : null}
               allRunningTasks={activeEntityId ? runningTasks.get(activeEntityId) ?? [] : []}
               terminalFontFamily={config.main.fontFamily}
+              terminalApp={config.apps.terminal}
+              editorApp={config.apps.editor}
               showIdleCheck={config.indicators.showIdleCheck}
               onToggleProject={toggleProject}
               onSelectProject={handleSelectProject}

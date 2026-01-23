@@ -20,6 +20,14 @@
     "padding": 8
   },
 
+  // External applications to open directories with
+  "apps": {
+    // Terminal application name (as recognized by the system)
+    "terminal": "Ghostty",
+    // Code editor application name (as recognized by the system)
+    "editor": "Zed"
+  },
+
   "worktree": {
     // Supports placeholder: {{ repo_directory }}
     "directory": "{{ repo_directory }}/.worktrees",
