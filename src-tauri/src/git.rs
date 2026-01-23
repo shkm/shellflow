@@ -291,6 +291,30 @@ pub fn get_changed_files(worktree_path: &Path) -> Result<Vec<FileChange>, GitErr
     Ok(changes)
 }
 
+/// Get list of files with merge conflicts in the worktree.
+pub fn get_conflicted_files(worktree_path: &Path) -> Result<Vec<String>, GitError> {
+    use std::process::Command;
+
+    // Use git diff to find unmerged files - more reliable than libgit2 status
+    let output = Command::new("git")
+        .args(["diff", "--name-only", "--diff-filter=U"])
+        .current_dir(worktree_path)
+        .output()
+        .map_err(|e| GitError::Io(e))?;
+
+    if !output.status.success() {
+        return Ok(Vec::new());
+    }
+
+    let conflicts: Vec<String> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| !line.is_empty())
+        .map(|s| s.to_string())
+        .collect();
+
+    Ok(conflicts)
+}
+
 /// Get a list of gitignored files and directories in the repository.
 /// Uses `git status --ignored --porcelain` to get ignored entries.
 /// Directories are returned with a trailing slash.
@@ -556,16 +580,29 @@ pub fn merge_branch_to_target(
         .output()?;
 
     if !output.status.success() {
-        // Abort the merge if it failed
-        let _ = Command::new("git")
-            .args(["merge", "--abort"])
-            .current_dir(repo_path)
-            .output();
-
+        // Don't abort here - leave conflicts for resolution (AI or manual)
+        // Caller should call abort_merge if user cancels without resolving
         return Err(GitError::MergeConflict(format!(
             "Merge failed: {}",
             String::from_utf8_lossy(&output.stderr)
         )));
+    }
+
+    Ok(())
+}
+
+/// Abort an in-progress merge operation
+pub fn abort_merge(repo_path: &Path) -> Result<(), GitError> {
+    use std::process::Command;
+
+    let output = Command::new("git")
+        .args(["merge", "--abort"])
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        // It's okay if abort fails (e.g., no merge in progress)
+        // Just log and continue
     }
 
     Ok(())

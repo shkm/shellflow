@@ -1,15 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { GitMerge, AlertCircle, CheckCircle, Loader2, AlertTriangle, Circle, Sparkles } from 'lucide-react';
 import { Worktree, MergeFeasibility, MergeStrategy, MergeProgress, MergeCompleted } from '../types';
 import { MergeConfig } from '../hooks/useConfig';
-import { checkMergeFeasibility, executeMergeWorkflow, cleanupWorktree } from '../lib/tauri';
+import { checkMergeFeasibility, executeMergeWorkflow, cleanupWorktree, abortMerge, MergeOptions } from '../lib/tauri';
+
+// Re-export for consumers
+export type { MergeOptions };
 
 export interface ActionContext {
   worktreeDir: string;
   worktreeName: string;
   branch: string;
   targetBranch: string;
+  mergeOptions?: MergeOptions;
 }
 
 interface MergeModalProps {
@@ -305,30 +309,65 @@ export function MergeModal({
   const canExecute = feasibility?.canMerge && !executing && !error;
   const canCleanup = feasibility && !feasibility.canMerge && !feasibility.isUpToDate && !feasibility.hasUncommittedChanges && !executing && !error;
   const showCleanupButton = canCleanup && (deleteWorktree || deleteLocalBranch || deleteRemoteBranch);
+  const hasConflict = error && error.toLowerCase().includes('conflict');
+  const canResolveWithAI = hasConflict && !executing && onTriggerAction && feasibility;
+
+  // Close with abort - used when cancelling with an active conflict
+  const handleClose = useCallback(async () => {
+    if (hasConflict) {
+      // Abort the merge to clean up conflict state
+      await abortMerge(projectPath).catch(() => {
+        // Ignore errors - merge might not be in progress
+      });
+    }
+    onClose();
+  }, [hasConflict, projectPath, onClose]);
+
+  const handleResolveWithAI = useCallback(() => {
+    if (!feasibility || !onTriggerAction) return;
+    // Pass projectPath as worktreeDir - that's where the merge conflicts are
+    onTriggerAction('merge_worktree_with_conflicts', {
+      worktreeDir: projectPath,
+      worktreeName: worktree.name,
+      branch: feasibility.currentBranch,
+      targetBranch: feasibility.targetBranch,
+      mergeOptions: {
+        deleteWorktree,
+        deleteLocalBranch,
+        deleteRemoteBranch,
+      },
+    });
+    // Close without aborting - user is going to resolve the conflicts
+    onClose();
+  }, [feasibility, onTriggerAction, worktree.name, projectPath, onClose, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
+
+  // Primary action is the main "confirm" action - changes based on state
+  const primaryAction = useMemo(() => {
+    if (canExecute) return handleMerge;
+    if (canResolveWithAI) return handleResolveWithAI;
+    if (showCleanupButton) return handleCleanup;
+    return null;
+  }, [canExecute, canResolveWithAI, showCleanupButton, handleMerge, handleResolveWithAI, handleCleanup]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !executing) {
         e.preventDefault();
-        onClose();
-      } else if (e.key === 'Enter' && (isMac ? e.metaKey : e.ctrlKey)) {
+        handleClose();
+      } else if (e.key === 'Enter' && (isMac ? e.metaKey : e.ctrlKey) && primaryAction) {
         e.preventDefault();
-        if (canExecute) {
-          handleMerge();
-        } else if (showCleanupButton) {
-          handleCleanup();
-        }
+        primaryAction();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, executing, canExecute, showCleanupButton, handleMerge, handleCleanup, isMac]);
+  }, [handleClose, executing, primaryAction, isMac]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={executing ? undefined : onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={executing ? undefined : handleClose} />
       <div className="relative bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl p-6 max-w-lg w-full mx-4">
         <div className="flex items-center gap-3 mb-4">
           <GitMerge size={24} className="text-zinc-400" />
@@ -456,24 +495,16 @@ export function MergeModal({
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={executing}
             className="px-4 py-2 text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 rounded disabled:opacity-50 inline-flex items-center gap-2"
           >
             {executing ? 'Close' : 'Cancel'}
           </button>
           {/* Show "Resolve with AI" when there's a conflict error */}
-          {error && !executing && onTriggerAction && feasibility && error.toLowerCase().includes('conflict') && (
+          {canResolveWithAI && (
             <button
-              onClick={() => {
-                onTriggerAction('merge_worktree_with_conflicts', {
-                  worktreeDir: worktree.path,
-                  worktreeName: worktree.name,
-                  branch: feasibility.currentBranch,
-                  targetBranch: feasibility.targetBranch,
-                });
-                onClose();
-              }}
+              onClick={handleResolveWithAI}
               className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-500 text-white rounded flex items-center gap-2"
             >
               <Sparkles size={14} />

@@ -142,3 +142,75 @@ pub fn stop_all_watchers() {
         let _ = tx.send(());
     }
 }
+
+// Track active merge watchers
+lazy_static::lazy_static! {
+    static ref MERGE_WATCHERS: Mutex<HashMap<String, Sender<()>>> = Mutex::new(HashMap::new());
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeComplete {
+    pub worktree_id: String,
+    pub worktree_path: String,
+}
+
+/// Watch for merge completion in a worktree.
+/// Detects when .git/MERGE_HEAD is deleted (merge committed successfully).
+pub fn watch_merge_state(app: AppHandle, worktree_id: String, worktree_path: String) {
+    // Check if already watching
+    if MERGE_WATCHERS.lock().contains_key(&worktree_id) {
+        return;
+    }
+
+    let merge_head_path = Path::new(&worktree_path).join(".git").join("MERGE_HEAD");
+
+    // Only start watching if MERGE_HEAD exists (we're in a merge state)
+    if !merge_head_path.exists() {
+        eprintln!("[MergeWatcher] No MERGE_HEAD found at {:?}, not watching", merge_head_path);
+        return;
+    }
+
+    eprintln!("[MergeWatcher] Starting merge watcher for {} at {:?}", worktree_id, merge_head_path);
+
+    let (stop_tx, stop_rx) = channel::<()>();
+    MERGE_WATCHERS.lock().insert(worktree_id.clone(), stop_tx);
+
+    let worktree_id_clone = worktree_id.clone();
+    let worktree_path_clone = worktree_path.clone();
+
+    thread::spawn(move || {
+        let poll_interval = Duration::from_millis(500);
+
+        loop {
+            // Check for stop signal
+            if stop_rx.try_recv().is_ok() {
+                eprintln!("[MergeWatcher] Stopping merge watcher for {}", worktree_id_clone);
+                break;
+            }
+
+            // Check if MERGE_HEAD still exists
+            if !merge_head_path.exists() {
+                eprintln!("[MergeWatcher] MERGE_HEAD deleted - merge complete for {}", worktree_id_clone);
+                let _ = app.emit(
+                    "merge-complete",
+                    MergeComplete {
+                        worktree_id: worktree_id_clone.clone(),
+                        worktree_path: worktree_path_clone.clone(),
+                    },
+                );
+                break;
+            }
+
+            thread::sleep(poll_interval);
+        }
+
+        MERGE_WATCHERS.lock().remove(&worktree_id_clone);
+    });
+}
+
+pub fn stop_merge_watcher(worktree_id: &str) {
+    if let Some(tx) = MERGE_WATCHERS.lock().remove(worktree_id) {
+        let _ = tx.send(());
+    }
+}

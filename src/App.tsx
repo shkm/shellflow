@@ -21,7 +21,7 @@ import { selectFolder, shutdown, ptyKill, ptyForceKill, stashChanges, stashPop, 
 import { arrayMove } from '@dnd-kit/sortable';
 import { sendOsNotification } from './lib/notifications';
 import { matchesShortcut } from './lib/keyboard';
-import { Project, Worktree, RunningTask } from './types';
+import { Project, Worktree, RunningTask, MergeCompleted } from './types';
 
 const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
 const SHOW_ACTIVE_ONLY_KEY = 'onemanband:showActiveOnly';
@@ -712,6 +712,7 @@ function App() {
         type: 'action',
         actionType,
         actionPrompt: expandedPrompt,
+        mergeOptions: context.mergeOptions,
       };
 
       // Add the tab
@@ -737,7 +738,10 @@ function App() {
       });
 
       // Open drawer and focus it
-      setIsDrawerOpen(true);
+      if (!isDrawerOpen) {
+        drawerPanelRef.current?.resize(lastDrawerSize.current);
+        setIsDrawerOpen(true);
+      }
       setFocusStates((prev) => {
         const next = new Map(prev);
         next.set(worktreeId, 'drawer');
@@ -758,7 +762,7 @@ function App() {
     } catch (err) {
       console.error('Failed to trigger action:', err);
     }
-  }, [drawerTabCounters, activeWorktreeId]);
+  }, [drawerTabCounters, activeWorktreeId, isDrawerOpen]);
 
   // Select drawer tab handler
   const handleSelectDrawerTab = useCallback((tabId: string) => {
@@ -1603,6 +1607,29 @@ function App() {
     [activeWorktreeId, openWorktreeIds, refreshProjects]
   );
 
+  // Listen for merge-completed events (from action terminal's "Complete" button)
+  useEffect(() => {
+    const unlistenMerge = listen<MergeCompleted>('merge-completed', (event) => {
+      const { worktreeId, success, deletedWorktree } = event.payload;
+
+      if (success) {
+        // Update UI state
+        handleMergeComplete(worktreeId, deletedWorktree);
+
+        // Close any action tabs for this worktree
+        const tabs = drawerTabs.get(worktreeId) ?? [];
+        const actionTab = tabs.find(t => t.type === 'action');
+        if (actionTab) {
+          handleCloseDrawerTab(actionTab.id, worktreeId);
+        }
+      }
+    });
+
+    return () => {
+      unlistenMerge.then((fn) => fn());
+    };
+  }, [handleMergeComplete, drawerTabs, handleCloseDrawerTab]);
+
   const confirmRemoveProject = useCallback(async () => {
     if (!pendingRemoveProject) return;
     try {
@@ -2118,7 +2145,9 @@ function App() {
                           <ActionTerminal
                             id={tab.id}
                             worktreeId={entityId}
+                            actionType={tab.actionType}
                             actionPrompt={tab.actionPrompt}
+                            mergeOptions={tab.mergeOptions}
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&

@@ -413,6 +413,70 @@ fn spawn_terminal(
 }
 
 #[tauri::command]
+fn spawn_action(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    worktree_id: &str,
+    prompt: &str,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<String> {
+    // Find worktree path and project path
+    let (worktree_path, project_path) = {
+        let persisted = state.persisted.read();
+        persisted
+            .projects
+            .iter()
+            .find_map(|p| {
+                p.worktrees
+                    .iter()
+                    .find(|w| w.id == worktree_id)
+                    .map(|w| (w.path.clone(), p.path.clone()))
+            })
+            .ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+    };
+
+    // Load config to get the action command
+    let config = config::load_config_for_project(Some(&project_path));
+    let action_command = &config.actions.command;
+
+    // Start action command with initial prompt (stays interactive)
+    // Run through shell so shell escaping works properly
+    let command = format!("{} {}", action_command, shell_escape::escape(prompt.into()));
+
+    // Get user's shell to run the command through
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+
+    pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows, Some(&shell)).map_err(map_err)
+}
+
+#[tauri::command]
+fn watch_merge_state(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    worktree_id: &str,
+) -> Result<()> {
+    // Find project path (where the merge is happening, not the worktree path)
+    let project_path = {
+        let persisted = state.persisted.read();
+        persisted
+            .projects
+            .iter()
+            .find(|p| p.worktrees.iter().any(|w| w.id == worktree_id))
+            .map(|p| p.path.clone())
+            .ok_or_else(|| format!("Worktree not found: {}", worktree_id))?
+    };
+
+    watcher::watch_merge_state(app, worktree_id.to_string(), project_path);
+    Ok(())
+}
+
+#[tauri::command]
+fn stop_merge_watcher(worktree_id: &str) {
+    watcher::stop_merge_watcher(worktree_id);
+}
+
+#[tauri::command]
 fn spawn_task(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
@@ -612,19 +676,27 @@ fn expand_action_prompt(
 ) -> Result<String> {
     let cfg = config::load_config_for_project(project_path.as_deref());
 
-    let template = match action_name {
-        "merge_worktree_with_conflicts" => &cfg.actions.merge_worktree_with_conflicts,
+    let (template, ctx) = match action_name {
+        "merge_worktree_with_conflicts" => {
+            let template = &cfg.actions.merge_worktree_with_conflicts;
+
+            // Get conflicted files for context
+            let conflicted_files = git::get_conflicted_files(Path::new(&context.worktree_dir))
+                .unwrap_or_default();
+
+            let ctx = minijinja::context! {
+                worktree_dir => context.worktree_dir,
+                worktree_name => context.worktree_name,
+                branch => context.branch,
+                target_branch => context.target_branch,
+                conflicted_files => conflicted_files,
+            };
+            (template.clone(), ctx)
+        }
         _ => return Err(format!("Unknown action: {}", action_name)),
     };
 
-    let ctx = template::ActionContext {
-        worktree_dir: context.worktree_dir,
-        worktree_name: context.worktree_name,
-        branch: context.branch,
-        target_branch: context.target_branch,
-    };
-
-    template::expand_action_template(template, &ctx).map_err(map_err)
+    template::expand_action_template(&template, ctx).map_err(map_err)
 }
 
 // Git commands
@@ -650,6 +722,12 @@ fn stash_changes(project_path: &str) -> Result<String> {
 fn stash_pop(project_path: &str, stash_id: &str) -> Result<()> {
     let path = Path::new(project_path);
     git::stash_pop(path, stash_id).map_err(map_err)
+}
+
+#[tauri::command]
+fn abort_merge(project_path: &str) -> Result<()> {
+    let path = Path::new(project_path);
+    git::abort_merge(path).map_err(map_err)
 }
 
 #[tauri::command]
@@ -1281,6 +1359,9 @@ pub fn run() {
             open_folder,
             spawn_main,
             spawn_terminal,
+            spawn_action,
+            watch_merge_state,
+            stop_merge_watcher,
             spawn_project_shell,
             spawn_task,
             get_task_urls,
@@ -1292,6 +1373,7 @@ pub fn run() {
             has_uncommitted_changes,
             stash_changes,
             stash_pop,
+            abort_merge,
             start_watching,
             stop_watching,
             get_config,

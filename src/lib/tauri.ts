@@ -63,6 +63,23 @@ export async function spawnTerminal(worktreeId: string): Promise<string> {
   return invoke<string>('spawn_terminal', { worktreeId });
 }
 
+export async function spawnAction(
+  worktreeId: string,
+  prompt: string,
+  cols?: number,
+  rows?: number
+): Promise<string> {
+  return invoke<string>('spawn_action', { worktreeId, prompt, cols, rows });
+}
+
+export async function watchMergeState(worktreeId: string): Promise<void> {
+  return invoke('watch_merge_state', { worktreeId });
+}
+
+export async function stopMergeWatcher(worktreeId: string): Promise<void> {
+  return invoke('stop_merge_watcher', { worktreeId });
+}
+
 export async function spawnTask(
   entityId: string,
   taskName: string,
@@ -121,6 +138,10 @@ export async function stashPop(projectPath: string, stashId: string): Promise<vo
   return invoke<void>('stash_pop', { projectPath, stashId });
 }
 
+export async function abortMerge(projectPath: string): Promise<void> {
+  return invoke<void>('abort_merge', { projectPath });
+}
+
 // Dialog helpers
 export async function selectFolder(): Promise<string | null> {
   const selected = await open({
@@ -132,11 +153,18 @@ export async function selectFolder(): Promise<string | null> {
 }
 
 // Action commands
+export interface MergeOptions {
+  deleteWorktree: boolean;
+  deleteLocalBranch: boolean;
+  deleteRemoteBranch: boolean;
+}
+
 export interface ActionPromptContext {
   worktreeDir: string;
   worktreeName: string;
   branch: string;
   targetBranch: string;
+  mergeOptions?: MergeOptions;
 }
 
 export async function expandActionPrompt(

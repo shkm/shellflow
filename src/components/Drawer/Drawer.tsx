@@ -15,6 +15,7 @@ import {
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { SortableDrawerTab } from './SortableDrawerTab';
+import { MergeOptions } from '../MergeModal';
 
 export interface DrawerTab {
   id: string;
@@ -25,6 +26,8 @@ export interface DrawerTab {
   actionType?: string;
   /** For action tabs: the expanded prompt to send when ready */
   actionPrompt?: string;
+  /** For merge action tabs: the cleanup options selected by the user */
+  mergeOptions?: MergeOptions;
 }
 
 interface TaskStatusInfo {

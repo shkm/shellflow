@@ -145,6 +145,40 @@
       },
       "additionalProperties": false
     },
+    "indicators": {
+      "type": "object",
+      "description": "Configuration for activity indicators",
+      "properties": {
+        "activityTimeout": {
+          "type": "integer",
+          "description": "Time in ms after last activity before progress indicator turns off",
+          "minimum": 0,
+          "default": 250
+        },
+        "showIdleCheck": {
+          "type": "boolean",
+          "description": "Show checkmark when activity stops (idle state)",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "actions": {
+      "type": "object",
+      "description": "Configuration for AI-assisted actions",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to run for AI-assisted actions (e.g., 'claude')",
+          "default": "claude"
+        },
+        "mergeWorktreeWithConflicts": {
+          "type": "string",
+          "description": "Prompt template for resolving merge conflicts. Variables: {{ worktree_dir }}, {{ worktree_name }}, {{ branch }}, {{ target_branch }}, {{ conflicted_files }}"
+        }
+      },
+      "additionalProperties": false
+    },
     "mappings": {
       "type": "object",
       "description": "Keyboard shortcut mappings",

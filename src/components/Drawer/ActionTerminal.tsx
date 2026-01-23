@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
@@ -8,7 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { attachKeyboardHandlers } from '../../lib/terminal';
-import { spawnMain, ptyWrite, ptyResize, ptyKill } from '../../lib/tauri';
+import { spawnAction, ptyWrite, ptyResize, ptyKill, watchMergeState, stopMergeWatcher, cleanupWorktree, MergeOptions } from '../../lib/tauri';
 import '@xterm/xterm/css/xterm.css';
 
 // Fix for xterm.js not handling 5-part colon-separated RGB sequences.
@@ -33,11 +33,14 @@ interface PtyOutput {
 interface ActionTerminalProps {
   id: string;
   worktreeId: string;
+  actionType?: string;
   actionPrompt: string;
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
   mappings: MappingsConfig;
+  /** Initial merge options from the modal (for merge actions) */
+  mergeOptions?: MergeOptions;
   onPtyIdReady?: (ptyId: string) => void;
   onActionExit?: (exitCode: number) => void;
   onFocus?: () => void;
@@ -46,11 +49,13 @@ interface ActionTerminalProps {
 export function ActionTerminal({
   id,
   worktreeId,
+  actionType,
   actionPrompt,
   isActive,
   shouldAutoFocus,
   terminalConfig,
   mappings,
+  mergeOptions: initialMergeOptions,
   onPtyIdReady,
   onActionExit,
   onFocus,
@@ -60,7 +65,13 @@ export function ActionTerminal({
   const fitAddonRef = useRef<FitAddon | null>(null);
   const initializedRef = useRef(false);
   const ptyIdRef = useRef<string | null>(null);
-  const promptSentRef = useRef(false);
+  const [isPtyReady, setIsPtyReady] = useState(false);
+  const [isMergeComplete, setIsMergeComplete] = useState(false);
+
+  // Editable merge options (initialized from props)
+  const [deleteWorktree, setDeleteWorktree] = useState(initialMergeOptions?.deleteWorktree ?? false);
+  const [deleteLocalBranch, setDeleteLocalBranch] = useState(initialMergeOptions?.deleteLocalBranch ?? false);
+  const [deleteRemoteBranch, setDeleteRemoteBranch] = useState(initialMergeOptions?.deleteRemoteBranch ?? false);
 
   useTerminalFontSync(terminalRef, fitAddonRef, terminalConfig);
 
@@ -88,7 +99,6 @@ export function ActionTerminal({
     let isMounted = true;
     let unlistenOutput: (() => void) | null = null;
     let unlistenExit: (() => void) | null = null;
-    let unlistenReady: (() => void) | null = null;
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -216,23 +226,11 @@ export function ActionTerminal({
       );
       unlistenExit = exitListener;
 
-      // Set up ready listener to send the prompt
-      const readyListener = await listen<{ ptyId: string; worktreeId: string }>(
-        'pty-ready',
-        (event) => {
-          if (event.payload.ptyId === ptyIdRef.current && !promptSentRef.current) {
-            promptSentRef.current = true;
-            // Send the action prompt
-            ptyWrite(ptyIdRef.current!, actionPrompt + '\n');
-          }
-        }
-      );
-      unlistenReady = readyListener;
-
-      // Spawn the main command
-      const newPtyId = await spawnMain(worktreeId);
+      // Spawn action command with the action prompt
+      const newPtyId = await spawnAction(worktreeId, actionPrompt, cols, rows);
       ptyIdRef.current = newPtyId;
       ptyIdKnown = true;
+      setIsPtyReady(true);
 
       // Report ptyId to parent
       onPtyIdReadyRef.current?.(newPtyId);
@@ -267,7 +265,6 @@ export function ActionTerminal({
       initializedRef.current = false;
       unlistenOutput?.();
       unlistenExit?.();
-      unlistenReady?.();
       if (ptyIdRef.current) {
         ptyKill(ptyIdRef.current);
         ptyIdRef.current = null;
@@ -288,6 +285,32 @@ export function ActionTerminal({
     return () => window.removeEventListener('pty-signal', handleSignal);
   }, []);
 
+  // Watch for merge completion when this is a merge action
+  useEffect(() => {
+    if (actionType !== 'merge_worktree_with_conflicts') return;
+
+    let unlisten: (() => void) | null = null;
+
+    const startWatching = async () => {
+      // Start watching for MERGE_HEAD deletion
+      await watchMergeState(worktreeId);
+
+      // Listen for merge-complete event
+      unlisten = await listen<{ worktreeId: string }>('merge-complete', (event) => {
+        if (event.payload.worktreeId === worktreeId) {
+          setIsMergeComplete(true);
+        }
+      });
+    };
+
+    startWatching().catch(console.error);
+
+    return () => {
+      unlisten?.();
+      stopMergeWatcher(worktreeId);
+    };
+  }, [actionType, worktreeId]);
+
   // Immediate resize handler
   const immediateResize = useCallback(() => {
     const terminal = terminalRef.current;
@@ -307,7 +330,7 @@ export function ActionTerminal({
   // ResizeObserver for container size changes
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !ptyIdRef.current || !isActive) return;
+    if (!container || !isPtyReady || !isActive) return;
 
     const resizeObserver = new ResizeObserver(() => {
       debouncedResize();
@@ -315,11 +338,11 @@ export function ActionTerminal({
 
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
-  }, [isActive, debouncedResize]);
+  }, [isActive, isPtyReady, debouncedResize]);
 
   // Listen for panel toggle completion
   useEffect(() => {
-    if (!ptyIdRef.current || !isActive) return;
+    if (!isPtyReady || !isActive) return;
 
     const handlePanelResizeComplete = () => {
       immediateResize();
@@ -328,15 +351,15 @@ export function ActionTerminal({
     window.addEventListener('panel-resize-complete', handlePanelResizeComplete);
     return () =>
       window.removeEventListener('panel-resize-complete', handlePanelResizeComplete);
-  }, [isActive, immediateResize]);
+  }, [isActive, isPtyReady, immediateResize]);
 
   // Fit on active change
   useEffect(() => {
-    if (isActive && ptyIdRef.current) {
+    if (isActive && isPtyReady) {
       const timeout = setTimeout(immediateResize, 50);
       return () => clearTimeout(timeout);
     }
-  }, [isActive, immediateResize]);
+  }, [isActive, isPtyReady, immediateResize]);
 
   // Focus terminal when shouldAutoFocus is true
   useEffect(() => {
@@ -345,9 +368,61 @@ export function ActionTerminal({
     }
   }, [shouldAutoFocus]);
 
+  // Handle completion with cleanup
+  const handleComplete = useCallback(() => {
+    cleanupWorktree(worktreeId, {
+      deleteWorktree,
+      deleteLocalBranch,
+      deleteRemoteBranch,
+    });
+    // onMergeComplete is called by the merge-completed event listener in App.tsx
+  }, [worktreeId, deleteWorktree, deleteLocalBranch, deleteRemoteBranch]);
+
   return (
-    <div className="w-full h-full p-2" style={{ backgroundColor: '#18181b' }}>
-      <div ref={containerRef} className="w-full h-full" />
+    <div className="w-full h-full p-2 flex flex-col" style={{ backgroundColor: '#18181b' }}>
+      <div ref={containerRef} className="w-full flex-1 min-h-0" />
+      {isMergeComplete && (
+        <div className="px-3 py-2 bg-green-900/30 border-t border-green-700/50 text-sm">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <span className="text-green-300 font-medium">Merge complete!</span>
+            <button
+              onClick={handleComplete}
+              className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-sm font-medium"
+            >
+              Complete
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-4 text-zinc-300">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteWorktree}
+                onChange={(e) => setDeleteWorktree(e.target.checked)}
+                className="rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-900"
+              />
+              Delete worktree
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteLocalBranch}
+                onChange={(e) => setDeleteLocalBranch(e.target.checked)}
+                className="rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-900"
+              />
+              Delete local branch
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteRemoteBranch}
+                onChange={(e) => setDeleteRemoteBranch(e.target.checked)}
+                className="rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-900"
+              />
+              Delete remote branch
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

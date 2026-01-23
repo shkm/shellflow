@@ -34,11 +34,21 @@
     "deleteRemoteBranch": false
   },
 
-  // Action prompts for AI-assisted operations.
-  // Template variables: {{ worktree_dir }}, {{ worktree_name }}, {{ branch }}, {{ target_branch }}
-  // "actions": {
-  //   "mergeWorktreeWithConflicts": "Your custom prompt here..."
-  // },
+  "indicators": {
+    // Time in ms after last activity before progress indicator turns off
+    "activityTimeout": 250,
+    // Show checkmark when activity stops (idle state)
+    "showIdleCheck": true
+  },
+
+  // AI-assisted actions configuration.
+  // Variables: {{ worktree_dir }}, {{ worktree_name }}, {{ branch }}, {{ target_branch }}, {{ conflicted_files }}
+  "actions": {
+    // Command to run for AI-assisted actions
+    "command": "claude",
+    // Prompt for merge conflict resolution
+    "mergeWorktreeWithConflicts": "In the git worktree at \"{{ worktree_dir }}\", complete the merge of branch \"{{ branch }}\" into \"{{ target_branch }}\".\n\nThe following files have merge conflicts:\n{% for file in conflicted_files %}- {{ file }}\n{% endfor %}\n\nAll conflict information is provided above - do not run git status or other diagnostic commands.\n\nRead only the conflicted files listed, resolve each conflict appropriately based on the code context, stage the resolved files with `git add`, and complete the merge with `git commit`."
+  },
 
   // Keyboard mappings. Each mapping can be:
   // - A string: "cmd+c" (universal shortcut)

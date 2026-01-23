@@ -129,19 +129,22 @@ impl Default for IndicatorsConfig {
 /// - `worktree_name` - Name of the worktree
 /// - `branch` - Current branch (the feature branch)
 /// - `target_branch` - Target branch to merge into (e.g., main)
-pub const DEFAULT_MERGE_WORKTREE_WITH_CONFLICTS_PROMPT: &str = r#"In the git worktree at {{ worktree_dir }}, complete the merge of branch "{{ branch }}" into "{{ target_branch }}".
+/// - `conflicted_files` - List of files with merge conflicts
+pub const DEFAULT_MERGE_WORKTREE_WITH_CONFLICTS_PROMPT: &str = r#"In the git worktree at "{{ worktree_dir }}", complete the merge of branch "{{ branch }}" into "{{ target_branch }}".
 
-There are merge conflicts that need to be resolved. Please:
-1. Identify all files with merge conflicts
-2. Review each conflict and resolve it appropriately based on the code context
-3. Stage resolved files with `git add`
-4. Complete the merge with `git commit`
+The following files have merge conflicts:
+{% for file in conflicted_files %}- {{ file }}
+{% endfor %}
 
-After the merge is complete, report what you did."#;
+All conflict information is provided above - do not run git status or other diagnostic commands.
+
+Read only the conflicted files listed, resolve each conflict appropriately based on the code context, stage the resolved files with `git add`, and complete the merge with `git commit`."#;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ActionsConfig {
+    /// Command to run for AI-assisted actions (e.g., "claude").
+    pub command: String,
     /// Prompt template for resolving merge conflicts in a worktree.
     #[serde(rename = "mergeWorktreeWithConflicts")]
     pub merge_worktree_with_conflicts: String,
@@ -150,6 +153,7 @@ pub struct ActionsConfig {
 impl Default for ActionsConfig {
     fn default() -> Self {
         Self {
+            command: "claude".to_string(),
             merge_worktree_with_conflicts: DEFAULT_MERGE_WORKTREE_WITH_CONFLICTS_PROMPT.to_string(),
         }
     }
