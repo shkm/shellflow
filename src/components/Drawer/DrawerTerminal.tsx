@@ -8,6 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, loadWebGLWithRecovery } from '../../lib/terminal';
 import '@xterm/xterm/css/xterm.css';
 
@@ -70,6 +71,9 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
   useEffect(() => {
     writeRef.current = write;
   }, [write]);
+
+  // Enable file drag-and-drop when PTY is ready and terminal is active
+  const { isDragOver } = useTerminalFileDrop(containerRef, (data) => writeRef.current(data), isActive && !!ptyId);
 
   // Store onFocus in ref for use in terminal events
   const onFocusRef = useRef(onFocus);
@@ -290,11 +294,16 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
   }, [shouldAutoFocus]);
 
   return (
-    <div className="w-full h-full" style={{ backgroundColor: '#18181b', padding: terminalConfig.padding }}>
+    <div className="relative w-full h-full" style={{ backgroundColor: '#18181b', padding: terminalConfig.padding }}>
       <div
         ref={containerRef}
         className="w-full h-full"
       />
+      {isDragOver && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-900/60 pointer-events-none border-2 border-dashed border-zinc-500 rounded">
+          <span className="text-zinc-300 text-sm">Drop files to insert path</span>
+        </div>
+      )}
     </div>
   );
 }

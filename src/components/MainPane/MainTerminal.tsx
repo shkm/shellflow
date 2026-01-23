@@ -9,6 +9,7 @@ import { Loader2, Play, RotateCcw, Terminal as TerminalIcon } from 'lucide-react
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, loadWebGLWithRecovery } from '../../lib/terminal';
 import '@xterm/xterm/css/xterm.css';
 
@@ -54,6 +55,9 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
   const [hasExited, setHasExited] = useState(false);
   const [exitInfo, setExitInfo] = useState<{ command: string; exitCode: number | null } | null>(null);
   const [currentMode, setCurrentMode] = useState<'main' | 'project' | 'scratch' | 'shell'>(type);
+
+  // File drag-and-drop support - uses stable callback via ref
+  const writeForDropRef = useRef<(data: string) => void>(() => {});
 
   // Progress indicator state refs (declared early so handleOutput can use them)
   // Only track activity when terminal is NOT active (background tabs only)
@@ -159,7 +163,11 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
   const writeRef = useRef(write);
   useEffect(() => {
     writeRef.current = write;
+    writeForDropRef.current = write;
   }, [write]);
+
+  // Enable file drag-and-drop when terminal is ready, active, and not exited
+  const { isDragOver } = useTerminalFileDrop(containerRef, (data) => writeForDropRef.current(data), isActive && isReady && !hasExited);
 
   // Store onFocus in ref for use in terminal events
   const onFocusRef = useRef(onFocus);
@@ -686,6 +694,11 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
         ref={containerRef}
         className={`w-full h-full transition-opacity duration-200 ${isReady && !hasExited ? 'opacity-100' : 'opacity-0'}`}
       />
+      {isDragOver && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-950/60 pointer-events-none border-2 border-dashed border-zinc-500 rounded">
+          <span className="text-zinc-300 text-sm">Drop files to insert path</span>
+        </div>
+      )}
     </div>
   );
 }
