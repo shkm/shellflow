@@ -3,11 +3,10 @@
   "tasks": [
     {
       "name": "Dev",
-      "command": "tauri dev --config '{\"build\":{\"devUrl\":\"http://localhost:{{ branch | hash_port }}\"}}'",
+      "command": "npm run tauri dev -- --config {\"build\":{\"devUrl\":\"http://localhost:{{ branch | hash_port }}\"}}",
       "kind": "daemon",
-      "shell": "/bin/bash",
       "env": {
-        "VITE_PORT": "{{ branch | hash_port }}"
+        "VITE_PORT": "{{ branch | hash_port }}",
       },
       "urls": {
         "Vite": "http://localhost:{{ branch | hash_port }}",
