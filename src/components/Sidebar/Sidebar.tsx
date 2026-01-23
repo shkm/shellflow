@@ -1,4 +1,4 @@
-import { FolderGit2, Plus, ChevronRight, ChevronDown, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot, Settings, Circle, Folder, Check, ExternalLink, TerminalSquare, SquareTerminal, Code } from 'lucide-react';
+import { FolderGit2, Plus, ChevronRight, ChevronDown, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, BellDot, Settings, Circle, Folder, Check, ExternalLink, Hash, SquareTerminal, Code } from 'lucide-react';
 import { Project, Worktree, RunningTask, ScratchTerminal } from '../../types';
 import { TaskConfig } from '../../hooks/useConfig';
 import { useState, useMemo, useEffect } from 'react';
@@ -342,7 +342,7 @@ export function Sidebar({
           {/* Scratch section header */}
           <div className="group relative flex items-center py-1 pr-2 text-zinc-500">
             <div className="w-7 flex-shrink-0 flex items-center justify-center">
-              <TerminalSquare size={14} className="text-zinc-600" />
+              <Hash size={14} className="text-zinc-600" />
             </div>
             <span className="text-xs font-medium uppercase tracking-wide">Scratch</span>
             {/* Add button - show on hover */}
