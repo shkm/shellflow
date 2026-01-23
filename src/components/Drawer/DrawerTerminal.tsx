@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { listen } from '@tauri-apps/api/event';
@@ -9,7 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
-import { attachKeyboardHandlers } from '../../lib/terminal';
+import { attachKeyboardHandlers, loadWebGLWithRecovery } from '../../lib/terminal';
 import '@xterm/xterm/css/xterm.css';
 
 // Fix for xterm.js not handling 5-part colon-separated RGB sequences.
@@ -141,6 +140,9 @@ export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, term
     terminal.open(containerRef.current);
 
     // Load ligatures addon if enabled (incompatible with WebGL)
+    // Store WebGL cleanup function if used
+    let webglCleanup: (() => void) | null = null;
+
     if (terminalConfig.fontLigatures) {
       try {
         const ligaturesAddon = new LigaturesAddon();
@@ -149,16 +151,8 @@ export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, term
         console.warn('Ligatures addon failed to load:', e);
       }
     } else {
-      // Load WebGL addon for GPU-accelerated rendering (only when ligatures disabled)
-      try {
-        const webglAddon = new WebglAddon();
-        webglAddon.onContextLoss(() => {
-          webglAddon.dispose();
-        });
-        terminal.loadAddon(webglAddon);
-      } catch (e) {
-        console.warn('WebGL addon failed to load, using canvas renderer:', e);
-      }
+      // Load WebGL addon with automatic recovery from context loss
+      webglCleanup = loadWebGLWithRecovery(terminal);
     }
 
     terminalRef.current = terminal;
@@ -202,6 +196,7 @@ export function DrawerTerminal({ id, worktreeId, isActive, shouldAutoFocus, term
     return () => {
       isMounted = false;
       onDataDisposable.dispose();
+      webglCleanup?.();
       containerRef.current?.removeEventListener('focusin', handleFocus);
       terminal.dispose();
       terminalRef.current = null;

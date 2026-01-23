@@ -1,13 +1,12 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { listen } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
-import { attachKeyboardHandlers } from '../../lib/terminal';
+import { attachKeyboardHandlers, loadWebGLWithRecovery } from '../../lib/terminal';
 import { spawnAction, ptyWrite, ptyResize, ptyKill, watchMergeState, stopMergeWatcher, watchRebaseState, stopRebaseWatcher, cleanupWorktree, MergeOptions, MergeStrategy } from '../../lib/tauri';
 import '@xterm/xterm/css/xterm.css';
 
@@ -151,16 +150,8 @@ export function ActionTerminal({
     terminal.loadAddon(webLinksAddon);
     terminal.open(containerRef.current);
 
-    // Load WebGL addon for GPU-accelerated rendering
-    try {
-      const webglAddon = new WebglAddon();
-      webglAddon.onContextLoss(() => {
-        webglAddon.dispose();
-      });
-      terminal.loadAddon(webglAddon);
-    } catch (e) {
-      console.warn('WebGL addon failed to load, using canvas renderer:', e);
-    }
+    // Load WebGL addon with automatic recovery from context loss
+    const webglCleanup = loadWebGLWithRecovery(terminal);
 
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
@@ -261,6 +252,7 @@ export function ActionTerminal({
     return () => {
       isMounted = false;
       onDataDisposable.dispose();
+      webglCleanup();
       containerRef.current?.removeEventListener('focusin', handleFocus);
       terminal.dispose();
       terminalRef.current = null;
