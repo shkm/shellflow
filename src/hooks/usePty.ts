@@ -125,9 +125,49 @@ export function usePty(onOutput?: (data: string) => void) {
     }
   }, []);
 
+  // Simpler shell spawn that just takes entity ID and optional directory
+  const spawnShell = useCallback(async (entityId: string, directory?: string, cols?: number, rows?: number) => {
+    try {
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+      }
+
+      let pendingId: string | null = null;
+      const earlyEvents: PtyOutput[] = [];
+
+      const unlisten = await listen<PtyOutput>('pty-output', (event) => {
+        if (pendingId === null) {
+          earlyEvents.push(event.payload);
+        } else if (event.payload.pty_id === pendingId) {
+          onOutputRef.current?.(event.payload.data);
+        }
+      });
+
+      const id = await invoke<string>('spawn_shell', { entityId, directory, cols, rows });
+
+      ptyIdRef.current = id;
+      setPtyId(id);
+      pendingId = id;
+      unlistenRef.current = unlisten;
+
+      for (const event of earlyEvents) {
+        if (event.pty_id === id) {
+          onOutputRef.current?.(event.data);
+        }
+      }
+
+      return id;
+    } catch (error) {
+      console.error('Failed to spawn shell:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     ptyId,
     spawn,
+    spawnShell,
     write,
     resize,
     kill,

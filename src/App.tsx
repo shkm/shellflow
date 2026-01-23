@@ -237,12 +237,20 @@ function App() {
     return projects.find(p => p.id === activeProjectId) ?? null;
   }, [activeProjectId, projects]);
 
-  // Helper to determine entity type from ID (for drawer terminals)
-  const getEntityType = useCallback((entityId: string): 'worktree' | 'project' | 'scratch' => {
-    if (scratchTerminals.some(s => s.id === entityId)) return 'scratch';
-    if (projects.some(p => p.id === entityId)) return 'project';
-    return 'worktree';
-  }, [scratchTerminals, projects]);
+  // Helper to get entity directory from ID (for drawer terminals)
+  // Returns undefined for scratch terminals (uses home directory)
+  const getEntityDirectory = useCallback((entityId: string): string | undefined => {
+    // Check worktrees
+    for (const project of projects) {
+      const worktree = project.worktrees.find(w => w.id === entityId);
+      if (worktree) return worktree.path;
+    }
+    // Check projects
+    const project = projects.find(p => p.id === entityId);
+    if (project) return project.path;
+    // Scratch terminals - return undefined to use home directory
+    return undefined;
+  }, [projects]);
 
   // Git status target - either the active worktree or project
   const gitStatusTarget = useMemo(() => {
@@ -2549,8 +2557,8 @@ function App() {
                         ) : (
                           <DrawerTerminal
                             id={tab.id}
-                            worktreeId={entityId}
-                            entityType={getEntityType(entityId)}
+                            entityId={entityId}
+                            directory={getEntityDirectory(entityId)}
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&

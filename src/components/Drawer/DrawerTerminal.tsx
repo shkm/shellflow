@@ -27,12 +27,10 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
   }) as T;
 }
 
-type EntityType = 'worktree' | 'project' | 'scratch';
-
 interface DrawerTerminalProps {
   id: string;
-  worktreeId: string;
-  entityType: EntityType;
+  entityId: string;
+  directory?: string;  // undefined = use home directory
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
@@ -42,7 +40,7 @@ interface DrawerTerminalProps {
   onPtyIdReady?: (ptyId: string) => void;
 }
 
-export function DrawerTerminal({ id, worktreeId, entityType, isActive, shouldAutoFocus, terminalConfig, mappings, onClose, onFocus, onPtyIdReady }: DrawerTerminalProps) {
+export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFocus, terminalConfig, mappings, onClose, onFocus, onPtyIdReady }: DrawerTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -57,15 +55,15 @@ export function DrawerTerminal({ id, worktreeId, entityType, isActive, shouldAut
     }
   }, []);
 
-  const { ptyId, spawn, write, resize, kill } = usePty(handleOutput);
+  const { ptyId, spawnShell, write, resize, kill } = usePty(handleOutput);
 
-  // Store spawn/kill in refs so they're stable for the effect
-  const spawnRef = useRef(spawn);
+  // Store spawnShell/kill in refs so they're stable for the effect
+  const spawnShellRef = useRef(spawnShell);
   const killRef = useRef(kill);
   useEffect(() => {
-    spawnRef.current = spawn;
+    spawnShellRef.current = spawnShell;
     killRef.current = kill;
-  }, [spawn, kill]);
+  }, [spawnShell, kill]);
 
   // Store write function in ref so onData handler can use it immediately
   const writeRef = useRef(write);
@@ -187,7 +185,7 @@ export function DrawerTerminal({ id, worktreeId, entityType, isActive, shouldAut
       fitAddon.fit();
       const cols = terminal.cols;
       const rows = terminal.rows;
-      const newPtyId = await spawnRef.current(worktreeId, entityType, cols, rows);
+      const newPtyId = await spawnShellRef.current(entityId, directory, cols, rows);
       if (newPtyId && isMounted) {
         onPtyIdReadyRef.current?.(newPtyId);
       }
@@ -209,7 +207,7 @@ export function DrawerTerminal({ id, worktreeId, entityType, isActive, shouldAut
       // 1. The pty-exit event handler (when shell exits naturally)
       // 2. App.tsx cleanup when tab is explicitly closed
     };
-  }, [id, worktreeId]);
+  }, [id, entityId, directory]);
 
   // Listen for pty-exit event to auto-close the tab
   useEffect(() => {

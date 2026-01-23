@@ -692,6 +692,28 @@ fn spawn_scratch_terminal(
 }
 
 #[tauri::command]
+fn spawn_shell(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    entity_id: &str,
+    directory: Option<&str>,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<String> {
+    // Use provided directory or fall back to home directory
+    let path = match directory {
+        Some(dir) => dir.to_string(),
+        None => {
+            let home_dir = dirs::home_dir()
+                .ok_or_else(|| "Could not determine home directory".to_string())?;
+            home_dir.to_string_lossy().to_string()
+        }
+    };
+
+    pty::spawn_pty(&app, &state, entity_id, &path, "shell", cols, rows, None, None).map_err(map_err)
+}
+
+#[tauri::command]
 fn pty_write(state: State<'_, Arc<AppState>>, pty_id: &str, data: &str) -> Result<()> {
     pty::write_to_pty(&state, pty_id, data).map_err(map_err)
 }
@@ -1468,6 +1490,7 @@ pub fn run() {
             spawn_main,
             spawn_terminal,
             spawn_scratch_terminal,
+            spawn_shell,
             spawn_action,
             watch_merge_state,
             stop_merge_watcher,
