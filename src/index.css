@@ -20,24 +20,6 @@ body {
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-zinc-800;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-zinc-600 rounded;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-zinc-500;
-}
-
 /* React Resizable Panels */
 [data-panel-group] {
   display: flex;
@@ -60,6 +42,23 @@ body {
 
 [data-panel-resize-handle] {
   flex-shrink: 0;
+}
+
+/* xterm.js scrollbar - style to look like native macOS overlay */
+.xterm .xterm-scrollable-element > .scrollbar {
+  width: 8px !important;
+  right: 2px !important;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar > .slider {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 4px !important;
+  width: 6px !important;
+  left: 1px !important;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar > .slider:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
 }
 
 /* macOS title bar drag region */
