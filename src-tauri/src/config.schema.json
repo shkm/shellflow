@@ -207,6 +207,86 @@
           "description": "Shortcut to paste text in terminals",
           "default": { "mac": "cmd+v", "other": "ctrl+shift+v" }
         },
+        "worktreePrev": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to the previous worktree",
+          "default": { "mac": "cmd+k", "other": "ctrl+shift+k" }
+        },
+        "worktreeNext": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to the next worktree",
+          "default": { "mac": "cmd+j", "other": "ctrl+shift+j" }
+        },
+        "worktree1": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 1",
+          "default": { "mac": "cmd+1", "other": "ctrl+1" }
+        },
+        "worktree2": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 2",
+          "default": { "mac": "cmd+2", "other": "ctrl+2" }
+        },
+        "worktree3": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 3",
+          "default": { "mac": "cmd+3", "other": "ctrl+3" }
+        },
+        "worktree4": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 4",
+          "default": { "mac": "cmd+4", "other": "ctrl+4" }
+        },
+        "worktree5": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 5",
+          "default": { "mac": "cmd+5", "other": "ctrl+5" }
+        },
+        "worktree6": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 6",
+          "default": { "mac": "cmd+6", "other": "ctrl+6" }
+        },
+        "worktree7": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 7",
+          "default": { "mac": "cmd+7", "other": "ctrl+7" }
+        },
+        "worktree8": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 8",
+          "default": { "mac": "cmd+8", "other": "ctrl+8" }
+        },
+        "worktree9": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch to worktree 9",
+          "default": { "mac": "cmd+9", "other": "ctrl+9" }
+        },
+        "runTask": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to open the task runner",
+          "default": { "mac": "cmd+r", "other": "ctrl+shift+r" }
+        },
+        "newWorkspace": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to create a new workspace",
+          "default": { "mac": "cmd+n", "other": "ctrl+n" }
+        },
+        "switchFocus": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to switch focus between main pane and drawer",
+          "default": "ctrl+\\"
+        },
+        "taskSwitcher": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to open the task switcher",
+          "default": { "mac": "cmd+;", "other": "ctrl+;" }
+        },
+        "expandDrawer": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to expand the drawer to full screen",
+          "default": "shift+Escape"
+        },
         "previousView": {
           "$ref": "#/$defs/shortcut",
           "description": "Shortcut to switch between current and previous view (worktree or project)",
