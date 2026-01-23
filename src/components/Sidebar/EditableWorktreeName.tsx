@@ -4,12 +4,18 @@ interface EditableWorktreeNameProps {
   name: string;
   onRename: (newName: string) => Promise<void>;
   className?: string;
+  /** Automatically enter edit mode when mounted */
+  autoEdit?: boolean;
+  /** Called when auto-edit mode is consumed (user starts editing or cancels) */
+  onAutoEditConsumed?: () => void;
 }
 
 export function EditableWorktreeName({
   name,
   onRename,
   className = '',
+  autoEdit = false,
+  onAutoEditConsumed,
 }: EditableWorktreeNameProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(name);
@@ -23,6 +29,15 @@ export function EditableWorktreeName({
       setEditValue(name);
     }
   }, [name, isEditing]);
+
+  // Auto-enter edit mode when autoEdit is true
+  useEffect(() => {
+    if (autoEdit && !isEditing) {
+      setIsEditing(true);
+      setError(null);
+      onAutoEditConsumed?.();
+    }
+  }, [autoEdit, isEditing, onAutoEditConsumed]);
 
   // Focus and select input when entering edit mode
   useEffect(() => {
@@ -104,9 +119,7 @@ export function EditableWorktreeName({
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={isSubmitting}
-          className={`bg-zinc-700 text-zinc-100 text-sm px-1 py-0 rounded border border-zinc-500 focus:border-blue-500 focus:outline-none min-w-0 w-full ${
-            error ? 'border-red-500' : ''
-          } ${isSubmitting ? 'opacity-50' : ''}`}
+          className={`bg-zinc-800 text-zinc-100 text-sm px-1 py-0 rounded border-none focus:outline-none min-w-0 w-full selection:bg-zinc-600 selection:text-zinc-100 ${isSubmitting ? 'opacity-50' : ''}`}
           onClick={(e) => e.stopPropagation()}
         />
         {error && (

@@ -285,6 +285,10 @@ pub struct WorktreeConfig {
 
     /// Configuration for copying files to new worktrees
     pub copy: CopyConfig,
+
+    /// Focus the branch name input when creating a new worktree
+    #[serde(rename = "focusNewBranchNames")]
+    pub focus_new_branch_names: bool,
 }
 
 impl Default for WorktreeConfig {
@@ -293,6 +297,7 @@ impl Default for WorktreeConfig {
             directory: None,
             base_branch: BaseBranch::default(),
             copy: CopyConfig::default(),
+            focus_new_branch_names: false,
         }
     }
 }

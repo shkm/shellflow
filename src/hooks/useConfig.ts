@@ -72,6 +72,10 @@ export interface ScratchConfig {
   startOnLaunch: boolean;
 }
 
+export interface WorktreeConfig {
+  focusNewBranchNames: boolean;
+}
+
 export interface MappingsConfig {
   toggleDrawer: Shortcut;
   toggleRightPanel: Shortcut;
@@ -110,6 +114,7 @@ export interface Config {
   tasks: TaskConfig[];
   actions: ActionsConfig;
   scratch: ScratchConfig;
+  worktree: WorktreeConfig;
 }
 
 /** An error from parsing a config file */
@@ -189,6 +194,9 @@ const defaultConfig: Config = {
   },
   scratch: {
     startOnLaunch: true,
+  },
+  worktree: {
+    focusNewBranchNames: false,
   },
 };
 

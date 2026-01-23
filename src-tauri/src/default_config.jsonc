@@ -36,7 +36,9 @@
     "copy": {
       "gitIgnored": false,
       "except": [".claude", ".worktrees"]
-    }
+    },
+    // Focus the branch name input when creating a new worktree
+    "focusNewBranchNames": false
   },
 
   "merge": {

@@ -49,6 +49,9 @@ function App() {
   // Get project path first for config loading (derived below after activeWorktreeId is defined)
   const [activeWorktreeId, setActiveWorktreeId] = useState<string | null>(null);
 
+  // Worktree that should auto-enter edit mode for its name (used with focusNewBranchNames config)
+  const [autoEditWorktreeId, setAutoEditWorktreeId] = useState<string | null>(null);
+
   // Active project (when viewing main repo terminal instead of a worktree)
   // If activeWorktreeId is set, activeProjectId indicates which project's worktree is active
   // If activeWorktreeId is null and activeProjectId is set, we're viewing the project's main terminal
@@ -1434,6 +1437,10 @@ function App() {
         setOpenWorktreeIds((prev) => new Set([...prev, worktree.id]));
         setActiveWorktreeId(worktree.id);
         setActiveScratchId(null);
+        // Auto-focus branch name for editing if configured
+        if (config.worktree.focusNewBranchNames) {
+          setAutoEditWorktreeId(worktree.id);
+        }
       } catch (err) {
         const errorMessage = String(err);
         console.log('[handleAddWorktree] Error caught:', errorMessage);
@@ -1449,7 +1456,7 @@ function App() {
         }
       }
     },
-    [projects, createWorktree]
+    [projects, createWorktree, config.worktree.focusNewBranchNames]
   );
 
   const handleStashAndCreate = useCallback(async () => {
@@ -1483,6 +1490,10 @@ function App() {
       setOpenWorktreeIds((prev) => new Set([...prev, worktree.id]));
       setActiveWorktreeId(worktree.id);
       setPendingStashProject(null);
+      // Auto-focus branch name for editing if configured
+      if (config.worktree.focusNewBranchNames) {
+        setAutoEditWorktreeId(worktree.id);
+      }
     } catch (err) {
       console.error('[handleStashAndCreate] Failed:', err);
       setStashError(String(err));
@@ -1497,7 +1508,7 @@ function App() {
     } finally {
       setIsStashing(false);
     }
-  }, [pendingStashProject, createWorktree]);
+  }, [pendingStashProject, createWorktree, config.worktree.focusNewBranchNames]);
 
   const handleSelectWorktree = useCallback((worktree: Worktree) => {
     // Mark the project as active and auto-open its project terminal
@@ -2447,6 +2458,7 @@ function App() {
               showIdleCheck={config.indicators.showIdleCheck}
               activeScratchCwd={activeScratchId ? scratchCwds.get(activeScratchId) ?? null : null}
               homeDir={homeDir}
+              autoEditWorktreeId={autoEditWorktreeId}
               onToggleProject={toggleProject}
               onSelectProject={handleSelectProject}
               onSelectWorktree={handleSelectWorktree}
@@ -2473,6 +2485,7 @@ function App() {
               onCloseScratch={handleCloseScratch}
               onRenameScratch={handleRenameScratch}
               onReorderScratchTerminals={handleReorderScratchTerminals}
+              onAutoEditConsumed={() => setAutoEditWorktreeId(null)}
             />
           </div>
         </Panel>

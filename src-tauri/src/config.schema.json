@@ -144,6 +144,11 @@
             }
           },
           "additionalProperties": false
+        },
+        "focusNewBranchNames": {
+          "type": "boolean",
+          "description": "Focus the branch name input when creating a new worktree, allowing immediate editing",
+          "default": false
         }
       },
       "additionalProperties": false

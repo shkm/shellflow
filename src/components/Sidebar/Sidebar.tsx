@@ -63,6 +63,8 @@ interface SidebarProps {
   showIdleCheck: boolean;
   activeScratchCwd: string | null;
   homeDir: string | null;
+  /** Worktree ID that should auto-enter edit mode for its name */
+  autoEditWorktreeId: string | null;
   onToggleProject: (projectId: string) => void;
   onSelectProject: (project: Project) => void;
   onSelectWorktree: (worktree: Worktree) => void;
@@ -89,6 +91,7 @@ interface SidebarProps {
   onCloseScratch: (scratchId: string) => void;
   onRenameScratch: (scratchId: string, newName: string) => void;
   onReorderScratchTerminals: (scratchIds: string[]) => void;
+  onAutoEditConsumed: () => void;
 }
 
 export function Sidebar({
@@ -125,6 +128,7 @@ export function Sidebar({
   showIdleCheck,
   activeScratchCwd,
   homeDir,
+  autoEditWorktreeId,
   onToggleProject,
   onSelectProject,
   onSelectWorktree,
@@ -151,6 +155,7 @@ export function Sidebar({
   onCloseScratch,
   onRenameScratch,
   onReorderScratchTerminals,
+  onAutoEditConsumed,
 }: SidebarProps) {
   const [contextMenu, setContextMenu] = useState<{
     project: Project;
@@ -642,6 +647,8 @@ export function Sidebar({
                                       <EditableWorktreeName
                                         name={worktree.name}
                                         onRename={(newName) => onRenameWorktree(worktree.id, newName)}
+                                        autoEdit={autoEditWorktreeId === worktree.id}
+                                        onAutoEditConsumed={onAutoEditConsumed}
                                       />
                                       {isLoading ? (
                                         <span className="absolute right-1" title="Starting...">
