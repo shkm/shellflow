@@ -63,6 +63,13 @@ function App() {
   // Scratch terminals - general-purpose terminals not tied to any project
   const [scratchTerminals, setScratchTerminals] = useState<ScratchTerminal[]>([]);
   const [scratchTerminalCounter, setScratchTerminalCounter] = useState(0);
+  const [scratchCwds, setScratchCwds] = useState<Map<string, string>>(new Map());
+  const [homeDir, setHomeDir] = useState<string | null>(null);
+
+  // Fetch home directory on mount (used for initial scratch terminal cwd)
+  useEffect(() => {
+    invoke<string>('get_home_dir').then(setHomeDir).catch(() => {});
+  }, []);
 
   // Open project terminals (main repo shells are kept alive for these)
   const [openProjectIds, setOpenProjectIds] = useState<Set<string>>(new Set());
@@ -1542,11 +1549,19 @@ function App() {
     };
     setScratchTerminals((prev) => [...prev, newScratch]);
     setScratchTerminalCounter(newCounter);
+    // Initialize cwd to home directory
+    if (homeDir) {
+      setScratchCwds((prev) => {
+        const next = new Map(prev);
+        next.set(newScratch.id, homeDir);
+        return next;
+      });
+    }
     // Select the new scratch terminal
     setPreviousView({ worktreeId: activeWorktreeId, projectId: activeProjectId, scratchId: activeScratchId });
     setActiveWorktreeId(null);
     setActiveScratchId(newScratch.id);
-  }, [scratchTerminalCounter, activeWorktreeId, activeProjectId, activeScratchId]);
+  }, [scratchTerminalCounter, activeWorktreeId, activeProjectId, activeScratchId, homeDir]);
 
   const handleSelectScratch = useCallback((scratchId: string) => {
     // Save current view as previous before switching
@@ -1559,7 +1574,7 @@ function App() {
 
   const handleCloseScratch = useCallback((scratchId: string) => {
     setScratchTerminals((prev) => prev.filter((s) => s.id !== scratchId));
-    // Clean up drawer tabs and focus state for this scratch terminal
+    // Clean up drawer tabs, focus state, and cwd for this scratch terminal
     setDrawerTabs((prev) => {
       const next = new Map(prev);
       next.delete(scratchId);
@@ -1576,6 +1591,11 @@ function App() {
       return next;
     });
     setFocusStates((prev) => {
+      const next = new Map(prev);
+      next.delete(scratchId);
+      return next;
+    });
+    setScratchCwds((prev) => {
       const next = new Map(prev);
       next.delete(scratchId);
       return next;
@@ -1610,6 +1630,14 @@ function App() {
     setScratchTerminals((prev) =>
       prev.map((s) => (s.id === scratchId ? { ...s, name: newName } : s))
     );
+  }, []);
+
+  const handleScratchCwdChange = useCallback((scratchId: string, cwd: string) => {
+    setScratchCwds((prev) => {
+      const next = new Map(prev);
+      next.set(scratchId, cwd);
+      return next;
+    });
   }, []);
 
   const handleReorderScratchTerminals = useCallback((scratchIds: string[]) => {
@@ -2417,6 +2445,8 @@ function App() {
               terminalApp={config.apps.terminal}
               editorApp={config.apps.editor}
               showIdleCheck={config.indicators.showIdleCheck}
+              activeScratchCwd={activeScratchId ? scratchCwds.get(activeScratchId) ?? null : null}
+              homeDir={homeDir}
               onToggleProject={toggleProject}
               onSelectProject={handleSelectProject}
               onSelectWorktree={handleSelectWorktree}
@@ -2473,6 +2503,7 @@ function App() {
                 onWorktreeThinkingChange={handleWorktreeThinkingChange}
                 onProjectNotification={handleProjectNotification}
                 onProjectThinkingChange={handleProjectThinkingChange}
+                onScratchCwdChange={handleScratchCwdChange}
               />
             </Panel>
 
