@@ -43,6 +43,8 @@ type FocusedPane = 'main' | 'drawer';
 function App() {
   const { projects, addProject, removeProject, createWorktree, renameWorktree, reorderProjectsOptimistic, reorderWorktreesOptimistic, refresh: refreshProjects } = useWorktrees();
 
+  // Guard to prevent dialog re-entry when escape key bubbles back from native dialog
+  const isAddProjectDialogOpen = useRef(false);
 
   // Get project path first for config loading (derived below after activeWorktreeId is defined)
   const [activeWorktreeId, setActiveWorktreeId] = useState<string | null>(null);
@@ -1370,19 +1372,28 @@ function App() {
 
   // Worktree handlers
   const handleAddProject = useCallback(async () => {
-    const path = await selectFolder();
-    if (path) {
-      try {
-        const project = await addProject(path);
-        setExpandedProjects((prev) => new Set([...prev, project.id]));
-        // Activate the newly added project immediately
-        setSessionTouchedProjects((prev) => new Set([...prev, project.id]));
-        setOpenProjectIds((prev) => new Set([...prev, project.id]));
-        setActiveWorktreeId(null);
-        setActiveProjectId(project.id);
-      } catch (err) {
-        console.error('Failed to add project:', err);
+    // Prevent re-entry when escape key bubbles back from native dialog
+    if (isAddProjectDialogOpen.current) {
+      return;
+    }
+    isAddProjectDialogOpen.current = true;
+    try {
+      const path = await selectFolder();
+      if (path) {
+        try {
+          const project = await addProject(path);
+          setExpandedProjects((prev) => new Set([...prev, project.id]));
+          // Activate the newly added project immediately
+          setSessionTouchedProjects((prev) => new Set([...prev, project.id]));
+          setOpenProjectIds((prev) => new Set([...prev, project.id]));
+          setActiveWorktreeId(null);
+          setActiveProjectId(project.id);
+        } catch (err) {
+          console.error('Failed to add project:', err);
+        }
       }
+    } finally {
+      isAddProjectDialogOpen.current = false;
     }
   }, [addProject]);
 
