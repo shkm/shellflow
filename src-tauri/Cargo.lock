@@ -2882,40 +2882,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
-name = "onemanband"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "dirs 5.0.1",
- "env_logger",
- "git2",
- "glob",
- "json-strip-comments",
- "lazy_static",
- "libc",
- "log",
- "minijinja",
- "notify",
- "openssl",
- "parking_lot",
- "petname",
- "portable-pty",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "shell-escape",
- "signal-hook",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "thiserror 2.0.18",
- "uuid",
-]
-
-[[package]]
 name = "open"
 version = "5.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4132,6 +4098,40 @@ name = "shell-words"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc6fe69c597f9c37bfeeeeeb33da3530379845f10be461a66d16d03eca2ded77"
+
+[[package]]
+name = "shellflow"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dirs 5.0.1",
+ "env_logger",
+ "git2",
+ "glob",
+ "json-strip-comments",
+ "lazy_static",
+ "libc",
+ "log",
+ "minijinja",
+ "notify",
+ "openssl",
+ "parking_lot",
+ "petname",
+ "portable-pty",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "shell-escape",
+ "signal-hook",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "thiserror 2.0.18",
+ "uuid",
+]
 
 [[package]]
 name = "shlex"

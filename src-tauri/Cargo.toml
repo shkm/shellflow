@@ -1,13 +1,13 @@
 [package]
-name = "onemanband"
+name = "shellflow"
 version = "0.0.0"
-description = "Git Worktree Orchestrator"
+description = "Parallel terminal and worktree orchestration"
 authors = ["Jamie Schembri"]
 license = "MIT"
 edition = "2021"
 
 [lib]
-name = "onemanband_lib"
+name = "shellflow_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

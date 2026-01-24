@@ -29,8 +29,8 @@ import { sendOsNotification } from './lib/notifications';
 import { matchesShortcut } from './lib/keyboard';
 import { Project, Worktree, RunningTask, MergeCompleted, ScratchTerminal } from './types';
 
-const EXPANDED_PROJECTS_KEY = 'onemanband:expandedProjects';
-const SELECTED_TASKS_KEY = 'onemanband:selectedTasks';
+const EXPANDED_PROJECTS_KEY = 'shellflow:expandedProjects';
+const SELECTED_TASKS_KEY = 'shellflow:selectedTasks';
 
 // Zoom constants
 const ZOOM_STEP = 2; // pixels per zoom level
@@ -564,7 +564,7 @@ function App() {
           const wt = project.worktrees.find(w => w.id === worktreeId);
           if (wt) return wt.name;
         }
-        return 'One Man Band';
+        return 'Shellflow';
       })();
       sendOsNotification(notificationTitle, body);
     }
@@ -626,7 +626,7 @@ function App() {
     if (activeWorktreeId || projectId !== activeProjectId) {
       const notificationTitle = title || (() => {
         const project = projects.find(p => p.id === projectId);
-        return project?.name ?? 'One Man Band';
+        return project?.name ?? 'Shellflow';
       })();
       sendOsNotification(notificationTitle, body);
     }
@@ -2065,9 +2065,9 @@ function App() {
     runTask: handleToggleTask,
     taskSwitcher: handleToggleTaskSwitcher,
     // Help menu
-    helpDocs: () => openUrl('https://github.com/shkm/One-Man-Band#readme'),
-    helpReportIssue: () => openUrl('https://github.com/shkm/One-Man-Band/issues/new'),
-    helpReleaseNotes: () => openUrl('https://github.com/shkm/One-Man-Band/releases'),
+    helpDocs: () => openUrl('https://github.com/shkm/shellflow#readme'),
+    helpReportIssue: () => openUrl('https://github.com/shkm/shellflow/issues/new'),
+    helpReleaseNotes: () => openUrl('https://github.com/shkm/shellflow/releases'),
   }), [
     activeProjectId, activeWorktreeId, activeScratchId, activeDrawerTabId, isDrawerOpen, activeFocusState,
     openWorktreesInOrder, projects, config.apps.terminal, config.apps.editor,

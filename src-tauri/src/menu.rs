@@ -36,16 +36,16 @@ pub static MENU_ITEMS: RwLock<Option<DynamicMenuItems>> = RwLock::new(None);
 pub fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let mut dynamic_items = DynamicMenuItems::new();
 
-    // === App Menu (One Man Band) ===
-    let about_item = PredefinedMenuItem::about(app, Some("About One Man Band"), None)?;
-    let quit_item = MenuItemBuilder::with_id("quit", "Quit One Man Band")
+    // === App Menu (Shellflow) ===
+    let about_item = PredefinedMenuItem::about(app, Some("About Shellflow"), None)?;
+    let quit_item = MenuItemBuilder::with_id("quit", "Quit Shellflow")
         .accelerator("CmdOrCtrl+Q")
         .build(app)?;
 
-    let app_submenu = SubmenuBuilder::new(app, "One Man Band")
+    let app_submenu = SubmenuBuilder::new(app, "Shellflow")
         .item(&about_item)
         .separator()
-        .item(&PredefinedMenuItem::hide(app, Some("Hide One Man Band"))?)
+        .item(&PredefinedMenuItem::hide(app, Some("Hide Shellflow"))?)
         .item(&PredefinedMenuItem::hide_others(app, None)?)
         .item(&PredefinedMenuItem::show_all(app, None)?)
         .separator()
@@ -307,7 +307,7 @@ pub fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     // === Help Menu ===
     // On macOS, naming this "Help" automatically adds the search field
-    let help_docs = MenuItemBuilder::with_id("help_docs", "One Man Band Help")
+    let help_docs = MenuItemBuilder::with_id("help_docs", "Shellflow Help")
         .build(app)?;
     let help_report_issue = MenuItemBuilder::with_id("help_report_issue", "Report Issue…")
         .build(app)?;

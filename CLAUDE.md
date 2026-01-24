@@ -1,4 +1,4 @@
-# One Man Band
+# Shellflow
 
 A Tauri desktop app for orchestrating git worktrees with integrated terminal support.
 
@@ -88,7 +88,7 @@ Version is defined in three places that release-please keeps in sync:
 
 ## Configuration
 
-User config is stored at `~/.config/onemanband/config.jsonc`:
+User config is stored at `~/.config/shellflow/config.jsonc`:
 
 ```jsonc
 {

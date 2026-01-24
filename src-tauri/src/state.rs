@@ -85,7 +85,7 @@ impl AppState {
         let state = Self::new();
 
         if let Some(config_dir) = dirs::home_dir() {
-            let state_file = config_dir.join(".onemanband").join("state.json");
+            let state_file = config_dir.join(".shellflow").join("state.json");
             if state_file.exists() {
                 if let Ok(content) = std::fs::read_to_string(&state_file) {
                     if let Ok(mut persisted) = serde_json::from_str::<PersistedState>(&content) {
@@ -126,7 +126,7 @@ impl AppState {
 
     pub fn save(&self) -> Result<(), std::io::Error> {
         if let Some(home_dir) = dirs::home_dir() {
-            let config_dir = home_dir.join(".onemanband");
+            let config_dir = home_dir.join(".shellflow");
             std::fs::create_dir_all(&config_dir)?;
 
             let state_file = config_dir.join("state.json");

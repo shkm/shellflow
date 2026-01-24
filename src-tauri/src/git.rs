@@ -459,7 +459,7 @@ pub fn stash_changes(repo_path: &Path) -> Result<String, GitError> {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
-    let stash_id = format!("onemanband-auto-stash-{}", timestamp);
+    let stash_id = format!("shellflow-auto-stash-{}", timestamp);
 
     log::info!("[stash_changes] Stashing changes in {:?} with id {}", repo_path, stash_id);
 

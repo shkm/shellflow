@@ -1,14 +1,14 @@
 <div align="center">
-  <img src="src-tauri/icons/web/icon-512.png" alt="One Man Band" width="128" height="128" />
+  <img src="src-tauri/icons/web/icon-512.png" alt="Shellflow" width="128" height="128" />
 
-  <h1>One Man Band</h1>
+  <h1>Shellflow</h1>
 
-  <p><strong>Terminal Wrapper & Worktree orchestration GUI for AI-driven development</strong></p>
+  <p><strong>Parallel terminal and worktree orchestration</strong></p>
 
   <p>
-    <a href="https://github.com/shkm/One-Man-Band/releases"><img src="https://img.shields.io/github/v/release/shkm/One-Man-Band?style=flat-square" alt="Release" /></a>
-    <a href="https://github.com/shkm/One-Man-Band/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shkm/One-Man-Band?style=flat-square" alt="License" /></a>
-    <a href="https://github.com/shkm/One-Man-Band/stargazers"><img src="https://img.shields.io/github/stars/shkm/One-Man-Band?style=flat-square" alt="Stars" /></a>
+    <a href="https://github.com/shkm/shellflow/releases"><img src="https://img.shields.io/github/v/release/shkm/shellflow?style=flat-square" alt="Release" /></a>
+    <a href="https://github.com/shkm/shellflow/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shkm/shellflow?style=flat-square" alt="License" /></a>
+    <a href="https://github.com/shkm/shellflow/stargazers"><img src="https://img.shields.io/github/stars/shkm/shellflow?style=flat-square" alt="Stars" /></a>
   </p>
 
   <p>
@@ -22,7 +22,7 @@
 <br />
 
 <p align="center">
-  <img src="./assets/screenshot.png" alt="One Man Band Screenshot" width="800" />
+  <img src="./assets/screenshot.png" alt="Shellflow Screenshot" width="800" />
 </p>
 
 <br />
@@ -62,9 +62,9 @@ Finally, task switching itself can be a chore. One terminal tab per worktree sou
 
 So I went looking for other options. [Conductor](https://docs.conductor.build) opened my eyes to how productive a polished workflow around worktrees can be. But I found Conductor a bit too heavy-handed for my uses, so I switched down to [Worktrunk](https://worktrunk.dev). Both fantastic pieces of software, but once again it wasn't a fit — I missed what I could do with a GUI.
 
-### Enter: One Man Band
+### Enter: Shellflow
 
-So that's why I built One Man Band (see what I did there?). Now I can run Claude, or any other terminal-based LLM, without losing the potential of rich GUI interactions. And that potential isn't yet realised, but we're getting there...
+So that's why I built Shellflow. Now I can run Claude, or any other terminal-based LLM, without losing the potential of rich GUI interactions. And that potential isn't yet realised, but we're getting there...
 
 ## Features
 
@@ -84,7 +84,7 @@ So that's why I built One Man Band (see what I did there?). Now I can run Claude
 | Shortcut                                 | Action                               |
 | ---------------------------------------- | ------------------------------------ |
 | ``Ctrl+` ``                              | Toggle drawer (terminal panel)       |
-| `Ctrl+\`                                | Switch focus between main and drawer |
+| `Ctrl+\`                                 | Switch focus between main and drawer |
 | `Shift+Escape`                           | Expand drawer                        |
 | `Cmd+B`                                  | Toggle right sidebar (changed files) |
 | `Cmd+;` (macOS) / `Ctrl+;` (other)       | Open task switcher                   |
@@ -119,12 +119,12 @@ These shortcuts can be customized via `mappings` in the [config](#configuration)
 
 ```bash
 brew tap shkm/brew
-brew install --cask one-man-band
+brew install --cask shellflow
 ```
 
 ### Manual Download
 
-Download the latest release for your platform from the [Releases](https://github.com/shkm/one-man-band/releases) page.
+Download the latest release for your platform from the [Releases](https://github.com/shkm/shellflow/releases) page.
 
 ## Technology Stack
 
@@ -156,8 +156,8 @@ npm run tauri build
 
 The built application will be available at:
 
-- `src-tauri/target/release/bundle/macos/One Man Band.app`
-- `src-tauri/target/release/bundle/dmg/One Man Band_*.dmg`
+- `src-tauri/target/release/bundle/macos/Shellflow.app`
+- `src-tauri/target/release/bundle/dmg/Shellflow_*.dmg`
 
 ## Architecture
 
@@ -191,11 +191,11 @@ The built application will be available at:
 ## Data Storage
 
 - **Worktrees**: Created in `<repo>/.worktrees/<worktree-name>/` by default
-- **State**: Persisted in `~/.onemanband/state.json`
+- **State**: Persisted in `~/.shellflow/state.json`
 
 ## Configuration
 
-Settings are stored in `~/.config/onemanband/config.jsonc`. The file is created with defaults on first run.
+Settings are stored in `~/.config/shellflow/config.jsonc`. The file is created with defaults on first run.
 
 See [default_config.jsonc](src-tauri/src/default_config.jsonc) for all available options, or use the [JSON schema](src-tauri/src/config.schema.json) for editor autocompletion.
 
@@ -238,12 +238,8 @@ Tasks are configurable commands that can be run per worktree. They appear in a d
 
 You can override settings per-project by creating config files in the project directory:
 
-- `.onemanband/config.jsonc` — shared with the team (commit to git)
-- `.onemanband/config.local.jsonc` — local overrides (add to `.gitignore`)
-
-### Attribution
-
-Drum icon is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) [VectorPortal](https://vectorportal.com).
+- `.shellflow/config.jsonc` — shared with the team (commit to git)
+- `.shellflow/config.local.jsonc` — local overrides (add to `.gitignore`)
 
 ### Inspiration
 

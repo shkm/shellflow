@@ -7,10 +7,10 @@ fn main() {
     // Check for watchdog mode: --watchdog <parent_pid>
     if args.len() == 3 && args[1] == "--watchdog" {
         if let Ok(ppid) = args[2].parse::<u32>() {
-            onemanband_lib::run_watchdog(ppid);
+            shellflow_lib::run_watchdog(ppid);
             return;
         }
     }
 
-    onemanband_lib::run()
+    shellflow_lib::run()
 }

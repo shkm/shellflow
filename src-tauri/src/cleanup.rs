@@ -7,7 +7,7 @@
 //! - Panic handler for emergency cleanup
 //! - Signal handlers (SIGTERM/SIGINT) for graceful shutdown
 //!
-//! Each app instance gets its own PID file at `~/.onemanband/pids/{app_pid}.json`.
+//! Each app instance gets its own PID file at `~/.shellflow/pids/{app_pid}.json`.
 //! This allows multiple instances to run simultaneously without interfering.
 
 use crate::pty;
@@ -37,7 +37,7 @@ lazy_static::lazy_static! {
 fn get_pids_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join(".onemanband")
+        .join(".shellflow")
         .join("pids")
 }
 

@@ -581,7 +581,7 @@ pub fn get_config_path() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("/tmp"))
         .join(".config")
-        .join("onemanband")
+        .join("shellflow")
         .join("config.jsonc")
 }
 
@@ -605,8 +605,8 @@ pub fn get_config_paths(project_path: Option<&str>) -> Vec<PathBuf> {
 
     if let Some(project_path) = project_path {
         let project_dir = Path::new(project_path);
-        paths.push(project_dir.join(".onemanband").join("config.jsonc"));
-        paths.push(project_dir.join(".onemanband").join("config.local.jsonc"));
+        paths.push(project_dir.join(".shellflow").join("config.jsonc"));
+        paths.push(project_dir.join(".shellflow").join("config.local.jsonc"));
     }
 
     paths
@@ -675,9 +675,9 @@ fn merge_arrays(base: &mut serde_json::Value, overlay: &serde_json::Value) {
 
 /// Load config with optional project-specific overrides.
 /// Config files are merged in order: global <- repo <- local
-/// - Global: ~/.config/onemanband/config.jsonc
-/// - Repo: {project_path}/.onemanband/config.jsonc (tracked in git)
-/// - Local: {project_path}/.onemanband/config.local.jsonc (gitignored)
+/// - Global: ~/.config/shellflow/config.jsonc
+/// - Repo: {project_path}/.shellflow/config.jsonc (tracked in git)
+/// - Local: {project_path}/.shellflow/config.local.jsonc (gitignored)
 pub fn load_config_for_project(project_path: Option<&str>) -> Config {
     load_config_with_errors(project_path).config
 }
@@ -724,8 +724,8 @@ pub fn load_config_with_errors(project_path: Option<&str>) -> ConfigResult {
     if let Some(project_path) = project_path {
         let project_dir = Path::new(project_path);
 
-        // Repo config: {project_path}/.onemanband/config.jsonc
-        let repo_config_path = project_dir.join(".onemanband").join("config.jsonc");
+        // Repo config: {project_path}/.shellflow/config.jsonc
+        let repo_config_path = project_dir.join(".shellflow").join("config.jsonc");
         if repo_config_path.exists() {
             match std::fs::read_to_string(&repo_config_path) {
                 Ok(content) => match parse_jsonc_value(&content) {
@@ -742,8 +742,8 @@ pub fn load_config_with_errors(project_path: Option<&str>) -> ConfigResult {
             }
         }
 
-        // Local config: {project_path}/.onemanband/config.local.jsonc
-        let local_config_path = project_dir.join(".onemanband").join("config.local.jsonc");
+        // Local config: {project_path}/.shellflow/config.local.jsonc
+        let local_config_path = project_dir.join(".shellflow").join("config.local.jsonc");
         if local_config_path.exists() {
             match std::fs::read_to_string(&local_config_path) {
                 Ok(content) => match parse_jsonc_value(&content) {

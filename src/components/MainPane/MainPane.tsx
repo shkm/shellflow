@@ -58,7 +58,7 @@ export function MainPane({
   if (!hasOpenEntities || !activeEntityId) {
     return (
       <div className="flex flex-col h-full bg-zinc-950 text-zinc-400 select-none items-center justify-center px-8">
-        <h1 className="text-2xl font-semibold text-zinc-200 mb-2">One Man Band</h1>
+        <h1 className="text-2xl font-semibold text-zinc-200 mb-2">Shellflow</h1>
         <p className="text-zinc-500 mb-8 text-center max-w-md">
           The terminal wrapper with worktree orchestration.
         </p>

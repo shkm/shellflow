@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg width="100%" height="100%" viewBox="0 0 4267 4267" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g><g><clipPath id="_clip1"><path d="M416.667,3016.667l0,-1766.667c0,-479.162 291.667,-833.354 833.442,-833.333l1766.558,-0.021c541.667,0.021 833.333,354.192 833.333,833.354l0,1766.667c0,479.171 -291.667,833.312 -833.333,833.333l-1766.558,0c-541.775,0 -833.442,-354.163 -833.442,-833.333Z"/></clipPath><g clip-path="url(#_clip1)">
+<!-- Background with radial gradient for richness -->
+<path d="M416.667,3016.667l0,-1766.667c0,-479.162 291.667,-833.354 833.442,-833.333l1766.558,-0.021c541.667,0.021 833.333,354.192 833.333,833.354l0,1766.667c0,479.171 -291.667,833.312 -833.333,833.333l-1766.558,0c-541.775,0 -833.442,-354.163 -833.442,-833.333Z" style="fill:url(#_bgRadial);fill-rule:nonzero;"/>
+<!-- Vignette overlay to darken corners -->
+<path d="M416.667,3016.667l0,-1766.667c0,-479.162 291.667,-833.354 833.442,-833.333l1766.558,-0.021c541.667,0.021 833.333,354.192 833.333,833.354l0,1766.667c0,479.171 -291.667,833.312 -833.333,833.333l-1766.558,0c-541.775,0 -833.442,-354.163 -833.442,-833.333Z" style="fill:url(#_vignette);fill-rule:nonzero;"/>
+<g>
+<!-- Texture layer - visible >_ elements with subtle rotations -->
+<text x="580px" y="620px" transform="rotate(-2 580 620)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:45px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="820px" y="580px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="1100px" y="650px" transform="rotate(3 1100 650)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="1380px" y="590px" transform="rotate(-1 1380 590)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="1650px" y="640px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:55px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+<text x="1920px" y="600px" transform="rotate(2.5 1920 600)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:36px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="2180px" y="660px" transform="rotate(-2.5 2180 660)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="2450px" y="610px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="2720px" y="650px" transform="rotate(1.5 2720 650)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:50px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="2980px" y="590px" transform="rotate(-3 2980 590)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="3250px" y="640px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="3480px" y="680px" transform="rotate(2 3480 680)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+
+<text x="620px" y="820px" transform="rotate(1.5 620 820)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="950px" y="780px" transform="rotate(-2 950 780)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="1230px" y="840px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:35px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="1520px" y="790px" transform="rotate(2.5 1520 790)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:47px;fill:#92dce5;fill-opacity:0.29;">&gt;_</text>
+<text x="1780px" y="850px" transform="rotate(-1.5 1780 850)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="2050px" y="800px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.33;">&gt;_</text>
+<text x="2320px" y="860px" transform="rotate(3 2320 860)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="2590px" y="810px" transform="rotate(-2.5 2590 810)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="2860px" y="870px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:37px;fill:#92dce5;fill-opacity:0.21;">&gt;_</text>
+<text x="3130px" y="820px" transform="rotate(1 3130 820)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:56px;fill:#92dce5;fill-opacity:0.36;">&gt;_</text>
+<text x="3400px" y="880px" transform="rotate(-2 3400 880)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+
+<text x="550px" y="1020px" transform="rotate(-1.5 550 1020)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:49px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="780px" y="980px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:39px;fill:#92dce5;fill-opacity:0.23;">&gt;_</text>
+<text x="1050px" y="1040px" transform="rotate(2 1050 1040)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:53px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="1850px" y="990px" transform="rotate(-2.5 1850 990)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="2650px" y="1050px" transform="rotate(1.5 2650 1050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:47px;fill:#92dce5;fill-opacity:0.29;">&gt;_</text>
+<text x="3180px" y="1000px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="3450px" y="1060px" transform="rotate(-3 3450 1060)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:51px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+
+<text x="600px" y="1220px" transform="rotate(2.5 600 1220)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="870px" y="1180px" transform="rotate(-1 870 1180)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+<text x="1680px" y="1240px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:37px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="1950px" y="1190px" transform="rotate(1.5 1950 1190)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="3050px" y="1250px" transform="rotate(-2 3050 1250)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:50px;fill:#92dce5;fill-opacity:0.31;">&gt;_</text>
+<text x="3320px" y="1200px" transform="rotate(3 3320 1200)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:39px;fill:#92dce5;fill-opacity:0.23;">&gt;_</text>
+<text x="3550px" y="1260px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:45px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+
+<text x="550px" y="1420px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="820px" y="1380px" transform="rotate(-2.5 820 1380)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:36px;fill:#92dce5;fill-opacity:0.21;">&gt;_</text>
+<text x="1580px" y="1440px" transform="rotate(2 1580 1440)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+<text x="2020px" y="1390px" transform="rotate(-1.5 2020 1390)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.33;">&gt;_</text>
+<text x="2280px" y="1450px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="2550px" y="1400px" transform="rotate(1 2550 1400)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:49px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="3180px" y="1460px" transform="rotate(-3 3180 1460)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="3450px" y="1410px" transform="rotate(2.5 3450 1410)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:55px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+
+<text x="600px" y="1620px" transform="rotate(-1 600 1620)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="870px" y="1580px" transform="rotate(2 870 1580)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:53px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="1450px" y="1640px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:45px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="2650px" y="1650px" transform="rotate(-2 2650 1650)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:37px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="2920px" y="1600px" transform="rotate(1.5 2920 1600)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:47px;fill:#92dce5;fill-opacity:0.29;">&gt;_</text>
+<text x="3190px" y="1660px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="3460px" y="1610px" transform="rotate(-2.5 3460 1610)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:56px;fill:#92dce5;fill-opacity:0.36;">&gt;_</text>
+
+<text x="550px" y="1820px" transform="rotate(3 550 1820)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="820px" y="1780px" transform="rotate(-1.5 820 1780)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:35px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="1380px" y="1840px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="2780px" y="1850px" transform="rotate(2 2780 1850)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:51px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="3050px" y="1800px" transform="rotate(-2.5 3050 1800)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="3320px" y="1860px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:49px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="3580px" y="1810px" transform="rotate(1 3580 1810)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+
+<text x="600px" y="2020px" transform="rotate(-2 600 2020)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.33;">&gt;_</text>
+<text x="870px" y="1980px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:39px;fill:#92dce5;fill-opacity:0.23;">&gt;_</text>
+<text x="1320px" y="2040px" transform="rotate(2.5 1320 2040)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="2850px" y="2050px" transform="rotate(-1 2850 2050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="3120px" y="2000px" transform="rotate(3 3120 2000)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:36px;fill:#92dce5;fill-opacity:0.21;">&gt;_</text>
+<text x="3390px" y="2060px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+<text x="3620px" y="2010px" transform="rotate(-1.5 3620 2010)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+
+<text x="550px" y="2220px" transform="rotate(2.5 550 2220)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+<text x="820px" y="2180px" transform="rotate(-1 820 2180)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:51px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="1280px" y="2240px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="2920px" y="2250px" transform="rotate(-2.5 2920 2250)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="3190px" y="2200px" transform="rotate(1.5 3190 2200)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:55px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+<text x="3460px" y="2260px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:35px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="3680px" y="2210px" transform="rotate(-3 3680 2210)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:47px;fill:#92dce5;fill-opacity:0.29;">&gt;_</text>
+
+<text x="600px" y="2420px" transform="rotate(-1.5 600 2420)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:50px;fill:#92dce5;fill-opacity:0.31;">&gt;_</text>
+<text x="870px" y="2380px" transform="rotate(2 870 2380)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:37px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="1350px" y="2440px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:45px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="2980px" y="2450px" transform="rotate(3 2980 2450)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="3250px" y="2400px" transform="rotate(-2 3250 2400)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:53px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="3520px" y="2460px" transform="rotate(1 3520 2460)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+
+<text x="550px" y="2620px" transform="rotate(2 550 2620)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="820px" y="2580px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+<text x="1280px" y="2640px" transform="rotate(-2.5 1280 2640)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:51px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="3050px" y="2650px" transform="rotate(1.5 3050 2650)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="3320px" y="2600px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="3590px" y="2660px" transform="rotate(-1 3590 2660)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+
+<text x="600px" y="2820px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:39px;fill:#92dce5;fill-opacity:0.23;">&gt;_</text>
+<text x="870px" y="2780px" transform="rotate(-2 870 2780)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:49px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="1320px" y="2840px" transform="rotate(3 1320 2840)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:36px;fill:#92dce5;fill-opacity:0.21;">&gt;_</text>
+<text x="2920px" y="2850px" transform="rotate(-1.5 2920 2850)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:56px;fill:#92dce5;fill-opacity:0.36;">&gt;_</text>
+<text x="3190px" y="2800px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="3460px" y="2860px" transform="rotate(2.5 3460 2860)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.33;">&gt;_</text>
+
+<text x="550px" y="3020px" transform="rotate(-1 550 3020)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="820px" y="2980px" transform="rotate(2.5 820 2980)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="1580px" y="3040px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+<text x="2050px" y="2990px" transform="rotate(-2 2050 2990)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:53px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="2320px" y="3050px" transform="rotate(1.5 2320 3050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:35px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="3050px" y="3060px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:47px;fill:#92dce5;fill-opacity:0.29;">&gt;_</text>
+<text x="3320px" y="3010px" transform="rotate(-3 3320 3010)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="3590px" y="3070px" transform="rotate(2 3590 3070)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+
+<text x="600px" y="3220px" transform="rotate(1 600 3220)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:51px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="870px" y="3180px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="1450px" y="3240px" transform="rotate(-2 1450 3240)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:49px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="1720px" y="3190px" transform="rotate(2.5 1720 3190)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:37px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="1990px" y="3250px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+<text x="2260px" y="3200px" transform="rotate(-1.5 2260 3200)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="2920px" y="3260px" transform="rotate(3 2920 3260)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="3190px" y="3210px" transform="rotate(-2 3190 3210)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:55px;fill:#92dce5;fill-opacity:0.35;">&gt;_</text>
+<text x="3460px" y="3270px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+
+<text x="550px" y="3420px" transform="rotate(-2.5 550 3420)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:45px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="820px" y="3380px" transform="rotate(1.5 820 3380)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.33;">&gt;_</text>
+<text x="1280px" y="3440px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="1550px" y="3390px" transform="rotate(-1 1550 3390)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="2120px" y="3450px" transform="rotate(2 2120 3450)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:36px;fill:#92dce5;fill-opacity:0.21;">&gt;_</text>
+<text x="2390px" y="3400px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:51px;fill:#92dce5;fill-opacity:0.32;">&gt;_</text>
+<text x="2660px" y="3460px" transform="rotate(-3 2660 3460)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="2930px" y="3410px" transform="rotate(2.5 2930 3410)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:49px;fill:#92dce5;fill-opacity:0.3;">&gt;_</text>
+<text x="3200px" y="3470px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:43px;fill:#92dce5;fill-opacity:0.26;">&gt;_</text>
+<text x="3470px" y="3420px" transform="rotate(-1.5 3470 3420)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+
+<text x="600px" y="3620px" transform="rotate(1 600 3620)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:37px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="870px" y="3580px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.28;">&gt;_</text>
+<text x="1150px" y="3640px" transform="rotate(-2 1150 3640)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:56px;fill:#92dce5;fill-opacity:0.36;">&gt;_</text>
+<text x="1420px" y="3590px" transform="rotate(2.5 1420 3590)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:39px;fill:#92dce5;fill-opacity:0.23;">&gt;_</text>
+<text x="1690px" y="3650px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:47px;fill:#92dce5;fill-opacity:0.29;">&gt;_</text>
+<text x="1960px" y="3600px" transform="rotate(-1.5 1960 3600)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:41px;fill:#92dce5;fill-opacity:0.25;">&gt;_</text>
+<text x="2230px" y="3660px" transform="rotate(3 2230 3660)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.33;">&gt;_</text>
+<text x="2500px" y="3610px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.27;">&gt;_</text>
+<text x="2770px" y="3670px" transform="rotate(-2.5 2770 3670)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.24;">&gt;_</text>
+<text x="3040px" y="3620px" transform="rotate(1.5 3040 3620)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:53px;fill:#92dce5;fill-opacity:0.34;">&gt;_</text>
+<text x="3310px" y="3680px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:35px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="3550px" y="3630px" transform="rotate(-1 3550 3630)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:50px;fill:#92dce5;fill-opacity:0.31;">&gt;_</text>
+
+<!-- Medium background >_ elements -->
+<text x="1150px" y="850px" transform="rotate(-2 1150 850)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:85px;fill:#92dce5;fill-opacity:0.4;">&gt;<tspan x="1180px" y="850px">_</tspan></text>
+
+<text x="2750px" y="950px" transform="rotate(1.5 2750 950)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:75px;fill:#92dce5;fill-opacity:0.35;">&gt;<tspan x="2777px" y="950px">_</tspan></text>
+
+<text x="3050px" y="2150px" transform="rotate(-1 3050 2150)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:70px;fill:#92dce5;fill-opacity:0.32;">&gt;<tspan x="3075px" y="2150px">_</tspan></text>
+
+<text x="1050px" y="2050px" transform="rotate(2.5 1050 2050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:80px;fill:#92dce5;fill-opacity:0.38;">&gt;<tspan x="1079px" y="2050px">_</tspan></text>
+
+<text x="2200px" y="3450px" transform="rotate(-2 2200 3450)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:65px;fill:#92dce5;fill-opacity:0.3;">&gt;<tspan x="2223px" y="3450px">_</tspan></text>
+
+<text x="1650px" y="720px" transform="rotate(1 1650 720)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:90px;fill:#92dce5;fill-opacity:0.42;">&gt;<tspan x="1682px" y="720px">_</tspan></text>
+
+<text x="2950px" y="3050px" transform="rotate(-1.5 2950 3050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:72px;fill:#92dce5;fill-opacity:0.34;">&gt;<tspan x="2976px" y="3050px">_</tspan></text>
+
+<text x="750px" y="1350px" transform="rotate(2 750 1350)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:82px;fill:#92dce5;fill-opacity:0.39;">&gt;<tspan x="779px" y="1350px">_</tspan></text>
+
+<text x="3150px" y="1550px" transform="rotate(-2.5 3150 1550)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:77px;fill:#92dce5;fill-opacity:0.36;">&gt;<tspan x="3177px" y="1550px">_</tspan></text>
+
+<text x="1850px" y="3150px" transform="rotate(1 1850 3150)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:88px;fill:#92dce5;fill-opacity:0.41;">&gt;<tspan x="1881px" y="3150px">_</tspan></text>
+
+<!-- Foreground scattered >_ elements -->
+<text x="1100px" y="1150px" transform="rotate(-1.5 1100 1150)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:150px;fill:#92dce5;fill-opacity:0.56;">&gt;<tspan x="1154px" y="1150px">_</tspan></text>
+
+<text x="1320px" y="1350px" transform="rotate(2 1320 1350)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:280px;fill:#92dce5;fill-opacity:0.72;">&gt;<tspan x="1421px" y="1350px">_</tspan></text>
+
+<text x="2550px" y="1050px" transform="rotate(-2 2550 1050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:200px;fill:#92dce5;fill-opacity:0.62;">&gt;<tspan x="2622px" y="1050px">_</tspan></text>
+
+<text x="2950px" y="1350px" transform="rotate(1.5 2950 1350)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:240px;fill:#92dce5;fill-opacity:0.67;">&gt;<tspan x="3036px" y="1350px">_</tspan></text>
+
+<text x="2980px" y="1950px" transform="rotate(-1 2980 1950)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:130px;fill:#92dce5;fill-opacity:0.54;">&gt;<tspan x="3027px" y="1950px">_</tspan></text>
+
+<text x="1120px" y="1780px" transform="rotate(2.5 1120 1780)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:180px;fill:#92dce5;fill-opacity:0.6;">&gt;<tspan x="1185px" y="1780px">_</tspan></text>
+
+<text x="2850px" y="2550px" transform="rotate(-2 2850 2550)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:220px;fill:#92dce5;fill-opacity:0.65;">&gt;<tspan x="2929px" y="2550px">_</tspan></text>
+
+<text x="1150px" y="2550px" transform="rotate(1 1150 2550)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:160px;fill:#92dce5;fill-opacity:0.57;">&gt;<tspan x="1208px" y="2550px">_</tspan></text>
+
+<text x="2780px" y="3150px" transform="rotate(-1.5 2780 3150)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:170px;fill:#92dce5;fill-opacity:0.58;">&gt;<tspan x="2841px" y="3150px">_</tspan></text>
+
+<text x="1250px" y="3100px" transform="rotate(2 1250 3100)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:260px;fill:#92dce5;fill-opacity:0.7;">&gt;<tspan x="1344px" y="3100px">_</tspan></text>
+
+<text x="2450px" y="3280px" transform="rotate(-2.5 2450 3280)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:140px;fill:#92dce5;fill-opacity:0.55;">&gt;<tspan x="2500px" y="3280px">_</tspan></text>
+
+<text x="1780px" y="3380px" transform="rotate(1.5 1780 3380)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:120px;fill:#92dce5;fill-opacity:0.52;">&gt;<tspan x="1823px" y="3380px">_</tspan></text>
+
+<text x="2150px" y="1180px" transform="rotate(-1 2150 1180)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:110px;fill:#92dce5;fill-opacity:0.5;">&gt;<tspan x="2190px" y="1180px">_</tspan></text>
+
+<!-- Subtle center zone >_ elements -->
+<text x="1550px" y="1650px" transform="rotate(2 1550 1650)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:55px;fill:#92dce5;fill-opacity:0.18;">&gt;_</text>
+<text x="2380px" y="1720px" transform="rotate(-1.5 2380 1720)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.15;">&gt;_</text>
+<text x="1780px" y="1850px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:62px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="2550px" y="1920px" transform="rotate(2.5 2550 1920)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.14;">&gt;_</text>
+<text x="1620px" y="2050px" transform="rotate(-2 1620 2050)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:70px;fill:#92dce5;fill-opacity:0.22;">&gt;_</text>
+<text x="2480px" y="2150px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:45px;fill:#92dce5;fill-opacity:0.16;">&gt;_</text>
+<text x="1720px" y="2280px" transform="rotate(1.5 1720 2280)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:58px;fill:#92dce5;fill-opacity:0.19;">&gt;_</text>
+<text x="2320px" y="2380px" transform="rotate(-2.5 2320 2380)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.17;">&gt;_</text>
+<text x="1850px" y="2520px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:65px;fill:#92dce5;fill-opacity:0.21;">&gt;_</text>
+<text x="2180px" y="2650px" transform="rotate(2 2180 2650)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.13;">&gt;_</text>
+<text x="1680px" y="2780px" transform="rotate(-1 1680 2780)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:56px;fill:#92dce5;fill-opacity:0.18;">&gt;_</text>
+<text x="2420px" y="2850px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:50px;fill:#92dce5;fill-opacity:0.16;">&gt;_</text>
+<!-- Additional center fills -->
+<text x="1950px" y="1580px" transform="rotate(-2 1950 1580)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.14;">&gt;_</text>
+<text x="2150px" y="1680px" transform="rotate(1.5 2150 1680)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.17;">&gt;_</text>
+<text x="1420px" y="1780px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.15;">&gt;_</text>
+<text x="2680px" y="1820px" transform="rotate(-2.5 2680 1820)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.12;">&gt;_</text>
+<text x="2020px" y="1920px" transform="rotate(2 2020 1920)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:60px;fill:#92dce5;fill-opacity:0.19;">&gt;_</text>
+<text x="1480px" y="2000px" transform="rotate(-1.5 1480 2000)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:50px;fill:#92dce5;fill-opacity:0.16;">&gt;_</text>
+<text x="2280px" y="2020px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:42px;fill:#92dce5;fill-opacity:0.14;">&gt;_</text>
+<text x="1880px" y="2120px" transform="rotate(2.5 1880 2120)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:54px;fill:#92dce5;fill-opacity:0.17;">&gt;_</text>
+<text x="2600px" y="2200px" transform="rotate(-2 2600 2200)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.15;">&gt;_</text>
+<text x="1520px" y="2250px" transform="rotate(1 1520 2250)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:58px;fill:#92dce5;fill-opacity:0.18;">&gt;_</text>
+<text x="2080px" y="2320px" transform="rotate(-1.5 2080 2320)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:40px;fill:#92dce5;fill-opacity:0.13;">&gt;_</text>
+<text x="1650px" y="2420px" transform="rotate(2 1650 2420)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:66px;fill:#92dce5;fill-opacity:0.2;">&gt;_</text>
+<text x="2520px" y="2480px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:44px;fill:#92dce5;fill-opacity:0.14;">&gt;_</text>
+<text x="1980px" y="2580px" transform="rotate(-2.5 1980 2580)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:52px;fill:#92dce5;fill-opacity:0.16;">&gt;_</text>
+<text x="1480px" y="2680px" transform="rotate(1 1480 2680)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:46px;fill:#92dce5;fill-opacity:0.15;">&gt;_</text>
+<text x="2650px" y="2720px" transform="rotate(-2 2650 2720)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:56px;fill:#92dce5;fill-opacity:0.17;">&gt;_</text>
+<text x="2100px" y="2820px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:38px;fill:#92dce5;fill-opacity:0.12;">&gt;_</text>
+<text x="1780px" y="2920px" transform="rotate(1.5 1780 2920)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:62px;fill:#92dce5;fill-opacity:0.19;">&gt;_</text>
+<text x="2350px" y="2950px" transform="rotate(-1 2350 2950)" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:48px;fill:#92dce5;fill-opacity:0.15;">&gt;_</text>
+
+<!-- Glow behind main >_ -->
+<g id="Middle-glow" transform="matrix(1,0,0,0.916417,0,-167.291641)" style="filter:url(#_glow);">
+<text x="1554.994px" y="2959.38px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:1382.195px;fill:#92dce5;fill-opacity:0.4;">&gt;<tspan x="2052.584px" y="2959.38px">_</tspan></text>
+</g>
+<!-- Middle main >_ -->
+<g id="Middle-one" serif:id="Middle one" transform="matrix(1,0,0,0.916417,0,-167.291641)"><g transform="matrix(1382.19536,0,0,1382.19536,2743.68171,2959.38027)"></g><text x="1554.994px" y="2959.38px" style="font-family:'ZedMonoNF-Medium', 'ZedMono Nerd Font', monospace;font-weight:500;font-size:1382.195px;fill:#92dce5;">&gt;<tspan x="2052.584px " y="2959.38px ">_</tspan></text></g>
+
+</g>
+<!-- Main depth gradient overlay -->
+<path d="M416.667,3016.667l0,-1766.667c0,-479.162 291.667,-833.354 833.442,-833.333l1766.558,-0.021c541.667,0.021 833.333,354.192 833.333,833.354l0,1766.667c0,479.171 -291.667,833.312 -833.333,833.333l-1766.558,0c-541.775,0 -833.442,-354.163 -833.442,-833.333Z" style="fill:url(#_Linear2);fill-rule:nonzero;"/>
+<!-- Top edge highlight -->
+<path d="M500,470 L3766,470" style="stroke:url(#_topHighlight);stroke-width:12;stroke-linecap:round;fill:none;"/>
+<!-- Inner border/stroke -->
+<path d="M450,3000l0,-1733c0,-460 280,-800 800,-800l1766,0c520,0 800,340 800,800l0,1733c0,460 -280,800 -800,800l-1766,0c-520,0 -800,-340 -800,-800Z" style="fill:none;stroke:url(#_innerBorder);stroke-width:8;"/>
+<!-- Scanline texture overlay -->
+<rect x="416" y="416" width="3434" height="2668" fill="url(#_scanlines)"/>
+</g></g></g><g id="symbol-0"></g><defs>
+<!-- Background radial gradient -->
+<radialGradient id="_bgRadial" cx="50%" cy="50%" r="70%" fx="50%" fy="45%">
+<stop offset="0%" style="stop-color:#1a1a1a"/>
+<stop offset="60%" style="stop-color:#0d0d0d"/>
+<stop offset="100%" style="stop-color:#040404"/>
+</radialGradient>
+<!-- Vignette gradient -->
+<radialGradient id="_vignette" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+<stop offset="0%" style="stop-color:#000;stop-opacity:0"/>
+<stop offset="70%" style="stop-color:#000;stop-opacity:0"/>
+<stop offset="100%" style="stop-color:#000;stop-opacity:0.4"/>
+</radialGradient>
+<!-- Main depth gradient -->
+<linearGradient id="_Linear2" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0,-3529.1875,3529.1875,0,2133.34375,3945.833333)">
+<stop offset="0" style="stop-color:#000;stop-opacity:0.35"/>
+<stop offset="0.25" style="stop-color:#000;stop-opacity:0.1"/>
+<stop offset="0.5" style="stop-color:#000;stop-opacity:0"/>
+<stop offset="0.75" style="stop-color:#fff;stop-opacity:0.05"/>
+<stop offset="0.9" style="stop-color:#fff;stop-opacity:0.15"/>
+<stop offset="1" style="stop-color:#fff;stop-opacity:0.25"/>
+</linearGradient>
+<!-- Top edge highlight gradient -->
+<linearGradient id="_topHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" style="stop-color:#fff;stop-opacity:0"/>
+<stop offset="20%" style="stop-color:#fff;stop-opacity:0.3"/>
+<stop offset="50%" style="stop-color:#fff;stop-opacity:0.5"/>
+<stop offset="80%" style="stop-color:#fff;stop-opacity:0.3"/>
+<stop offset="100%" style="stop-color:#fff;stop-opacity:0"/>
+</linearGradient>
+<!-- Inner border gradient -->
+<linearGradient id="_innerBorder" x1="0%" y1="0%" x2="0%" y2="100%">
+<stop offset="0%" style="stop-color:#fff;stop-opacity:0.15"/>
+<stop offset="30%" style="stop-color:#fff;stop-opacity:0.05"/>
+<stop offset="70%" style="stop-color:#fff;stop-opacity:0.02"/>
+<stop offset="100%" style="stop-color:#000;stop-opacity:0.1"/>
+</linearGradient>
+<!-- Glow filter for main text -->
+<filter id="_glow" x="-50%" y="-50%" width="200%" height="200%">
+<feGaussianBlur in="SourceGraphic" stdDeviation="60" result="blur"/>
+<feMerge>
+<feMergeNode in="blur"/>
+<feMergeNode in="blur"/>
+</feMerge>
+</filter>
+<!-- Scanline pattern -->
+<pattern id="_scanlines" patternUnits="userSpaceOnUse" width="24" height="24">
+<rect width="24" height="12" fill="#000" fill-opacity="0.2"/>
+</pattern>
+</defs></svg>

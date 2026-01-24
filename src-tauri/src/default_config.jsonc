@@ -1,7 +1,7 @@
 {
-  "$schema": "https://raw.githubusercontent.com/shkm/one-man-band/main/src-tauri/src/config.schema.json",
-  // One Man Band Default Configuration
-  // https://github.com/shkm/one-man-band/blob/main/src-tauri/src/default_config.jsonc
+  "$schema": "https://raw.githubusercontent.com/shkm/shellflow/main/src-tauri/src/config.schema.json",
+  // Shellflow Default Configuration
+  // https://github.com/shkm/shellflow/blob/main/src-tauri/src/default_config.jsonc
 
   "main": {
     "command": "claude",
@@ -115,7 +115,7 @@
     "projectSwitcher": { "mac": "cmd+shift+o", "other": "ctrl+shift+o" }
   }
 
-  // Example tasks (define in your project's .onemanband/config.jsonc):
+  // Example tasks (define in your project's .shellflow/config.jsonc):
   // "tasks": [
   //   {
   //     "name": "Dev Server",

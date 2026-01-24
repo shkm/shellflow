@@ -133,7 +133,7 @@ jobs:
           APPLE_API_KEY_PATH: ~/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
         with:
           tagName: ${{ env.TAG_NAME }}
-          releaseName: 'One Man Band ${{ env.TAG_NAME }}'
+          releaseName: 'Shellflow ${{ env.TAG_NAME }}'
           releaseBody: 'See the assets below for downloads. Check CHANGELOG.md for details.'
           releaseDraft: false
           prerelease: false
