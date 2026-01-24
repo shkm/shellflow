@@ -443,6 +443,8 @@ pub struct MappingsConfig {
     pub run_task: Shortcut,
     #[serde(rename = "newWorkspace")]
     pub new_workspace: Shortcut,
+    #[serde(rename = "newScratchTerminal")]
+    pub new_scratch_terminal: Shortcut,
     #[serde(rename = "switchFocus")]
     pub switch_focus: Shortcut,
     #[serde(rename = "taskSwitcher")]
@@ -512,6 +514,8 @@ struct MappingsConfigRaw {
     run_task: Shortcut,
     #[serde(rename = "newWorkspace")]
     new_workspace: Shortcut,
+    #[serde(rename = "newScratchTerminal")]
+    new_scratch_terminal: Shortcut,
     #[serde(rename = "switchFocus")]
     switch_focus: Shortcut,
     #[serde(rename = "taskSwitcher")]
@@ -560,6 +564,7 @@ impl Default for MappingsConfig {
                     rename_branch: m.rename_branch,
                     run_task: m.run_task,
                     new_workspace: m.new_workspace,
+                    new_scratch_terminal: m.new_scratch_terminal,
                     switch_focus: m.switch_focus,
                     task_switcher: m.task_switcher,
                     expand_drawer: m.expand_drawer,

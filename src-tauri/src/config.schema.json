@@ -344,8 +344,13 @@
         },
         "newWorkspace": {
           "$ref": "#/$defs/shortcut",
-          "description": "Shortcut to create a new workspace",
+          "description": "Shortcut to create a new workspace (worktree when in project, scratch terminal otherwise)",
           "default": { "mac": "cmd+n", "other": "ctrl+n" }
+        },
+        "newScratchTerminal": {
+          "$ref": "#/$defs/shortcut",
+          "description": "Shortcut to create a new scratch terminal (works from anywhere)",
+          "default": { "mac": "cmd+shift+n", "other": "ctrl+shift+n" }
         },
         "switchFocus": {
           "$ref": "#/$defs/shortcut",

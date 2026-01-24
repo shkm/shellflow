@@ -104,6 +104,7 @@
     "renameBranch": "F2",
     "runTask": { "mac": "cmd+r", "other": "ctrl+shift+r" },
     "newWorkspace": { "mac": "cmd+n", "other": "ctrl+n" },
+    "newScratchTerminal": { "mac": "cmd+shift+n", "other": "ctrl+shift+n" },
     "switchFocus": "ctrl+\\",
     "taskSwitcher": { "mac": "cmd+;", "other": "ctrl+;" },
     "expandDrawer": "shift+Escape",

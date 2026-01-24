@@ -64,6 +64,13 @@ pub fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .build(app)?;
     dynamic_items.insert("new_worktree", new_worktree.clone());
 
+    let new_scratch_terminal =
+        MenuItemBuilder::with_id("new_scratch_terminal", "New Scratch Terminal")
+            .accelerator("CmdOrCtrl+Shift+N")
+            .enabled(false)
+            .build(app)?;
+    dynamic_items.insert("new_scratch_terminal", new_scratch_terminal.clone());
+
     let close_tab = MenuItemBuilder::with_id("close_tab", "Close")
         .accelerator("CmdOrCtrl+W")
         .enabled(false)
@@ -93,6 +100,7 @@ pub fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let file_submenu = SubmenuBuilder::new(app, "File")
         .item(&add_project)
         .item(&new_worktree)
+        .item(&new_scratch_terminal)
         .separator()
         .item(&close_tab)
         .separator()

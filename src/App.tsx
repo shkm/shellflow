@@ -1987,6 +1987,7 @@ function App() {
   const actionHandlers: ActionHandlers = useMemo(() => ({
     addProject: handleAddProject,
     newWorktree: () => activeProjectId && handleAddWorktree(activeProjectId),
+    newScratchTerminal: handleAddScratchTerminal,
     closeTab: () => {
       // Priority: drawer tab (if focused) > scratch terminal > worktree > project terminal
       if (isDrawerOpen && activeFocusState === 'drawer' && activeDrawerTabId) {
@@ -2077,7 +2078,7 @@ function App() {
   }), [
     activeProjectId, activeWorktreeId, activeScratchId, activeDrawerTabId, isDrawerOpen, activeFocusState,
     openWorktreesInOrder, projects, config.apps.terminal, config.apps.editor,
-    handleAddProject, handleAddWorktree, handleCloseDrawerTab, handleCloseProject,
+    handleAddProject, handleAddWorktree, handleAddScratchTerminal, handleCloseDrawerTab, handleCloseProject,
     handleCloseWorktree, handleCloseScratch,
     handleToggleDrawer, handleToggleDrawerExpand, handleToggleRightPanel,
     handleZoomIn, handleZoomOut, handleZoomReset, handleSwitchToPreviousView, handleSwitchFocus,
@@ -2396,6 +2397,12 @@ function App() {
         } else {
           handleAddScratchTerminal();
         }
+      }
+
+      // New scratch terminal - always creates a scratch terminal
+      if (matchesShortcut(e, mappings.newScratchTerminal)) {
+        e.preventDefault();
+        handleAddScratchTerminal();
       }
     };
 
