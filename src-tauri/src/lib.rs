@@ -1,3 +1,4 @@
+mod cleanup;
 mod config;
 mod git;
 mod menu;
@@ -1453,7 +1454,23 @@ fn shutdown(app: AppHandle, state: State<'_, Arc<AppState>>) -> bool {
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
+    // Clean up any orphaned processes from a previous crash
+    cleanup::cleanup_orphans();
+
     let app_state = Arc::new(AppState::load_or_default());
+
+    // Install panic hook for emergency cleanup
+    cleanup::install_panic_hook(Arc::clone(&app_state));
+
+    // Install signal handlers (SIGTERM, SIGINT) for graceful shutdown
+    #[cfg(unix)]
+    cleanup::install_signal_handlers(Arc::clone(&app_state));
+
+    // Initialize PID file for crash recovery
+    cleanup::init_pid_file();
+
+    // Spawn watchdog process to clean up if we die unexpectedly
+    cleanup::spawn_watchdog();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -1551,4 +1568,9 @@ pub fn run() {
             // ExitRequested is handled via custom Quit menu item
             // No additional handling needed here
         });
+}
+
+/// Run as a watchdog process (called from main.rs when --watchdog flag is passed)
+pub fn run_watchdog(parent_pid: u32) {
+    cleanup::run_watchdog(parent_pid);
 }

@@ -42,6 +42,7 @@ shell-escape = "0.1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+signal-hook = "0.3"
 
 [profile.dev]
 incremental = true

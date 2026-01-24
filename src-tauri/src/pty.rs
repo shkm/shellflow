@@ -94,7 +94,7 @@ lazy_static::lazy_static! {
     // Cache the user's shell
     static ref CACHED_USER_SHELL: Mutex<Option<String>> = Mutex::new(None);
     // Track if shutdown is already in progress
-    static ref SHUTDOWN_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
+    pub(crate) static ref SHUTDOWN_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 }
 
 /// Get the user's PATH, using cached value if available
@@ -252,6 +252,11 @@ pub fn spawn_pty(
     let child_pid = child.process_id().unwrap_or(0);
     eprintln!("[PTY] Child spawned with PID: {}", child_pid);
 
+    // Track PID for crash recovery
+    if child_pid > 0 {
+        crate::cleanup::add_pid(child_pid);
+    }
+
     let pty_id = Uuid::new_v4().to_string();
 
     // Store the master for resize operations
@@ -285,6 +290,7 @@ pub fn spawn_pty(
     let command_name = command.to_string();
     let ready_emitted = Arc::new(AtomicBool::new(false));
     let ready_emitted_clone = ready_emitted.clone();
+    let child_pid_for_cleanup = child_pid;
 
     thread::spawn(move || {
         eprintln!("[PTY:{}] Reader thread started", pty_id_clone);
@@ -381,6 +387,11 @@ pub fn spawn_pty(
                 None
             }
         };
+
+        // Remove PID from crash recovery tracking
+        if child_pid_for_cleanup > 0 {
+            crate::cleanup::remove_pid(child_pid_for_cleanup);
+        }
 
         eprintln!("[PTY:{}] Reader thread exiting, emitting pty-exit event", pty_id_clone);
         let _ = app_handle.emit("pty-exit", serde_json::json!({
@@ -508,14 +519,14 @@ pub struct ShutdownProgress {
 
 /// Check if a process is still running
 #[cfg(unix)]
-fn is_process_alive(pid: u32) -> bool {
+pub(crate) fn is_process_alive(pid: u32) -> bool {
     // kill with signal 0 checks if process exists without sending a signal
     unsafe { libc::kill(pid as i32, 0) == 0 }
 }
 
 /// Get process name from PID using ps command
 #[cfg(unix)]
-fn get_process_name(pid: u32) -> Option<String> {
+pub(crate) fn get_process_name(pid: u32) -> Option<String> {
     Command::new("ps")
         .args(["-p", &pid.to_string(), "-o", "comm="])
         .output()
@@ -534,13 +545,13 @@ fn get_process_name(pid: u32) -> Option<String> {
 
 /// Send a signal to a process
 #[cfg(unix)]
-fn send_signal(pid: u32, signal: i32) -> bool {
+pub(crate) fn send_signal(pid: u32, signal: i32) -> bool {
     unsafe { libc::kill(pid as i32, signal) == 0 }
 }
 
 /// Get all child PIDs of a process (recursive)
 #[cfg(unix)]
-fn get_child_pids(pid: u32) -> Vec<u32> {
+pub(crate) fn get_child_pids(pid: u32) -> Vec<u32> {
     let mut children = Vec::new();
 
     // Use pgrep to find children
@@ -665,6 +676,9 @@ pub fn shutdown_all_ptys(app: &AppHandle, state: &AppState) {
         PTY_WRITERS.lock().remove(pty_id);
         PTY_MASTERS.lock().remove(pty_id);
     }
+
+    // Delete PID file on clean shutdown
+    crate::cleanup::delete_pid_file();
 
     emit_progress("complete", "All processes terminated", None, None, None);
 }
