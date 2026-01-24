@@ -33,9 +33,8 @@
     "createUpdaterArtifacts": false,
     "icon": [
       "icons/icon.icns",
-      "icons/web/icon-192.png",
-      "icons/web/icon-512.png",
-      "icons/web/favicon.ico"
+      "icons/icon.ico",
+      "icons/icon.png"
     ],
     "macOS": {
       "minimumSystemVersion": "10.13"

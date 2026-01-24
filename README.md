@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src-tauri/icons/web/icon-512.png" alt="Shellflow" width="128" height="128" />
+  <img src="assets/icon.png" alt="Shellflow" width="128" height="128" />
 
   <h1>Shellflow</h1>
 
