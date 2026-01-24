@@ -19,6 +19,7 @@ export type ActionId =
   // File menu
   | 'addProject'
   | 'newWorktree'
+  | 'newScratchTerminal'
   | 'closeTab'
   | 'openInFinder'
   | 'openInTerminal'
@@ -76,7 +77,10 @@ export interface ActionContext {
 const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
   // File menu
   addProject: () => true,
-  newWorktree: (ctx) => !!ctx.activeProjectId,
+  // newWorktree: available when Cmd+N creates a worktree (in project, not viewing scratch)
+  newWorktree: (ctx) => !!ctx.activeProjectId && !ctx.activeScratchId,
+  // newScratchTerminal: always available (has dedicated Cmd+Shift+N shortcut)
+  newScratchTerminal: () => true,
   closeTab: (ctx) => (ctx.isDrawerOpen && !!ctx.activeDrawerTabId) || !!ctx.activeEntityId,
   openInFinder: (ctx) => !!ctx.activeEntityId,
   openInTerminal: (ctx) => !!ctx.activeEntityId,
@@ -124,6 +128,7 @@ const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
 const ACTION_TO_MENU_ID: Record<ActionId, string> = {
   addProject: 'add_project',
   newWorktree: 'new_worktree',
+  newScratchTerminal: 'new_scratch_terminal',
   closeTab: 'close_tab',
   openInFinder: 'open_in_finder',
   openInTerminal: 'open_in_terminal',
@@ -222,6 +227,7 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   // File menu
   addProject: { label: 'Add Project', category: 'File', showInPalette: true },
   newWorktree: { label: 'New Worktree', category: 'File', shortcutKey: 'newWorkspace', showInPalette: true },
+  newScratchTerminal: { label: 'New Scratch Terminal', category: 'File', shortcutKey: 'newScratchTerminal', showInPalette: true },
   closeTab: { label: 'Close', category: 'File', showInPalette: true },
   openInFinder: { label: 'Open in Finder', category: 'File', showInPalette: true },
   openInTerminal: { label: 'Open in Terminal', category: 'File', showInPalette: true },

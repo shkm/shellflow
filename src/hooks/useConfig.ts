@@ -97,6 +97,7 @@ export interface MappingsConfig {
   renameBranch: Shortcut;
   runTask: Shortcut;
   newWorkspace: Shortcut;
+  newScratchTerminal: Shortcut;
   switchFocus: Shortcut;
   taskSwitcher: Shortcut;
   expandDrawer: Shortcut;
@@ -188,6 +189,7 @@ const defaultConfig: Config = {
     renameBranch: '',
     runTask: '',
     newWorkspace: '',
+    newScratchTerminal: '',
     switchFocus: '',
     taskSwitcher: '',
     expandDrawer: '',
