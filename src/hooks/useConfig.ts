@@ -121,6 +121,8 @@ export interface Config {
   actions: ActionsConfig;
   scratch: ScratchConfig;
   worktree: WorktreeConfig;
+  /** Opacity (0.0 to 1.0) applied to unfocused panes (main terminal or drawer) */
+  unfocusedOpacity: number;
 }
 
 /** An error from parsing a config file */
@@ -210,6 +212,7 @@ const defaultConfig: Config = {
   worktree: {
     focusNewBranchNames: false,
   },
+  unfocusedOpacity: 1,
 };
 
 export function useConfig(projectPath?: string) {

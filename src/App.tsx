@@ -2680,25 +2680,30 @@ function App() {
             className="h-full"
           >
             <Panel panelRef={mainPanelRef} minSize="0px" collapsible collapsedSize="0px">
-              <MainPane
-                openWorktreeIds={openWorktreeIds}
-                activeWorktreeId={activeWorktreeId}
-                openProjectIds={openProjectIds}
-                activeProjectId={activeProjectId}
-                scratchTerminals={scratchTerminals}
-                activeScratchId={activeScratchId}
-                terminalConfig={mainTerminalConfig}
-                mappings={config.mappings}
-                activityTimeout={config.indicators.activityTimeout}
-                shouldAutoFocus={activeFocusState === 'main'}
-                configErrors={configErrors}
-                onFocus={handleMainPaneFocused}
-                onWorktreeNotification={handleWorktreeNotification}
-                onWorktreeThinkingChange={handleWorktreeThinkingChange}
-                onProjectNotification={handleProjectNotification}
-                onProjectThinkingChange={handleProjectThinkingChange}
-                onScratchCwdChange={handleScratchCwdChange}
-              />
+              <div
+                className="h-full transition-opacity duration-150"
+                style={{ opacity: activeFocusState === 'drawer' ? config.unfocusedOpacity : 1 }}
+              >
+                <MainPane
+                  openWorktreeIds={openWorktreeIds}
+                  activeWorktreeId={activeWorktreeId}
+                  openProjectIds={openProjectIds}
+                  activeProjectId={activeProjectId}
+                  scratchTerminals={scratchTerminals}
+                  activeScratchId={activeScratchId}
+                  terminalConfig={mainTerminalConfig}
+                  mappings={config.mappings}
+                  activityTimeout={config.indicators.activityTimeout}
+                  shouldAutoFocus={activeFocusState === 'main'}
+                  configErrors={configErrors}
+                  onFocus={handleMainPaneFocused}
+                  onWorktreeNotification={handleWorktreeNotification}
+                  onWorktreeThinkingChange={handleWorktreeThinkingChange}
+                  onProjectNotification={handleProjectNotification}
+                  onProjectThinkingChange={handleProjectThinkingChange}
+                  onScratchCwdChange={handleScratchCwdChange}
+                />
+              </div>
             </Panel>
 
             {/* Drawer Panel - collapsible */}
@@ -2718,7 +2723,10 @@ function App() {
               collapsedSize="0px"
               onResize={handleDrawerResize}
             >
-              <div className="h-full overflow-hidden">
+              <div
+                className="h-full overflow-hidden transition-opacity duration-150"
+                style={{ opacity: activeFocusState === 'main' ? config.unfocusedOpacity : 1 }}
+              >
                 <Drawer
                   isOpen={isDrawerOpen}
                   isExpanded={isDrawerExpanded}

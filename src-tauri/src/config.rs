@@ -18,7 +18,7 @@ pub struct ConfigResult {
     pub errors: Vec<ConfigError>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
     pub main: MainConfig,
@@ -32,6 +32,28 @@ pub struct Config {
     pub tasks: Vec<TaskConfig>,
     pub actions: ActionsConfig,
     pub scratch: ScratchConfig,
+    /// Opacity (0.0 to 1.0) applied to unfocused panes (main terminal or drawer)
+    #[serde(rename = "unfocusedOpacity")]
+    pub unfocused_opacity: f64,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            main: MainConfig::default(),
+            terminal: TerminalConfig::default(),
+            apps: AppsConfig::default(),
+            worktree: WorktreeConfig::default(),
+            merge: MergeConfig::default(),
+            navigation: NavigationConfig::default(),
+            mappings: MappingsConfig::default(),
+            indicators: IndicatorsConfig::default(),
+            tasks: Vec::new(),
+            actions: ActionsConfig::default(),
+            scratch: ScratchConfig::default(),
+            unfocused_opacity: 1.0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
