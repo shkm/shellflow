@@ -63,6 +63,10 @@ interface SidebarProps {
   homeDir: string | null;
   /** Worktree ID that should auto-enter edit mode for its name */
   autoEditWorktreeId: string | null;
+  /** Ref to element that should receive focus when editing ends */
+  focusToRestoreRef: React.RefObject<HTMLElement | null>;
+  /** Called to focus the main terminal area */
+  onFocusMain: () => void;
   onToggleProject: (projectId: string) => void;
   onSelectProject: (project: Project) => void;
   onSelectWorktree: (worktree: Worktree) => void;
@@ -122,6 +126,8 @@ export function Sidebar({
   activeScratchCwd,
   homeDir,
   autoEditWorktreeId,
+  focusToRestoreRef,
+  onFocusMain,
   onToggleProject,
   onSelectProject,
   onSelectWorktree,
@@ -608,6 +614,8 @@ export function Sidebar({
                                         onRename={(newName) => onRenameWorktree(worktree.id, newName)}
                                         autoEdit={autoEditWorktreeId === worktree.id}
                                         onAutoEditConsumed={onAutoEditConsumed}
+                                        focusToRestoreRef={autoEditWorktreeId === worktree.id ? focusToRestoreRef : undefined}
+                                        onFocusMain={onFocusMain}
                                       />
                                       {isLoading ? (
                                         <span className="absolute right-1" title="Starting...">

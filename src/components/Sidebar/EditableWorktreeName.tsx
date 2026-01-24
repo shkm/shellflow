@@ -8,6 +8,10 @@ interface EditableWorktreeNameProps {
   autoEdit?: boolean;
   /** Called when auto-edit mode is consumed (user starts editing or cancels) */
   onAutoEditConsumed?: () => void;
+  /** Ref to element that should receive focus when editing ends (takes precedence over previousFocus) */
+  focusToRestoreRef?: React.RefObject<HTMLElement | null>;
+  /** Called to focus the main terminal area when no other focus target is available */
+  onFocusMain?: () => void;
 }
 
 export function EditableWorktreeName({
@@ -16,12 +20,15 @@ export function EditableWorktreeName({
   className = '',
   autoEdit = false,
   onAutoEditConsumed,
+  focusToRestoreRef,
+  onFocusMain,
 }: EditableWorktreeNameProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(name);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Reset edit value when name changes externally
   useEffect(() => {
@@ -33,6 +40,7 @@ export function EditableWorktreeName({
   // Auto-enter edit mode when autoEdit is true
   useEffect(() => {
     if (autoEdit && !isEditing) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
       setIsEditing(true);
       setError(null);
       onAutoEditConsumed?.();
@@ -49,6 +57,7 @@ export function EditableWorktreeName({
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
     setIsEditing(true);
     setError(null);
   }, []);
@@ -57,7 +66,31 @@ export function EditableWorktreeName({
     setIsEditing(false);
     setEditValue(name);
     setError(null);
-  }, [name]);
+
+    // Helper to check if element is visible and focusable
+    const isElementVisible = (el: HTMLElement | null): boolean => {
+      if (!el || !el.isConnected) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+
+    // Focus restoration logic:
+    // - If focusToRestoreRef is provided (autoEdit from App.tsx): use it or fall back to onFocusMain
+    //   (skip previousFocusRef since App.tsx has control over the focus target)
+    // - If focusToRestoreRef is not provided (manual double-click rename): try previousFocusRef, then onFocusMain
+    if (focusToRestoreRef) {
+      if (focusToRestoreRef.current && isElementVisible(focusToRestoreRef.current)) {
+        focusToRestoreRef.current.focus();
+      } else {
+        onFocusMain?.();
+      }
+    } else if (previousFocusRef.current && isElementVisible(previousFocusRef.current)) {
+      previousFocusRef.current.focus();
+    } else {
+      onFocusMain?.();
+    }
+    previousFocusRef.current = null;
+  }, [name, focusToRestoreRef, onFocusMain]);
 
   const handleSubmit = useCallback(async () => {
     const trimmedValue = editValue.trim();
@@ -80,12 +113,36 @@ export function EditableWorktreeName({
     try {
       await onRename(trimmedValue);
       setIsEditing(false);
+
+      // Helper to check if element is visible and focusable
+      const isElementVisible = (el: HTMLElement | null): boolean => {
+        if (!el || !el.isConnected) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      };
+
+      // Focus restoration logic:
+      // - If focusToRestoreRef is provided (autoEdit from App.tsx): use it or fall back to onFocusMain
+      //   (skip previousFocusRef since App.tsx has control over the focus target)
+      // - If focusToRestoreRef is not provided (manual double-click rename): try previousFocusRef, then onFocusMain
+      if (focusToRestoreRef) {
+        if (focusToRestoreRef.current && isElementVisible(focusToRestoreRef.current)) {
+          focusToRestoreRef.current.focus();
+        } else {
+          onFocusMain?.();
+        }
+      } else if (previousFocusRef.current && isElementVisible(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      } else {
+        onFocusMain?.();
+      }
+      previousFocusRef.current = null;
     } catch (err) {
       setError(String(err));
     } finally {
       setIsSubmitting(false);
     }
-  }, [editValue, name, onRename, handleCancel]);
+  }, [editValue, name, onRename, handleCancel, focusToRestoreRef, onFocusMain]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

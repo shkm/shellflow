@@ -34,6 +34,8 @@ interface MainTerminalProps {
   type?: 'main' | 'project' | 'scratch';
   isActive: boolean;
   shouldAutoFocus: boolean;
+  /** Counter that triggers focus when incremented */
+  focusTrigger?: number;
   terminalConfig: TerminalConfig;
   mappings: MappingsConfig;
   activityTimeout?: number;
@@ -43,7 +45,7 @@ interface MainTerminalProps {
   onCwdChange?: (cwd: string) => void;
 }
 
-export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocus, terminalConfig, mappings, activityTimeout = 250, onFocus, onNotification, onThinkingChange, onCwdChange }: MainTerminalProps) {
+export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocus, focusTrigger, terminalConfig, mappings, activityTimeout = 250, onFocus, onNotification, onThinkingChange, onCwdChange }: MainTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -649,12 +651,12 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     return () => window.removeEventListener('panel-resize-complete', handlePanelResizeComplete);
   }, [ptyId, isActive, immediateResize]);
 
-  // Focus terminal when shouldAutoFocus is true
+  // Focus terminal when shouldAutoFocus is true or when focusTrigger changes
   useEffect(() => {
     if (shouldAutoFocus && terminalRef.current) {
       terminalRef.current.focus();
     }
-  }, [shouldAutoFocus]);
+  }, [shouldAutoFocus, focusTrigger]);
 
   return (
     <div className="relative w-full h-full" style={{ backgroundColor: '#09090b', padding: terminalConfig.padding }}>

@@ -53,6 +53,8 @@ function App() {
 
   // Worktree that should auto-enter edit mode for its name (used with focusNewBranchNames config)
   const [autoEditWorktreeId, setAutoEditWorktreeId] = useState<string | null>(null);
+  // Element to restore focus to after editing worktree name
+  const focusToRestoreRef = useRef<HTMLElement | null>(null);
 
   // Active project (when viewing main repo terminal instead of a worktree)
   // If activeWorktreeId is set, activeProjectId indicates which project's worktree is active
@@ -118,6 +120,9 @@ function App() {
 
   // Per-worktree focus state (which pane has focus)
   const [focusStates, setFocusStates] = useState<Map<string, FocusedPane>>(new Map());
+
+  // Counter to trigger focus on main pane (incremented when focus is explicitly requested)
+  const [mainFocusTrigger, setMainFocusTrigger] = useState(0);
 
   // Per-project selected task (persisted to localStorage)
   const [selectedTasksByProject, setSelectedTasksByProject] = useState<Map<string, string>>(() => {
@@ -972,6 +977,21 @@ function App() {
     });
   }, []);
 
+  // Focus main pane of the currently active entity
+  const handleFocusMain = useCallback(() => {
+    const entityId = activeWorktreeId ?? activeScratchId ?? activeProjectId;
+    if (entityId) {
+      setFocusStates((prev) => {
+        if (prev.get(entityId) === 'main') return prev;
+        const next = new Map(prev);
+        next.set(entityId, 'main');
+        return next;
+      });
+      // Always increment trigger to ensure focus happens even if state was already 'main'
+      setMainFocusTrigger((prev) => prev + 1);
+    }
+  }, [activeWorktreeId, activeScratchId, activeProjectId]);
+
   // Switch focus between main and drawer panes
   const handleSwitchFocus = useCallback(() => {
     if (!activeEntityId) return;
@@ -1451,36 +1471,29 @@ function App() {
 
   const handleAddWorktree = useCallback(
     async (projectId: string) => {
-      console.log('[handleAddWorktree] Called with projectId:', projectId);
       const project = projects.find((p) => p.id === projectId);
       if (!project) {
-        console.log('[handleAddWorktree] Project not found');
         return;
       }
-      console.log('[handleAddWorktree] Found project:', project.name, 'path:', project.path);
-
       setExpandedProjects((prev) => new Set([...prev, projectId]));
 
-      console.log('[handleAddWorktree] About to call createWorktree...');
       try {
         const worktree = await createWorktree(project.path);
-        console.log('[handleAddWorktree] createWorktree succeeded:', worktree.name);
         setLoadingWorktrees((prev) => new Set([...prev, worktree.id]));
         setOpenWorktreeIds((prev) => new Set([...prev, worktree.id]));
         setActiveWorktreeId(worktree.id);
         setActiveScratchId(null);
         // Auto-focus branch name for editing if configured
         if (config.worktree.focusNewBranchNames) {
+          // For new worktrees, don't set a focusToRestoreRef - the worktree didn't exist before,
+          // so there's no valid prior focus within it. We'll fall back to onFocusMain().
+          focusToRestoreRef.current = null;
           setAutoEditWorktreeId(worktree.id);
         }
       } catch (err) {
         const errorMessage = String(err);
-        console.log('[handleAddWorktree] Error caught:', errorMessage);
-        console.log('[handleAddWorktree] Error type:', typeof err);
-        console.log('[handleAddWorktree] Error object:', err);
         // Check if this is an uncommitted changes error
         if (errorMessage.includes('uncommitted changes')) {
-          console.log('[handleAddWorktree] Showing stash modal for project:', project.name);
           setStashError(null); // Clear any previous error
           setPendingStashProject(project);
         } else {
@@ -1497,26 +1510,19 @@ function App() {
 
     const project = pendingStashProject;
     setIsStashing(true);
-    console.log('[handleStashAndCreate] Starting for project:', project.path);
 
     let stashId: string | null = null;
 
     try {
       // Stash the changes and get the stash ID
-      console.log('[handleStashAndCreate] Stashing changes...');
       stashId = await stashChanges(project.path);
-      console.log('[handleStashAndCreate] Stash successful with id:', stashId);
 
       // Create the worktree
-      console.log('[handleStashAndCreate] Creating worktree...');
       const worktree = await createWorktree(project.path);
-      console.log('[handleStashAndCreate] Worktree created:', worktree.name);
       setActiveScratchId(null);
 
       // Pop the stash to restore changes
-      console.log('[handleStashAndCreate] Popping stash with id:', stashId);
       await stashPop(project.path, stashId);
-      console.log('[handleStashAndCreate] Stash popped');
 
       // Update UI state
       setLoadingWorktrees((prev) => new Set([...prev, worktree.id]));
@@ -1525,6 +1531,9 @@ function App() {
       setPendingStashProject(null);
       // Auto-focus branch name for editing if configured
       if (config.worktree.focusNewBranchNames) {
+        // For new worktrees, don't set a focusToRestoreRef - the worktree didn't exist before,
+        // so there's no valid prior focus within it. We'll fall back to onFocusMain().
+        focusToRestoreRef.current = null;
         setAutoEditWorktreeId(worktree.id);
       }
     } catch (err) {
@@ -1894,6 +1903,7 @@ function App() {
   }, []);
 
   const handleRenameBranch = useCallback((worktreeId: string) => {
+    focusToRestoreRef.current = document.activeElement as HTMLElement | null;
     setAutoEditWorktreeId(worktreeId);
   }, []);
 
@@ -2153,6 +2163,7 @@ function App() {
       // Rename branch shortcut (F2 by default)
       if (matchesShortcut(e, mappings.renameBranch) && activeWorktreeId) {
         e.preventDefault();
+        focusToRestoreRef.current = document.activeElement as HTMLElement | null;
         setAutoEditWorktreeId(activeWorktreeId);
         return;
       }
@@ -2643,6 +2654,8 @@ function App() {
               activeScratchCwd={activeScratchId ? scratchCwds.get(activeScratchId) ?? null : null}
               homeDir={homeDir}
               autoEditWorktreeId={autoEditWorktreeId}
+              focusToRestoreRef={focusToRestoreRef}
+              onFocusMain={handleFocusMain}
               onToggleProject={toggleProject}
               onSelectProject={handleSelectProject}
               onSelectWorktree={handleSelectWorktree}
@@ -2695,6 +2708,7 @@ function App() {
                   mappings={config.mappings}
                   activityTimeout={config.indicators.activityTimeout}
                   shouldAutoFocus={activeFocusState === 'main'}
+                  focusTrigger={mainFocusTrigger}
                   configErrors={configErrors}
                   onFocus={handleMainPaneFocused}
                   onWorktreeNotification={handleWorktreeNotification}

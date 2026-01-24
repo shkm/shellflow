@@ -19,6 +19,8 @@ interface MainPaneProps {
   mappings: MappingsConfig;
   activityTimeout: number;
   shouldAutoFocus: boolean;
+  /** Counter that triggers focus when incremented */
+  focusTrigger?: number;
   configErrors: ConfigError[];
   onFocus: (entityId: string) => void;
   onWorktreeNotification?: (worktreeId: string, title: string, body: string) => void;
@@ -41,6 +43,7 @@ export function MainPane({
   mappings,
   activityTimeout,
   shouldAutoFocus,
+  focusTrigger,
   configErrors,
   onFocus,
   onWorktreeNotification,
@@ -121,6 +124,7 @@ export function MainPane({
             type="main"
             isActive={worktreeId === activeEntityId}
             shouldAutoFocus={worktreeId === activeEntityId && shouldAutoFocus}
+            focusTrigger={worktreeId === activeEntityId ? focusTrigger : undefined}
             terminalConfig={terminalConfig}
             mappings={mappings}
             activityTimeout={activityTimeout}
@@ -145,6 +149,7 @@ export function MainPane({
             type="project"
             isActive={!activeWorktreeId && !activeScratchId && projectId === activeEntityId}
             shouldAutoFocus={!activeWorktreeId && !activeScratchId && projectId === activeEntityId && shouldAutoFocus}
+            focusTrigger={!activeWorktreeId && !activeScratchId && projectId === activeEntityId ? focusTrigger : undefined}
             terminalConfig={terminalConfig}
             mappings={mappings}
             activityTimeout={activityTimeout}
@@ -169,6 +174,7 @@ export function MainPane({
             type="scratch"
             isActive={scratch.id === activeScratchId}
             shouldAutoFocus={scratch.id === activeScratchId && shouldAutoFocus}
+            focusTrigger={scratch.id === activeScratchId ? focusTrigger : undefined}
             terminalConfig={terminalConfig}
             mappings={mappings}
             activityTimeout={activityTimeout}
