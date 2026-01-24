@@ -118,7 +118,8 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
   const updateThinkingStateRef = useRef<() => void>(() => {});
 
   // Function to trigger activity-based thinking (resets timeout)
-  const triggerActivityRef = useRef<() => void>(() => {});
+  // bypassGracePeriod: if true, triggers immediately even during grace period (for strong signals like title changes)
+  const triggerActivityRef = useRef<(bypassGracePeriod?: boolean) => void>(() => {});
 
   // Handle PTY output by writing directly to terminal
   const handleOutput = useCallback((data: string) => {
@@ -225,9 +226,11 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     };
 
     // Trigger activity-based thinking (resets timeout)
-    triggerActivityRef.current = () => {
+    // bypassGracePeriod: if true, triggers immediately even during grace period (for strong signals like title changes)
+    triggerActivityRef.current = (bypassGracePeriod = false) => {
       // If within grace period, count activity (need multiple events to filter out tab-switch noise)
-      if (gracePeriodTimeoutRef.current !== null) {
+      // Title changes bypass this because they're a strong signal of real activity
+      if (gracePeriodTimeoutRef.current !== null && !bypassGracePeriod) {
         activityCountDuringGracePeriodRef.current++;
         return;
       }
@@ -447,9 +450,10 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
 
       // Any title change triggers activity-based thinking (with timeout)
       // Only track when not active (background tabs only)
+      // Title changes bypass grace period since they're a strong signal of real activity
       titleChangeDisposable = terminal.onTitleChange(() => {
         if (!isActiveRef.current) {
-          triggerActivityRef.current();
+          triggerActivityRef.current(true);
         }
       });
     }
