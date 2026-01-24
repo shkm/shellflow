@@ -20,6 +20,30 @@ body {
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
+/* Disable default focus outlines - we use custom focus indicators where needed */
+*:focus {
+  outline: none;
+}
+
+/* Disable text selection globally except in terminals and inputs */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+.xterm {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Disable the blue highlight when clicking/tapping on elements */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* React Resizable Panels */
 [data-panel-group] {
   display: flex;

@@ -19,13 +19,13 @@ interface ContextMenuProps {
 function ToggleSwitch({ checked }: { checked: boolean }) {
   return (
     <div
-      className={`relative w-8 h-[18px] rounded-full transition-colors ${
+      className={`relative w-7 h-4 rounded-full transition-colors ${
         checked ? 'bg-blue-500' : 'bg-zinc-600'
       }`}
     >
       <div
-        className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-transform ${
-          checked ? 'translate-x-[16px]' : 'translate-x-[2px]'
+        className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform ${
+          checked ? 'translate-x-[14px]' : 'translate-x-0.5'
         }`}
       />
     </div>
@@ -60,8 +60,8 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed bg-zinc-800/95 backdrop-blur-sm border border-zinc-700/50 rounded-lg shadow-xl shadow-black/40 py-1 min-w-[160px] z-50"
-      style={{ left: x, top: y }}
+      className="fixed bg-zinc-800/95 backdrop-blur-md border border-zinc-600/50 rounded px-1 py-1 min-w-[140px] z-50"
+      style={{ left: x, top: y, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
     >
       {items.map((item, index) => (
         <button
@@ -72,15 +72,10 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
               onClose();
             }
           }}
-          className={`w-full text-left px-3 py-1.5 text-[13px] mx-1 rounded first:mt-0.5 last:mb-0.5 flex items-center justify-between gap-3 ${
-            item.danger
-              ? 'text-red-400 hover:bg-red-500 hover:text-white'
-              : 'text-zinc-200 hover:bg-zinc-700'
-          }`}
-          style={{ width: 'calc(100% - 8px)' }}
+          className="w-full text-left px-2 py-0.5 text-[13px] rounded-sm flex items-center justify-between gap-3 text-zinc-200 hover:bg-blue-500 hover:text-white"
         >
           <span className="flex items-center gap-2">
-            {item.icon}
+            {item.icon && <span className="opacity-80">{item.icon}</span>}
             {item.label}
           </span>
           {item.toggle && <ToggleSwitch checked={item.checked ?? false} />}
