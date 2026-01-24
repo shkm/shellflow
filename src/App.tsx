@@ -222,11 +222,15 @@ function App() {
   const [isModifierKeyHeld, setIsModifierKeyHeld] = useState(false);
   const [isCtrlKeyHeld, setIsCtrlKeyHeld] = useState(false);
 
-  // Centralized modal open tracking - modals register themselves on mount/unmount
-  const [modalCount, setModalCount] = useState(0);
-  const onModalOpen = useCallback(() => setModalCount(c => c + 1), []);
-  const onModalClose = useCallback(() => setModalCount(c => c - 1), []);
-  const isModalOpen = modalCount > 0;
+  // Track when a picker is open to block global shortcuts
+  const isPickerOpen = isTaskSwitcherOpen || isCommandPaletteOpen || isProjectSwitcherOpen;
+  // Use a ref so the keyboard handler always sees the current value (no stale closures)
+  const isPickerOpenRef = useRef(isPickerOpen);
+  isPickerOpenRef.current = isPickerOpen;
+
+  // Legacy modal tracking for components that still use it (confirm dialogs, etc.)
+  const onModalOpen = useCallback(() => {}, []);
+  const onModalClose = useCallback(() => {}, []);
 
   // Panel refs
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
@@ -1284,7 +1288,14 @@ function App() {
   // Task switcher handlers
   const handleToggleTaskSwitcher = useCallback(() => {
     if (!activeEntityId || config.tasks.length === 0) return;
-    setIsTaskSwitcherOpen(prev => !prev);
+    setIsTaskSwitcherOpen(prev => {
+      if (!prev) {
+        // Close other pickers when opening
+        setIsCommandPaletteOpen(false);
+        setIsProjectSwitcherOpen(false);
+      }
+      return !prev;
+    });
   }, [activeEntityId, config.tasks.length]);
 
   const handleTaskSwitcherSelect = useCallback((taskName: string) => {
@@ -1300,12 +1311,26 @@ function App() {
 
   // Command palette handlers
   const handleToggleCommandPalette = useCallback(() => {
-    setIsCommandPaletteOpen(prev => !prev);
+    setIsCommandPaletteOpen(prev => {
+      if (!prev) {
+        // Close other pickers when opening
+        setIsTaskSwitcherOpen(false);
+        setIsProjectSwitcherOpen(false);
+      }
+      return !prev;
+    });
   }, []);
 
   // Project switcher handlers
   const handleToggleProjectSwitcher = useCallback(() => {
-    setIsProjectSwitcherOpen(prev => !prev);
+    setIsProjectSwitcherOpen(prev => {
+      if (!prev) {
+        // Close other pickers when opening
+        setIsTaskSwitcherOpen(false);
+        setIsCommandPaletteOpen(false);
+      }
+      return !prev;
+    });
   }, []);
 
   const handleProjectSwitcherSelect = useCallback(async (projectId: string) => {
@@ -2060,6 +2085,34 @@ function App() {
         setIsCtrlKeyHeld(true);
       }
 
+      // When a picker is open, we're in "picker" context.
+      // Only handle picker-specific shortcuts here; everything else passes through
+      // to the browser/picker naturally (text editing, navigation, etc.)
+      if (isPickerOpenRef.current) {
+        // Picker context: only handle picker toggle shortcuts (to switch/close pickers)
+        if (matchesShortcut(e, mappings.taskSwitcher)) {
+          e.preventDefault();
+          handleToggleTaskSwitcher();
+          return;
+        }
+        if (matchesShortcut(e, mappings.commandPalette)) {
+          e.preventDefault();
+          handleToggleCommandPalette();
+          return;
+        }
+        if (matchesShortcut(e, mappings.projectSwitcher)) {
+          e.preventDefault();
+          handleToggleProjectSwitcher();
+          return;
+        }
+
+        // Don't process any other shortcuts in picker context - just exit early
+        // This lets the picker and browser handle everything else naturally
+        return;
+      }
+
+      // Normal context: handle all app shortcuts below
+
       // Ctrl+1-9 to select drawer tabs (when drawer is open)
       if (e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && isDrawerOpen && activeDrawerTabs.length > 0) {
         const digit = parseInt(e.key, 10);
@@ -2372,6 +2425,10 @@ function App() {
   // Listen for menu bar actions from the backend
   useEffect(() => {
     const unlistenMenu = listen<string>('menu-action', (event) => {
+      // When a picker is open, ignore menu actions (except picker toggles handled via keyboard)
+      if (isPickerOpenRef.current) {
+        return;
+      }
       // Use the action system to execute menu actions
       // The action system handles availability checking internally
       actions.executeByMenuId(event.payload);
@@ -2548,7 +2605,7 @@ function App() {
               openProjectIds={openProjectIds}
               openWorktreeIds={openWorktreeIds}
               openEntitiesInOrder={openEntitiesInOrder}
-              isModifierKeyHeld={isModifierKeyHeld && !isModalOpen}
+              isModifierKeyHeld={isModifierKeyHeld && !isPickerOpen}
               loadingWorktrees={loadingWorktrees}
               notifiedWorktreeIds={notifiedWorktreeIds}
               thinkingWorktreeIds={thinkingWorktreeIds}
@@ -2655,7 +2712,7 @@ function App() {
                   tabs={activeDrawerTabs}
                   activeTabId={activeDrawerTabId}
                   taskStatuses={activeTaskStatuses}
-                  isCtrlKeyHeld={isCtrlKeyHeld && !isModalOpen}
+                  isCtrlKeyHeld={isCtrlKeyHeld && !isPickerOpen}
                   onSelectTab={handleSelectDrawerTab}
                   onCloseTab={handleCloseDrawerTab}
                   onAddTab={handleAddDrawerTab}
