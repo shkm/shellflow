@@ -68,8 +68,10 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
   const isActiveRef = useRef(isActive);
   const activityTimeoutMsRef = useRef(activityTimeout);
   // Grace period after becoming inactive before tracking starts (prevents false triggers from tab switch events)
-  const becameInactiveAtRef = useRef<number | null>(null);
+  const gracePeriodTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activityCountDuringGracePeriodRef = useRef(0);
   const INACTIVE_GRACE_PERIOD = 100; // ms
+  const MIN_ACTIVITY_COUNT = 2; // Require multiple events to filter out tab-switch noise
 
   // Keep refs in sync with props
   useEffect(() => {
@@ -84,7 +86,11 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     if (isActive) {
       // When becoming active, clear any pending activity state
       // (no need to show indicator for the tab you're looking at)
-      becameInactiveAtRef.current = null;
+      if (gracePeriodTimeoutRef.current) {
+        clearTimeout(gracePeriodTimeoutRef.current);
+        gracePeriodTimeoutRef.current = null;
+      }
+      activityCountDuringGracePeriodRef.current = 0;
       if (activityTimeoutRef.current) {
         clearTimeout(activityTimeoutRef.current);
         activityTimeoutRef.current = null;
@@ -94,8 +100,17 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
       // Notify parent that thinking stopped
       onThinkingChangeRef.current?.(false);
     } else if (wasActive) {
-      // Just became inactive - record timestamp for grace period
-      becameInactiveAtRef.current = Date.now();
+      // Just became inactive - start grace period timer
+      // If sustained activity occurs during grace period, we'll trigger when it ends
+      activityCountDuringGracePeriodRef.current = 0;
+      gracePeriodTimeoutRef.current = setTimeout(() => {
+        gracePeriodTimeoutRef.current = null;
+        // Only trigger if we saw multiple events (filters out single tab-switch noise)
+        if (activityCountDuringGracePeriodRef.current >= MIN_ACTIVITY_COUNT) {
+          activityCountDuringGracePeriodRef.current = 0;
+          triggerActivityRef.current();
+        }
+      }, INACTIVE_GRACE_PERIOD);
     }
   }, [isActive]);
 
@@ -211,12 +226,10 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
 
     // Trigger activity-based thinking (resets timeout)
     triggerActivityRef.current = () => {
-      // Skip if within grace period after becoming inactive (prevents false triggers from tab switch)
-      if (becameInactiveAtRef.current !== null) {
-        const elapsed = Date.now() - becameInactiveAtRef.current;
-        if (elapsed < INACTIVE_GRACE_PERIOD) {
-          return;
-        }
+      // If within grace period, count activity (need multiple events to filter out tab-switch noise)
+      if (gracePeriodTimeoutRef.current !== null) {
+        activityCountDuringGracePeriodRef.current++;
+        return;
       }
 
       // Clear existing timeout
