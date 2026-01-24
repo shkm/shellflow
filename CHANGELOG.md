@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/shkm/One-Man-Band/compare/v0.6.0...v0.7.0) (2026-01-24)
+
+
+### Features
+
+* add active/closed project management with project switcher ([42b3072](https://github.com/shkm/One-Man-Band/commit/42b3072ef22bc1140549c900ae954be0e1d6c8b1))
+* add Cmd+Enter shortcut for merge/rebase completion banner ([fc104ad](https://github.com/shkm/One-Man-Band/commit/fc104ad457bc65064d49900d6ce26ea96f287fa7))
+* add command palette ([1855412](https://github.com/shkm/One-Man-Band/commit/18554120a76223568b6fe9572707a9f6fb753446))
+* add crash recovery with watchdog process ([ffd937d](https://github.com/shkm/One-Man-Band/commit/ffd937d33387eb3659fd6d47b777ecac3899e8cf))
+* add file drag-and-drop support for terminals ([10bae34](https://github.com/shkm/One-Man-Band/commit/10bae347b2820a740f093ce2c9061ed19fe27453))
+* add focusNewBranchNames worktree config option ([f6eee1b](https://github.com/shkm/One-Man-Band/commit/f6eee1b9b6ba0ef8a2461fc40ec8bbd112cd18f8))
+* add focusNewBranchNames worktree config option ([4383779](https://github.com/shkm/One-Man-Band/commit/43837790eb903bd05d91be85d1b8a955dd7d8fd4))
+* add keyboard shortcuts for drawer tabs and branch renaming ([a27fe96](https://github.com/shkm/One-Man-Band/commit/a27fe963db8d6fcd0e955ebfacd561e8aa7b2d28))
+* improve close project workflow ([b03cafc](https://github.com/shkm/One-Man-Band/commit/b03cafc12c72fd5d720e6d65098083c660a99977))
+
+
+### Bug Fixes
+
+* block global shortcuts when picker is open ([3579016](https://github.com/shkm/One-Man-Band/commit/35790164cf6d578cb4a77641eb14eceb43927b03))
+* reduce delay showing progress indicator after switching tabs ([1561895](https://github.com/shkm/One-Man-Band/commit/156189518b45c9ce75116f7ba6f29626e5181992))
+
 ## [0.6.0](https://github.com/shkm/One-Man-Band/compare/v0.5.0...v0.6.0) (2026-01-23)
 
 
