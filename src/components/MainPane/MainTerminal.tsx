@@ -136,22 +136,12 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     }
   }, [type]);
 
-  const { ptyId, spawn, write, resize, kill } = usePty(handleOutput);
+  // Handle pty-ready event - passed to usePty to avoid race condition
+  const handleReady = useCallback(() => {
+    setIsReady(true);
+  }, []);
 
-  // Listen for pty-ready event
-  useEffect(() => {
-    if (!ptyId) return;
-
-    const unlisten = listen<{ ptyId: string; worktreeId: string }>('pty-ready', (event) => {
-      if (event.payload.ptyId === ptyId) {
-        setIsReady(true);
-      }
-    });
-
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, [ptyId]);
+  const { ptyId, spawn, write, resize, kill } = usePty(handleOutput, handleReady);
 
   // Listen for pty-exit event
   useEffect(() => {

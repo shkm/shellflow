@@ -5,39 +5,55 @@ import { PtyOutput } from '../types';
 
 type PtyType = 'main' | 'shell' | 'worktree' | 'project' | 'scratch';
 
-export function usePty(onOutput?: (data: string) => void) {
+export function usePty(onOutput?: (data: string) => void, onReady?: () => void) {
   const [ptyId, setPtyId] = useState<string | null>(null);
   // Use ref for immediate access to ptyId (avoids React state timing issues)
   const ptyIdRef = useRef<string | null>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
+  const unlistenReadyRef = useRef<UnlistenFn | null>(null);
   const onOutputRef = useRef(onOutput);
+  const onReadyRef = useRef(onReady);
+
+  // Keep the ready callback ref updated
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   // Keep the callback ref updated
   useEffect(() => {
     onOutputRef.current = onOutput;
   }, [onOutput]);
 
-  // Clean up listener on unmount
+  // Clean up listeners on unmount
   useEffect(() => {
     return () => {
       if (unlistenRef.current) {
         unlistenRef.current();
+      }
+      if (unlistenReadyRef.current) {
+        unlistenReadyRef.current();
       }
     };
   }, []);
 
   const spawn = useCallback(async (worktreeId: string, type: PtyType, cols?: number, rows?: number) => {
     try {
-      // Clean up any existing listener
+      // Clean up any existing listeners
       if (unlistenRef.current) {
         unlistenRef.current();
         unlistenRef.current = null;
       }
+      if (unlistenReadyRef.current) {
+        unlistenReadyRef.current();
+        unlistenReadyRef.current = null;
+      }
 
-      // Set up listener BEFORE spawning so we don't miss early output (like DA1 queries)
+      // Set up listeners BEFORE spawning so we don't miss early events
       // We'll filter by id once we know it
       let pendingId: string | null = null;
       const earlyEvents: PtyOutput[] = [];
+      let earlyReadyReceived = false;
+      let earlyReadyPtyId: string | null = null;
 
       const unlisten = await listen<PtyOutput>('pty-output', (event) => {
         if (pendingId === null) {
@@ -45,6 +61,17 @@ export function usePty(onOutput?: (data: string) => void) {
           earlyEvents.push(event.payload);
         } else if (event.payload.pty_id === pendingId) {
           onOutputRef.current?.(event.payload.data);
+        }
+      });
+
+      // Listen for pty-ready BEFORE spawning to avoid race condition
+      const unlistenReady = await listen<{ ptyId: string; worktreeId: string }>('pty-ready', (event) => {
+        if (pendingId === null) {
+          // Buffer if we don't know our id yet
+          earlyReadyReceived = true;
+          earlyReadyPtyId = event.payload.ptyId;
+        } else if (event.payload.ptyId === pendingId) {
+          onReadyRef.current?.();
         }
       });
 
@@ -73,12 +100,18 @@ export function usePty(onOutput?: (data: string) => void) {
       setPtyId(id);
       pendingId = id;
       unlistenRef.current = unlisten;
+      unlistenReadyRef.current = unlistenReady;
 
       // Process any buffered events
       for (const event of earlyEvents) {
         if (event.pty_id === id) {
           onOutputRef.current?.(event.data);
         }
+      }
+
+      // Process buffered ready event
+      if (earlyReadyReceived && earlyReadyPtyId === id) {
+        onReadyRef.current?.();
       }
 
       return id;
@@ -119,6 +152,10 @@ export function usePty(onOutput?: (data: string) => void) {
       if (unlistenRef.current) {
         unlistenRef.current();
         unlistenRef.current = null;
+      }
+      if (unlistenReadyRef.current) {
+        unlistenReadyRef.current();
+        unlistenReadyRef.current = null;
       }
     } catch (error) {
       console.error('Failed to kill PTY:', error);

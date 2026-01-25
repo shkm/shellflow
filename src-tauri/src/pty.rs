@@ -148,7 +148,6 @@ pub fn spawn_pty(
 
     // "shell" is a special command that spawns the user's login shell
     // Any other command is run through the shell with -c to support shell features
-    let is_main_command = command != "shell";
 
     // Use shell override if provided, otherwise use cached user shell
     let shell = shell_override
@@ -327,8 +326,8 @@ pub fn spawn_pty(
                         }
                     }
 
-                    // Emit pty-ready event on first substantial output for main command
-                    if is_main_command && !ready_emitted_clone.load(Ordering::SeqCst) && total_bytes > 50 {
+                    // Emit pty-ready event on first substantial output
+                    if !ready_emitted_clone.load(Ordering::SeqCst) && total_bytes > 50 {
                         ready_emitted_clone.store(true, Ordering::SeqCst);
                         eprintln!("[PTY:{}] Emitting pty-ready event for worktree {}", pty_id_clone, worktree_id_clone);
                         let _ = app_handle.emit("pty-ready", serde_json::json!({
