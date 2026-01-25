@@ -10,8 +10,9 @@ import type { ActionId } from './mappings';
 
 /**
  * Handler function type
+ * Returns true/void if handled (prevent default), false to let event through
  */
-export type ActionHandler = (...args: unknown[]) => void;
+export type ActionHandler = (...args: unknown[]) => boolean | void;
 
 /**
  * Map of action IDs to handlers
@@ -69,9 +70,10 @@ export interface ActionHandlerCallbacks {
   onToggleTaskSwitcher: () => void;
   onRunTask: () => void;
 
-  // NOTE: Terminal copy/paste are intentionally NOT in this interface.
-  // They are handled directly by terminal components via xterm's key handler.
-  // Including them here would prevent events from reaching the terminal.
+  // Terminal actions (via terminal registry)
+  /** Returns true if copied (had selection), false to let Ctrl+C through as interrupt */
+  onTerminalCopy: () => boolean;
+  onTerminalPaste: () => void;
 
   // Modal actions
   onCloseModal: () => void;
@@ -136,10 +138,9 @@ export function createActionHandlers(callbacks: ActionHandlerCallbacks): ActionH
     'task::switcher': callbacks.onToggleTaskSwitcher,
     'task::run': callbacks.onRunTask,
 
-    // NOTE: Terminal copy/paste are NOT registered here.
-    // They are handled by terminal components via xterm's attachCustomKeyEventHandler.
-    // If we registered empty handlers here, executeAction would return true,
-    // the event would be prevented, and terminals would never receive the keypress.
+    // Terminal actions (copy/paste via terminal registry)
+    'terminal::copy': callbacks.onTerminalCopy,
+    'terminal::paste': callbacks.onTerminalPaste,
 
     // Modal actions
     'modal::close': callbacks.onCloseModal,
@@ -148,6 +149,7 @@ export function createActionHandlers(callbacks: ActionHandlerCallbacks): ActionH
 
 /**
  * Execute an action by ID
+ * Returns true if handled and event should be prevented, false otherwise
  */
 export function executeAction(
   actionId: ActionId,
@@ -156,8 +158,10 @@ export function executeAction(
 ): boolean {
   const handler = handlers[actionId];
   if (handler) {
-    handler(...args);
-    return true;
+    const result = handler(...args);
+    // If handler explicitly returns false, don't prevent default
+    // Otherwise (true or undefined/void), prevent default
+    return result !== false;
   }
   return false;
 }

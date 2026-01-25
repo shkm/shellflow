@@ -1,6 +1,6 @@
 import { GitBranch, FolderPlus, Terminal, Keyboard } from 'lucide-react';
 import { MainTerminal } from './MainTerminal';
-import { TerminalConfig, MappingsConfig, ConfigError } from '../../hooks/useConfig';
+import { TerminalConfig, ConfigError } from '../../hooks/useConfig';
 import { ConfigErrorBanner } from '../ConfigErrorBanner';
 import { ScratchTerminal } from '../../types';
 
@@ -16,7 +16,6 @@ interface MainPaneProps {
   activeScratchId: string | null;
   // Common props
   terminalConfig: TerminalConfig;
-  mappings: MappingsConfig;
   activityTimeout: number;
   shouldAutoFocus: boolean;
   /** Counter that triggers focus when incremented */
@@ -40,7 +39,6 @@ export function MainPane({
   scratchTerminals,
   activeScratchId,
   terminalConfig,
-  mappings,
   activityTimeout,
   shouldAutoFocus,
   focusTrigger,
@@ -126,7 +124,6 @@ export function MainPane({
             shouldAutoFocus={worktreeId === activeEntityId && shouldAutoFocus}
             focusTrigger={worktreeId === activeEntityId ? focusTrigger : undefined}
             terminalConfig={terminalConfig}
-            mappings={mappings}
             activityTimeout={activityTimeout}
             onFocus={() => onFocus(worktreeId)}
             onNotification={(title, body) => onWorktreeNotification?.(worktreeId, title, body)}
@@ -151,7 +148,6 @@ export function MainPane({
             shouldAutoFocus={!activeWorktreeId && !activeScratchId && projectId === activeEntityId && shouldAutoFocus}
             focusTrigger={!activeWorktreeId && !activeScratchId && projectId === activeEntityId ? focusTrigger : undefined}
             terminalConfig={terminalConfig}
-            mappings={mappings}
             activityTimeout={activityTimeout}
             onFocus={() => onFocus(projectId)}
             onNotification={(title, body) => onProjectNotification?.(projectId, title, body)}
@@ -176,7 +172,6 @@ export function MainPane({
             shouldAutoFocus={scratch.id === activeScratchId && shouldAutoFocus}
             focusTrigger={scratch.id === activeScratchId ? focusTrigger : undefined}
             terminalConfig={terminalConfig}
-            mappings={mappings}
             activityTimeout={activityTimeout}
             onFocus={() => onFocus(scratch.id)}
             onNotification={(title, body) => onScratchNotification?.(scratch.id, title, body)}

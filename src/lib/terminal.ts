@@ -1,13 +1,6 @@
 import type { Terminal } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
-import type { Shortcut } from '../hooks/useConfig';
-import { matchesShortcut } from './keyboard';
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager';
-
-export interface TerminalShortcuts {
-  copy: Shortcut;
-  paste: Shortcut;
-}
 
 /**
  * Loads the WebGL addon with automatic recovery from context loss.
@@ -94,46 +87,21 @@ export function loadWebGLWithRecovery(terminal: Terminal): () => void {
  * Attaches custom keyboard handlers to an xterm.js terminal.
  *
  * Handles:
- * - Copy shortcut: Copy selected text to clipboard (configurable, default Cmd+C / Ctrl+Shift+C)
- * - Paste shortcut: Paste from clipboard (configurable, default Cmd+V / Ctrl+Shift+V)
- * - Shift+Enter: Sends kitty keyboard protocol sequence for newline insertion
+ * - Shift+Enter: Sends LF for newline insertion in multi-line input
  *   (allows multiline input in applications like Claude CLI)
+ *
+ * Note: Copy/paste are now handled globally via App.tsx and the terminal registry.
  *
  * @param terminal - The xterm.js Terminal instance
  * @param write - Function to write data to the PTY
- * @param shortcuts - Configurable keyboard shortcuts for copy/paste
  * @returns Cleanup function to remove event listeners
  */
 export function attachKeyboardHandlers(
   terminal: Terminal,
-  write: (data: string) => void,
-  shortcuts?: TerminalShortcuts
+  write: (data: string) => void
 ): () => void {
   terminal.attachCustomKeyEventHandler((event) => {
     if (event.type !== 'keydown') return true;
-
-    // Copy shortcut: copy selection to clipboard
-    if (shortcuts?.copy && matchesShortcut(event, shortcuts.copy)) {
-      if (terminal.hasSelection()) {
-        const selection = terminal.getSelection();
-        writeText(selection).catch(console.error);
-        return false; // Prevent default handling
-      }
-      // No selection: let the key pass through (e.g., Ctrl+C sends interrupt)
-      return true;
-    }
-
-    // Paste shortcut: paste from clipboard (uses native Tauri API to avoid macOS prompt)
-    if (shortcuts?.paste && matchesShortcut(event, shortcuts.paste)) {
-      readText()
-        .then((text) => {
-          if (text) {
-            write(text);
-          }
-        })
-        .catch(console.error);
-      return false; // Prevent default handling
-    }
 
     // Shift+Enter: Send LF for newline insertion in multi-line input
     if (event.shiftKey && event.key === 'Enter') {
@@ -146,13 +114,10 @@ export function attachKeyboardHandlers(
     return true; // Let xterm.js handle normally
   });
 
-  // Prevent native paste event when custom paste shortcut is configured.
-  // Without this, both the keyboard shortcut handler AND the browser's native
-  // paste event would fire, causing the content to be pasted twice.
+  // Prevent native paste event to avoid double-paste.
+  // Copy/paste is handled by App.tsx via the terminal registry.
   const handlePaste = (event: ClipboardEvent) => {
-    if (shortcuts?.paste) {
-      event.preventDefault();
-    }
+    event.preventDefault();
   };
 
   const element = terminal.element;
@@ -160,5 +125,38 @@ export function attachKeyboardHandlers(
 
   return () => {
     element?.removeEventListener('paste', handlePaste);
+  };
+}
+
+/**
+ * Create copy/paste functions for a terminal.
+ * Used with the terminal registry for global keyboard handling.
+ *
+ * @param terminal - The xterm.js Terminal instance
+ * @param write - Function to write data to the PTY
+ * @returns Object with copy and paste functions
+ */
+export function createTerminalCopyPaste(
+  terminal: Terminal,
+  write: (data: string) => void
+): { copy: () => boolean; paste: () => void } {
+  return {
+    copy: () => {
+      if (terminal.hasSelection()) {
+        const selection = terminal.getSelection();
+        writeText(selection).catch(console.error);
+        return true;
+      }
+      return false;
+    },
+    paste: () => {
+      readText()
+        .then((text) => {
+          if (text) {
+            write(text);
+          }
+        })
+        .catch(console.error);
+    },
   };
 }

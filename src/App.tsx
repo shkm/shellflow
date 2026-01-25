@@ -30,6 +30,7 @@ import { matchesShortcut } from './lib/keyboard';
 import { useMappings } from './hooks/useMappings';
 import { getActiveContexts, type ContextState } from './lib/contexts';
 import { createActionHandlers, executeAction } from './lib/actionHandlers';
+import { copyFromActiveTerminal, pasteToActiveTerminal } from './lib/terminalRegistry';
 import { Project, Worktree, RunningTask, MergeCompleted, ScratchTerminal } from './types';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
@@ -2184,8 +2185,14 @@ function App() {
     onToggleTaskSwitcher: handleToggleTaskSwitcher,
     onRunTask: handleToggleTask,
 
-    // NOTE: Terminal copy/paste are NOT registered here - they're handled by terminals.
-    // See actionHandlers.ts for explanation.
+    // Terminal copy/paste via terminal registry
+    onTerminalCopy: () => {
+      // Returns true if copied (had selection), false to let Ctrl+C through as interrupt
+      return copyFromActiveTerminal();
+    },
+    onTerminalPaste: () => {
+      pasteToActiveTerminal();
+    },
 
     // Modal actions
     onCloseModal: () => {
@@ -2857,7 +2864,6 @@ function App() {
                   scratchTerminals={scratchTerminals}
                   activeScratchId={activeScratchId}
                   terminalConfig={mainTerminalConfig}
-                  mappings={config.mappings}
                   activityTimeout={config.indicators.activityTimeout}
                   shouldAutoFocus={activeFocusState === 'main'}
                   focusTrigger={mainFocusTrigger}
@@ -2937,7 +2943,6 @@ function App() {
                               activeFocusState === 'drawer'
                             }
                             terminalConfig={drawerTerminalConfig}
-                            mappings={config.mappings}
                             onPtyIdReady={(ptyId) => handleTaskPtyIdReady(entityId, tab.taskName!, ptyId)}
                             onTaskExit={(exitCode) => handleTaskExit(entityId, tab.taskName!, exitCode)}
                             onFocus={() => handleDrawerFocused(entityId)}
@@ -2962,7 +2967,6 @@ function App() {
                               activeFocusState === 'drawer'
                             }
                             terminalConfig={drawerTerminalConfig}
-                            mappings={config.mappings}
                             onFocus={() => handleDrawerFocused(entityId)}
                           />
                         ) : (
@@ -2982,7 +2986,6 @@ function App() {
                               activeFocusState === 'drawer'
                             }
                             terminalConfig={drawerTerminalConfig}
-                            mappings={config.mappings}
                             onClose={() => handleCloseDrawerTab(tab.id, entityId)}
                             onFocus={() => handleDrawerFocused(entityId)}
                             onPtyIdReady={(ptyId) => handleDrawerPtyIdReady(tab.id, ptyId)}

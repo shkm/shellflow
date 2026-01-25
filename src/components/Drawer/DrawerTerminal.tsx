@@ -6,10 +6,11 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { listen } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { usePty } from '../../hooks/usePty';
-import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
+import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
-import { attachKeyboardHandlers, loadWebGLWithRecovery } from '../../lib/terminal';
+import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
+import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
 import '@xterm/xterm/css/xterm.css';
 
 // Fix for xterm.js not handling 5-part colon-separated RGB sequences.
@@ -35,13 +36,12 @@ interface DrawerTerminalProps {
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
-  mappings: MappingsConfig;
   onClose?: () => void;
   onFocus?: () => void;
   onPtyIdReady?: (ptyId: string) => void;
 }
 
-export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFocus, terminalConfig, mappings, onClose, onFocus, onPtyIdReady }: DrawerTerminalProps) {
+export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFocus, terminalConfig, onClose, onFocus, onPtyIdReady }: DrawerTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -163,16 +163,26 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Attach custom keyboard handlers (copy, paste, Shift+Enter for newline)
-    const cleanupKeyboardHandlers = attachKeyboardHandlers(terminal, (data) => writeRef.current(data), {
-      copy: mappings.terminalCopy,
-      paste: mappings.terminalPaste,
-    });
+    // Attach custom keyboard handlers (Shift+Enter for newline)
+    const cleanupKeyboardHandlers = attachKeyboardHandlers(terminal, (data) => writeRef.current(data));
+
+    // Create copy/paste functions for the terminal registry
+    const copyPasteFns = createTerminalCopyPaste(terminal, (data) => writeRef.current(data));
 
     // Attach onData handler immediately
     const onDataDisposable = terminal.onData((data) => {
       writeRef.current(data);
     });
+
+    // Register with terminal registry on focus, unregister on blur
+    const handleTerminalFocus = () => {
+      registerActiveTerminal(copyPasteFns);
+    };
+    const handleTerminalBlur = () => {
+      unregisterActiveTerminal(copyPasteFns);
+    };
+    terminal.textarea?.addEventListener('focus', handleTerminalFocus);
+    terminal.textarea?.addEventListener('blur', handleTerminalBlur);
 
     // Report focus changes to parent via DOM events on container
     const handleFocus = () => {
@@ -203,6 +213,9 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
       cleanupKeyboardHandlers();
       webglCleanup?.();
       containerRef.current?.removeEventListener('focusin', handleFocus);
+      terminal.textarea?.removeEventListener('focus', handleTerminalFocus);
+      terminal.textarea?.removeEventListener('blur', handleTerminalBlur);
+      unregisterActiveTerminal(copyPasteFns);
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;

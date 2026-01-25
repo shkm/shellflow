@@ -4,9 +4,10 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { listen } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { TerminalConfig, MappingsConfig } from '../../hooks/useConfig';
+import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
-import { attachKeyboardHandlers, loadWebGLWithRecovery } from '../../lib/terminal';
+import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
+import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
 import { spawnTask, ptyWrite, ptyResize, ptyKill } from '../../lib/tauri';
 import '@xterm/xterm/css/xterm.css';
 
@@ -36,7 +37,6 @@ interface TaskTerminalProps {
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
-  mappings: MappingsConfig;
   onPtyIdReady?: (ptyId: string) => void;
   onTaskExit?: (exitCode: number) => void;
   onFocus?: () => void;
@@ -49,7 +49,6 @@ export function TaskTerminal({
   isActive,
   shouldAutoFocus,
   terminalConfig,
-  mappings,
   onPtyIdReady,
   onTaskExit,
   onFocus,
@@ -143,19 +142,28 @@ export function TaskTerminal({
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Attach custom keyboard handlers
-    const cleanupKeyboardHandlers = attachKeyboardHandlers(
-      terminal,
-      (data) => {
-        if (ptyIdRef.current) {
-          ptyWrite(ptyIdRef.current, data);
-        }
-      },
-      {
-        copy: mappings.terminalCopy,
-        paste: mappings.terminalPaste,
+    // Write function for keyboard handlers
+    const writeToPty = (data: string) => {
+      if (ptyIdRef.current) {
+        ptyWrite(ptyIdRef.current, data);
       }
-    );
+    };
+
+    // Attach custom keyboard handlers (Shift+Enter for newline)
+    const cleanupKeyboardHandlers = attachKeyboardHandlers(terminal, writeToPty);
+
+    // Create copy/paste functions for the terminal registry
+    const copyPasteFns = createTerminalCopyPaste(terminal, writeToPty);
+
+    // Register with terminal registry on focus, unregister on blur
+    const handleTerminalFocus = () => {
+      registerActiveTerminal(copyPasteFns);
+    };
+    const handleTerminalBlur = () => {
+      unregisterActiveTerminal(copyPasteFns);
+    };
+    terminal.textarea?.addEventListener('focus', handleTerminalFocus);
+    terminal.textarea?.addEventListener('blur', handleTerminalBlur);
 
     // Attach onData handler
     const onDataDisposable = terminal.onData((data) => {
@@ -241,6 +249,9 @@ export function TaskTerminal({
       cleanupKeyboardHandlers();
       webglCleanup();
       containerRef.current?.removeEventListener('focusin', handleFocus);
+      terminal.textarea?.removeEventListener('focus', handleTerminalFocus);
+      terminal.textarea?.removeEventListener('blur', handleTerminalBlur);
+      unregisterActiveTerminal(copyPasteFns);
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;

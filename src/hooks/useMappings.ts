@@ -18,7 +18,6 @@ import {
   type ResolvedBinding,
   type RawMappings,
   type ActionId,
-  type ActionKeyInfo,
 } from '../lib/mappings';
 import { getActiveContexts, type ActiveContexts, type ContextState } from '../lib/contexts';
 
