@@ -29,7 +29,7 @@ export function emitEvent(eventName: string, payload: unknown) {
 // Default config - minimal structure that the app requires
 // Tests can override specific values as needed
 export const defaultTestConfig = {
-  main: { command: 'claude', fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
+  main: { command: null, fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
   terminal: { fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
   merge: { strategy: 'merge', deleteWorktree: true, deleteLocalBranch: true, deleteRemoteBranch: false },
   navigation: { includeProjects: true },

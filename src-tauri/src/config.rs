@@ -263,8 +263,8 @@ impl Default for ScratchConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MainConfig {
-    /// Command to run in the main terminal pane
-    pub command: String,
+    /// Command to run in the main terminal pane. If null, spawns the user's shell.
+    pub command: Option<String>,
     #[serde(rename = "fontFamily")]
     pub font_family: String,
     #[serde(rename = "fontSize")]
@@ -278,7 +278,7 @@ pub struct MainConfig {
 impl Default for MainConfig {
     fn default() -> Self {
         Self {
-            command: "claude".to_string(),
+            command: None,
             font_family: "Menlo, Monaco, 'Courier New', monospace".to_string(),
             font_size: 13,
             font_ligatures: false,

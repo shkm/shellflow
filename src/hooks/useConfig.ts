@@ -11,7 +11,8 @@ export interface TerminalConfig {
 }
 
 export interface MainConfig extends TerminalConfig {
-  command: string;
+  /** Command to run in the main terminal pane. If null, spawns user's shell. */
+  command: string | null;
 }
 
 export interface MergeConfig {
@@ -90,7 +91,7 @@ interface ConfigResult {
 
 const defaultConfig: Config = {
   main: {
-    command: 'claude',
+    command: null,
     fontFamily: "Menlo, Monaco, 'Courier New', monospace",
     fontSize: 13,
     fontLigatures: false,

@@ -4,7 +4,8 @@
   // https://github.com/shkm/shellflow/blob/main/src-tauri/src/default_config.jsonc
 
   "main": {
-    "command": "claude",
+    // Command to run in the main terminal pane. If null or omitted, spawns your shell.
+    // "command": "claude",
     "fontFamily": "Menlo, Monaco, 'Courier New', monospace",
     "fontSize": 13,
     "fontLigatures": false,

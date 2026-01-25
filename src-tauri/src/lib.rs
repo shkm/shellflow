@@ -428,11 +428,16 @@ fn spawn_main(
     // Load config with project-specific overrides
     let cfg = config::load_config_for_project(Some(&project_path));
 
-    // Expand template variables in command
-    let ctx = template::TemplateContext::new(&project_path)
-        .with_branch(&worktree_branch)
-        .with_worktree_name(&worktree_name);
-    let command = template::expand_template(&cfg.main.command, &ctx).map_err(map_err)?;
+    // Expand template variables in command, or use shell if not configured
+    let command = match &cfg.main.command {
+        Some(cmd) => {
+            let ctx = template::TemplateContext::new(&project_path)
+                .with_branch(&worktree_branch)
+                .with_worktree_name(&worktree_name);
+            template::expand_template(cmd, &ctx).map_err(map_err)?
+        }
+        None => "shell".to_string(),
+    };
 
     pty::spawn_pty(&app, &state, worktree_id, &worktree_path, &command, cols, rows, None, None).map_err(map_err)
 }
@@ -720,9 +725,14 @@ fn spawn_project_shell(
     // Load config with project-specific overrides
     let cfg = config::load_config_for_project(Some(&project_path));
 
-    // Expand template variables in command (no branch/worktree_name for projects)
-    let ctx = template::TemplateContext::new(&project_path);
-    let command = template::expand_template(&cfg.main.command, &ctx).map_err(map_err)?;
+    // Expand template variables in command, or use shell if not configured
+    let command = match &cfg.main.command {
+        Some(cmd) => {
+            let ctx = template::TemplateContext::new(&project_path);
+            template::expand_template(cmd, &ctx).map_err(map_err)?
+        }
+        None => "shell".to_string(),
+    };
 
     // Use project_id as the "worktree_id" for PTY tracking purposes
     pty::spawn_pty(&app, &state, project_id, &project_path, &command, cols, rows, None, None).map_err(map_err)

@@ -204,7 +204,7 @@ describe('useConfig', () => {
       });
 
       // Should not crash and should have default config
-      expect(result.current.config.main.command).toBe('claude');
+      expect(result.current.config.main.command).toBeNull();
       consoleSpy.mockRestore();
     });
 
@@ -238,7 +238,7 @@ describe('useConfig', () => {
       const { result } = renderHook(() => useConfig());
 
       // Should have defaults even while loading
-      expect(result.current.config.main.command).toBe('claude');
+      expect(result.current.config.main.command).toBeNull();
       expect(result.current.config.main.fontSize).toBe(13);
     });
   });

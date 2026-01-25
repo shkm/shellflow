@@ -14,9 +14,9 @@
       "description": "Configuration for the main terminal pane",
       "properties": {
         "command": {
-          "type": "string",
-          "description": "Command to run in the main terminal pane",
-          "default": "claude"
+          "type": ["string", "null"],
+          "description": "Command to run in the main terminal pane. If null or omitted, spawns your shell.",
+          "default": null
         },
         "fontFamily": {
           "type": "string",
