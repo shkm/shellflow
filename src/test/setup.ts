@@ -31,7 +31,7 @@ export function emitEvent(eventName: string, payload: unknown) {
 export const defaultTestConfig = {
   main: { command: null, fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
   drawer: { fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
-  navigation: { includeProjects: true },
+  navigation: {},
   indicators: { activityTimeout: 5000, showIdleCheck: true },
   apps: { terminal: 'Terminal', editor: 'VS Code' },
   tasks: [],

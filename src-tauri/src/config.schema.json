@@ -179,14 +179,8 @@
     },
     "navigation": {
       "type": "object",
-      "description": "Configuration for keyboard navigation",
-      "properties": {
-        "includeProjects": {
-          "type": "boolean",
-          "description": "Include open projects in keyboard navigation (cmd+j/k, cmd+1-9). When false, only cycles through open worktrees.",
-          "default": true
-        }
-      },
+      "description": "Reserved for future navigation settings",
+      "properties": {},
       "additionalProperties": false
     },
     "indicators": {

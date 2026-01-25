@@ -15,7 +15,7 @@ describe('DrawerTerminal', () => {
     entityId: 'worktree-1',
     isActive: true,
     shouldAutoFocus: false,
-    terminalConfig: defaultTestConfig.terminal,
+    terminalConfig: defaultTestConfig.drawer,
   };
 
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe('DrawerTerminal', () => {
 
     it('applies padding from config', () => {
       const customConfig = {
-        ...defaultTestConfig.terminal,
+        ...defaultTestConfig.drawer,
         padding: 12,
       };
 
@@ -197,7 +197,7 @@ describe('DrawerTerminal', () => {
   describe('terminal config', () => {
     it('applies font family from config', async () => {
       const customConfig = {
-        ...defaultTestConfig.terminal,
+        ...defaultTestConfig.drawer,
         fontFamily: 'JetBrains Mono',
       };
 
@@ -212,7 +212,7 @@ describe('DrawerTerminal', () => {
 
     it('applies font size from config', async () => {
       const customConfig = {
-        ...defaultTestConfig.terminal,
+        ...defaultTestConfig.drawer,
         fontSize: 14,
       };
 

@@ -14,7 +14,7 @@ describe('MainTerminal', () => {
     type: 'main' as const,
     isActive: true,
     shouldAutoFocus: false,
-    terminalConfig: defaultTestConfig.terminal,
+    terminalConfig: defaultTestConfig.drawer,
   };
 
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe('MainTerminal', () => {
 
     it('applies padding from config', () => {
       const customConfig = {
-        ...defaultTestConfig.terminal,
+        ...defaultTestConfig.drawer,
         padding: 16,
       };
 
@@ -154,7 +154,7 @@ describe('MainTerminal', () => {
   describe('terminal config', () => {
     it('applies font settings from config', async () => {
       const customConfig = {
-        ...defaultTestConfig.terminal,
+        ...defaultTestConfig.drawer,
         fontSize: 16,
         fontFamily: 'Fira Code',
       };
@@ -175,7 +175,7 @@ describe('MainTerminal', () => {
         const { unmount } = render(
           <MainTerminal
             {...defaultProps}
-            terminalConfig={{ ...defaultTestConfig.terminal, padding }}
+            terminalConfig={{ ...defaultTestConfig.drawer, padding }}
           />
         );
 

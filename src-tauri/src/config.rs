@@ -188,20 +188,10 @@ impl Default for MergeConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct NavigationConfig {
-    /// Include open projects in keyboard navigation (cmd+j/k)
-    #[serde(rename = "includeProjects")]
-    pub include_projects: bool,
-}
-
-impl Default for NavigationConfig {
-    fn default() -> Self {
-        Self {
-            include_projects: true,
-        }
-    }
+    // Reserved for future navigation settings
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

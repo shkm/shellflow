@@ -314,15 +314,15 @@ function App() {
 
   // Open entities in sidebar order - scratch terminals first, then projects/worktrees
   // Used for unified keyboard navigation (1-9, j/k)
-  // When includeProjects is true, projects are interleaved with their worktrees in sidebar order
+  // Projects are interleaved with their worktrees in sidebar order
   const openEntitiesInOrder = useMemo(() => {
     const scratchIds = scratchTerminals.map(s => ({ type: 'scratch' as const, id: s.id }));
 
     // Build project/worktree list in sidebar visual order
     const projectAndWorktreeIds: Array<{ type: 'project' | 'worktree'; id: string }> = [];
     for (const project of projects) {
-      // Include project if includeProjects is enabled and project terminal is open
-      if (config.navigation.includeProjects && openProjectIds.has(project.id)) {
+      // Include project if project terminal is open
+      if (openProjectIds.has(project.id)) {
         projectAndWorktreeIds.push({ type: 'project' as const, id: project.id });
       }
       // Include open worktrees from this project
@@ -334,7 +334,7 @@ function App() {
     }
 
     return [...scratchIds, ...projectAndWorktreeIds];
-  }, [scratchTerminals, projects, openProjectIds, openWorktreeIds, config.navigation.includeProjects]);
+  }, [scratchTerminals, projects, openProjectIds, openWorktreeIds]);
 
   // Worktrees with running tasks and their counts (for sidebar indicator)
   const runningTaskCounts = useMemo(() => {

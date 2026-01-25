@@ -44,10 +44,6 @@
     }
   },
 
-  "navigation": {
-    // Include open projects in keyboard navigation (cmd+j/k, cmd+1-9)
-    "includeProjects": true
-  },
 
   "indicators": {
     // Time in ms after last activity before progress indicator turns off

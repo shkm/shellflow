@@ -27,7 +27,7 @@ export interface MergeConfig {
 }
 
 export interface NavigationConfig {
-  includeProjects: boolean;
+  // Reserved for future navigation settings
 }
 
 export type TaskKind = 'command' | 'daemon';
@@ -111,9 +111,7 @@ const defaultConfig: Config = {
     terminal: 'Ghostty',
     editor: 'Zed',
   },
-  navigation: {
-    includeProjects: true,
-  },
+  navigation: {},
   indicators: {
     activityTimeout: 250,
     showIdleCheck: true,
