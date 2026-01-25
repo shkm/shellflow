@@ -435,6 +435,40 @@ pub fn resize_pty(_state: &AppState, pty_id: &str, cols: u16, rows: u16) -> Resu
     Ok(())
 }
 
+/// Send SIGINT to interrupt the foreground process in a PTY session
+#[cfg(unix)]
+pub fn interrupt_pty(state: &AppState, pty_id: &str) -> Result<(), PtyError> {
+    use libc::SIGINT;
+
+    // Get the child PID
+    let child_pid = state
+        .pty_sessions
+        .read()
+        .get(pty_id)
+        .map(|s| s.child_pid);
+
+    if let Some(pid) = child_pid {
+        // Send SIGINT to the entire process group by using negative PID.
+        // The shell spawned by the PTY is the process group leader, so -pid
+        // sends the signal to the shell and all its children (like `yes`).
+        // This is instant, unlike using pgrep to find children.
+        let result = unsafe { libc::kill(-(pid as i32), SIGINT) == 0 };
+
+        // Fallback: send directly to the process in case it's not in the same group
+        if !result {
+            send_signal(pid, SIGINT);
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(not(unix))]
+pub fn interrupt_pty(_state: &AppState, _pty_id: &str) -> Result<(), PtyError> {
+    // On non-Unix, this is a no-op (Ctrl+C should work via terminal)
+    Ok(())
+}
+
 /// Kill a PTY session with SIGTERM (can be caught/ignored by the process)
 #[cfg(unix)]
 pub fn kill_pty(state: &AppState, pty_id: &str) -> Result<(), PtyError> {
@@ -699,5 +733,115 @@ pub fn shutdown_all_ptys(app: &AppHandle, state: &AppState) {
         state.pty_sessions.write().remove(&pty_id);
         PTY_WRITERS.lock().remove(&pty_id);
         PTY_MASTERS.lock().remove(&pty_id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::AppState;
+
+    #[test]
+    fn test_interrupt_pty_returns_ok_for_missing_session() {
+        // interrupt_pty should not panic or error when session doesn't exist
+        let state = AppState::new();
+        let result = interrupt_pty(&state, "nonexistent-pty-id");
+        assert!(result.is_ok(), "interrupt_pty should succeed even for missing session");
+    }
+
+    #[test]
+    fn test_kill_pty_returns_ok_for_missing_session() {
+        // kill_pty should not panic or error when session doesn't exist
+        let state = AppState::new();
+        let result = kill_pty(&state, "nonexistent-pty-id");
+        assert!(result.is_ok(), "kill_pty should succeed even for missing session");
+    }
+
+    #[test]
+    fn test_force_kill_pty_returns_ok_for_missing_session() {
+        // force_kill_pty should not panic or error when session doesn't exist
+        let state = AppState::new();
+        let result = force_kill_pty(&state, "nonexistent-pty-id");
+        assert!(result.is_ok(), "force_kill_pty should succeed even for missing session");
+    }
+
+    #[test]
+    fn test_write_to_pty_returns_error_for_missing_session() {
+        // write_to_pty should return an error when session doesn't exist
+        let state = AppState::new();
+        let result = write_to_pty(&state, "nonexistent-pty-id", "test data");
+        assert!(result.is_err(), "write_to_pty should error for missing session");
+
+        let err = result.unwrap_err();
+        match err {
+            PtyError::SessionNotFound(id) => {
+                assert_eq!(id, "nonexistent-pty-id");
+            }
+            _ => panic!("Expected SessionNotFound error, got {:?}", err),
+        }
+    }
+
+    #[test]
+    fn test_resize_pty_returns_error_for_missing_session() {
+        // resize_pty should return an error when session doesn't exist
+        let state = AppState::new();
+        let result = resize_pty(&state, "nonexistent-pty-id", 80, 24);
+        assert!(result.is_err(), "resize_pty should error for missing session");
+
+        let err = result.unwrap_err();
+        match err {
+            PtyError::SessionNotFound(id) => {
+                assert_eq!(id, "nonexistent-pty-id");
+            }
+            _ => panic!("Expected SessionNotFound error, got {:?}", err),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_send_signal_returns_false_for_nonexistent_pid() {
+        // send_signal should return false for a PID that doesn't exist
+        // Using a very high PID that is unlikely to exist
+        let result = send_signal(4194304, libc::SIGINT);
+        assert!(!result, "Signal to nonexistent PID should fail");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_is_process_alive_returns_false_for_invalid_pid() {
+        // is_process_alive should return false for PID that doesn't exist
+        let result = is_process_alive(999999999);
+        assert!(!result, "Invalid PID should not be alive");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_get_child_pids_returns_empty_for_invalid_pid() {
+        // get_child_pids should return empty vec for PID that doesn't exist
+        let children = get_child_pids(999999999);
+        assert!(children.is_empty(), "Invalid PID should have no children");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_get_process_name_returns_none_for_invalid_pid() {
+        // get_process_name should return None for PID that doesn't exist
+        let name = get_process_name(999999999);
+        assert!(name.is_none(), "Invalid PID should have no process name");
+    }
+
+    #[test]
+    fn test_get_cached_user_path_returns_non_empty() {
+        // get_cached_user_path should return a non-empty PATH
+        let path = get_cached_user_path();
+        assert!(!path.is_empty(), "User PATH should not be empty");
+    }
+
+    #[test]
+    fn test_get_cached_user_shell_returns_valid_shell() {
+        // get_cached_user_shell should return a valid shell path
+        let shell = get_cached_user_shell();
+        assert!(!shell.is_empty(), "User shell should not be empty");
+        assert!(shell.contains("sh"), "Shell should contain 'sh': {}", shell);
     }
 }

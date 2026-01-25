@@ -35,6 +35,32 @@ npm run tauri dev
 
 **Important**: Do not run the app. The user will always run and test the app themselves.
 
+## Testing
+
+**Always write tests for new functionality and bug fixes.** After making changes, explicitly state whether tests were added and run them to verify they pass.
+
+### Running Tests
+
+```bash
+# TypeScript/React tests (Vitest)
+npm test
+
+# Rust tests
+cd src-tauri && cargo test
+```
+
+### Test Structure
+
+- **Frontend tests**: `src/**/*.test.ts(x)` - Uses Vitest with mocked Tauri APIs
+- **Backend tests**: `src-tauri/src/*.rs` - Uses `#[cfg(test)]` modules with `#[test]` functions
+
+### Test Guidelines
+
+1. Add tests for new features covering the happy path and edge cases
+2. Add regression tests for bug fixes to prevent recurrence
+3. Use existing test files as patterns (e.g., `usePty.test.ts` for hooks)
+4. Mock Tauri APIs using the setup in `src/test/setup.ts`
+
 ## Commits and Releases
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/) with release-please for automated versioning.

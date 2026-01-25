@@ -791,6 +791,11 @@ fn pty_resize(state: State<'_, Arc<AppState>>, pty_id: &str, cols: u16, rows: u1
 }
 
 #[tauri::command]
+fn pty_interrupt(state: State<'_, Arc<AppState>>, pty_id: &str) -> Result<()> {
+    pty::interrupt_pty(&state, pty_id).map_err(map_err)
+}
+
+#[tauri::command]
 fn pty_kill(state: State<'_, Arc<AppState>>, pty_id: &str) -> Result<()> {
     pty::kill_pty(&state, pty_id).map_err(map_err)
 }
@@ -1610,6 +1615,7 @@ pub fn run() {
             get_task_urls,
             pty_write,
             pty_resize,
+            pty_interrupt,
             pty_kill,
             pty_force_kill,
             get_changed_files,

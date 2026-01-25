@@ -109,6 +109,16 @@ export function usePty(onOutput?: (data: string) => void) {
     }
   }, []);
 
+  const interrupt = useCallback(async () => {
+    const id = ptyIdRef.current;
+    if (!id) return;
+    try {
+      await invoke('pty_interrupt', { ptyId: id });
+    } catch (error) {
+      console.error('Failed to interrupt PTY:', error);
+    }
+  }, []);
+
   const kill = useCallback(async () => {
     const id = ptyIdRef.current;
     if (!id) return;
@@ -170,6 +180,7 @@ export function usePty(onOutput?: (data: string) => void) {
     spawnShell,
     write,
     resize,
+    interrupt,
     kill,
   };
 }
