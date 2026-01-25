@@ -261,9 +261,9 @@ Examples:
 2. ✅ Create default mappings file with all current shortcuts
 3. ✅ Create JSON Schema for validation
 4. ✅ Implement `resolveBinding(key, contexts, mappings)`
-5. ⏳ Implement backend: load user mappings, merge with defaults
-6. ⏳ Add Tauri command: `get_mappings`
-7. ⏳ Watch `mappings.jsonc` for changes
+5. ✅ Implement backend: load user mappings, merge with defaults
+6. ✅ Add Tauri command: `get_mappings`
+7. ✅ Watch `mappings.jsonc` for changes
 
 ### Phase 3: Hook & Integration
 
