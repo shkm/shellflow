@@ -50,11 +50,50 @@ export const defaultTestConfig = {
   unfocusedOpacity: 1,
 };
 
+// Default mappings for tests
+export const defaultTestMappings = {
+  mappings: {
+    bindings: [
+      {
+        bindings: {
+          'cmd-shift-p': 'palette::toggle',
+        },
+      },
+      {
+        context: 'drawerFocused',
+        bindings: {
+          'cmd-w': 'drawer::closeTab',
+        },
+      },
+      {
+        context: 'scratchFocused && !drawerFocused',
+        bindings: {
+          'cmd-w': 'scratch::close',
+        },
+      },
+      {
+        context: 'worktreeFocused && !drawerFocused',
+        bindings: {
+          'cmd-w': 'worktree::close',
+        },
+      },
+      {
+        context: 'projectFocused && !drawerFocused',
+        bindings: {
+          'cmd-w': 'project::close',
+        },
+      },
+    ],
+  },
+  errors: [],
+};
+
 // Helper to set up common mock responses
 export function setupDefaultMocks() {
   mockInvokeResponses.set('list_projects', []);
   mockInvokeResponses.set('get_config', { config: defaultTestConfig, errors: [] });
   mockInvokeResponses.set('get_home_dir', '/Users/test');
+  mockInvokeResponses.set('get_mappings', defaultTestMappings);
 }
 
 // Helper to create config with overrides

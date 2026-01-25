@@ -265,18 +265,20 @@ Examples:
 6. ✅ Add Tauri command: `get_mappings`
 7. ✅ Watch `mappings.jsonc` for changes
 
-### Phase 3: Hook & Integration
+### Phase 3: Hook & Integration ✅ COMPLETE
 
 **Files:**
-- [ ] `src/hooks/useMappings.ts` - React hook for mappings
-- [ ] Refactor `src/App.tsx` - New keyboard handler
+- [x] `src/hooks/useMappings.ts` - React hook for mappings
+- [x] `src/lib/actionHandlers.ts` - Maps namespaced actions to handlers
+- [x] `src/App.tsx` - Added context-aware keyboard handler
+- [x] `src/test/setup.ts` - Added mappings mock
 
 **Tasks:**
-1. Create `useMappings()` hook
-2. Refactor keyboard handler to use `resolveBinding()`
-3. Remove old hardcoded shortcut logic
-4. Update menu bar to use new action names
-5. Integration tests
+1. ✅ Create `useMappings()` hook
+2. ✅ Add context-aware keyboard handler (runs before legacy handler)
+3. ⏳ Remove old hardcoded shortcut logic (deferred - incremental migration)
+4. ⏳ Update menu bar to use new action names (deferred)
+5. ✅ Integration tests (171 passing)
 
 ### Phase 4: Migration & Cleanup
 

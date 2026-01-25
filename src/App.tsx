@@ -27,6 +27,9 @@ import { useActions, ActionHandlers } from './hooks/useActions';
 import { arrayMove } from '@dnd-kit/sortable';
 import { sendOsNotification } from './lib/notifications';
 import { matchesShortcut } from './lib/keyboard';
+import { useMappings } from './hooks/useMappings';
+import { getActiveContexts, type ContextState } from './lib/contexts';
+import { createActionHandlers, executeAction } from './lib/actionHandlers';
 import { Project, Worktree, RunningTask, MergeCompleted, ScratchTerminal } from './types';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
@@ -97,6 +100,9 @@ function App() {
   }, [activeWorktreeId, activeProjectId, projects]);
 
   const { config, errors: configErrors } = useConfig(activeProjectPath);
+
+  // Context-aware keyboard mappings
+  const { resolveKeyEvent } = useMappings();
 
   // Toast notifications
   const { toasts, dismissToast, showError } = useToast();
@@ -2104,6 +2110,151 @@ function App() {
 
   // The action system hook
   const actions = useActions(actionContext, actionHandlers);
+
+  // Context-aware action handlers (new system)
+  const contextActionHandlers = useMemo(() => createActionHandlers({
+    // Drawer actions
+    onCloseDrawerTab: () => activeDrawerTabId && handleCloseDrawerTab(activeDrawerTabId),
+    onToggleDrawer: handleToggleDrawer,
+    onExpandDrawer: handleToggleDrawerExpand,
+    onPrevDrawerTab: () => {
+      if (isDrawerOpen && activeDrawerTabs.length > 1) {
+        const currentIndex = activeDrawerTabs.findIndex(tab => tab.id === activeDrawerTabId);
+        if (currentIndex !== -1) {
+          const prevIndex = currentIndex === 0 ? activeDrawerTabs.length - 1 : currentIndex - 1;
+          handleSelectDrawerTab(activeDrawerTabs[prevIndex].id);
+        }
+      }
+    },
+    onNextDrawerTab: () => {
+      if (isDrawerOpen && activeDrawerTabs.length > 1) {
+        const currentIndex = activeDrawerTabs.findIndex(tab => tab.id === activeDrawerTabId);
+        if (currentIndex !== -1) {
+          const nextIndex = currentIndex === activeDrawerTabs.length - 1 ? 0 : currentIndex + 1;
+          handleSelectDrawerTab(activeDrawerTabs[nextIndex].id);
+        }
+      }
+    },
+    onAddDrawerTab: handleAddDrawerTab,
+
+    // Scratch actions
+    onCloseScratch: () => activeScratchId && handleCloseScratch(activeScratchId),
+    onNewScratch: handleAddScratchTerminal,
+
+    // Worktree actions
+    onCloseWorktree: () => activeWorktreeId && handleCloseWorktree(activeWorktreeId),
+    onNewWorktree: () => activeProjectId && handleAddWorktree(activeProjectId),
+    onRenameBranch: () => {
+      if (activeWorktreeId) {
+        focusToRestoreRef.current = document.activeElement as HTMLElement | null;
+        setAutoEditWorktreeId(activeWorktreeId);
+      }
+    },
+
+    // Project actions
+    onCloseProject: () => activeProjectId && handleCloseProject(activeProjectId),
+
+    // Navigation actions
+    onNavigatePrev: () => actionHandlers.worktreePrev?.(),
+    onNavigateNext: () => actionHandlers.worktreeNext?.(),
+    onNavigateBack: handleSwitchToPreviousView,
+    onNavigateToEntity: (index: number) => selectEntityAtIndex(index),
+
+    // Focus actions
+    onSwitchFocus: handleSwitchFocus,
+
+    // View actions
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+    onZoomReset: handleZoomReset,
+
+    // Panel actions
+    onToggleRightPanel: handleToggleRightPanel,
+
+    // Palette actions
+    onTogglePalette: handleToggleCommandPalette,
+    onClosePalette: () => {
+      if (isCommandPaletteOpen) handleToggleCommandPalette();
+      if (isTaskSwitcherOpen) handleToggleTaskSwitcher();
+      if (isProjectSwitcherOpen) handleToggleProjectSwitcher();
+    },
+    onToggleProjectSwitcher: handleToggleProjectSwitcher,
+
+    // Task actions
+    onToggleTaskSwitcher: handleToggleTaskSwitcher,
+    onRunTask: handleToggleTask,
+
+    // Terminal actions
+    onTerminalCopy: () => {}, // Handled by terminal component
+    onTerminalPaste: () => {}, // Handled by terminal component
+
+    // Modal actions
+    onCloseModal: () => {
+      if (pendingCloseProject) setPendingCloseProject(null);
+      if (pendingDeleteId) setPendingDeleteId(null);
+      if (pendingMergeId) setPendingMergeId(null);
+    },
+  }), [
+    activeDrawerTabId, activeDrawerTabs, isDrawerOpen, activeScratchId, activeWorktreeId, activeProjectId,
+    handleCloseDrawerTab, handleToggleDrawer, handleToggleDrawerExpand, handleSelectDrawerTab, handleAddDrawerTab,
+    handleCloseScratch, handleAddScratchTerminal, handleCloseWorktree, handleAddWorktree, handleCloseProject,
+    handleSwitchToPreviousView, handleSwitchFocus, handleZoomIn, handleZoomOut, handleZoomReset,
+    handleToggleRightPanel, handleToggleCommandPalette, handleToggleTaskSwitcher, handleToggleProjectSwitcher,
+    handleToggleTask, selectEntityAtIndex, actionHandlers,
+    isCommandPaletteOpen, isTaskSwitcherOpen, isProjectSwitcherOpen,
+    pendingCloseProject, pendingDeleteId, pendingMergeId,
+  ]);
+
+  // Context-aware keyboard shortcuts (new system)
+  // This runs before the legacy handler and handles cmd-w and other context-dependent shortcuts
+  useEffect(() => {
+    const handleContextKeyDown = (e: KeyboardEvent) => {
+      // Build context state from current app state
+      const contextState: ContextState = {
+        activeScratchId,
+        activeWorktreeId,
+        activeProjectId,
+        focusState: activeFocusState,
+        isDrawerOpen,
+        isRightPanelOpen,
+        isCommandPaletteOpen,
+        isTaskSwitcherOpen,
+        isProjectSwitcherOpen,
+        hasOpenModal: !!(pendingCloseProject || pendingDeleteId || pendingMergeId),
+        openEntityCount: openEntitiesInOrder.length,
+        hasPreviousView: !!previousView,
+      };
+
+      // Get active contexts
+      const contexts = getActiveContexts(contextState);
+
+      // Try to resolve the key event to an action
+      const binding = resolveKeyEvent(e, contexts);
+
+      if (binding) {
+        // Execute the action
+        const handled = executeAction(binding.actionId, binding.args, contextActionHandlers);
+        if (handled) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log(`[ContextKeys] ${binding.actionId} (context: ${binding.context ?? 'global'})`);
+        }
+      }
+    };
+
+    // Use capture phase with higher priority than the legacy handler
+    window.addEventListener('keydown', handleContextKeyDown, true);
+
+    return () => {
+      window.removeEventListener('keydown', handleContextKeyDown, true);
+    };
+  }, [
+    activeScratchId, activeWorktreeId, activeProjectId, activeFocusState,
+    isDrawerOpen, isRightPanelOpen, isCommandPaletteOpen, isTaskSwitcherOpen, isProjectSwitcherOpen,
+    pendingCloseProject, pendingDeleteId, pendingMergeId,
+    openEntitiesInOrder.length, previousView,
+    resolveKeyEvent, contextActionHandlers,
+  ]);
 
   // Keyboard shortcuts
   useEffect(() => {
