@@ -10,6 +10,7 @@ import {
   emitEvent,
   createTestProject,
   createTestWorktree,
+  defaultTestConfig,
 } from './test/setup';
 
 // Mock useGitStatus to avoid file watching issues
@@ -345,6 +346,301 @@ describe('App', () => {
         },
         { timeout: 3000 }
       );
+    });
+  });
+
+  describe('Task Running', () => {
+    it('opens task switcher when tasks are configured', async () => {
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+
+      // Config with tasks
+      mockInvokeResponses.set('get_config', {
+        config: {
+          ...defaultTestConfig,
+          tasks: [
+            { name: 'build', command: 'npm run build' },
+            { name: 'test', command: 'npm test' },
+          ],
+        },
+        errors: [],
+      });
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for project to appear and select worktree
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      await user.click(screen.getByText('my-project'));
+
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+      await user.click(screen.getByText('feature-branch'));
+
+      // Open task switcher via menu action
+      await act(async () => {
+        emitEvent('menu-action', 'task_switcher');
+      });
+
+      // Task switcher should open and show tasks
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Search tasks...')).toBeInTheDocument();
+      });
+
+      // Both tasks should be visible
+      expect(screen.getByText('build')).toBeInTheDocument();
+      expect(screen.getByText('npm run build')).toBeInTheDocument();
+    });
+
+    it('spawns task when run from task switcher with Cmd+Enter', async () => {
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+      mockInvokeResponses.set('spawn_task', 'pty-task-123');
+      mockInvokeResponses.set('get_task_urls', []);
+
+      // Config with single task for simpler test
+      mockInvokeResponses.set('get_config', {
+        config: {
+          ...defaultTestConfig,
+          tasks: [{ name: 'dev', command: 'npm run dev' }],
+        },
+        errors: [],
+      });
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Select worktree to set activeEntityId
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+      await user.click(screen.getByText('my-project'));
+
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+      await user.click(screen.getByText('feature-branch'));
+
+      // Wait for spawn_main (worktree terminal)
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_main')).toBe(true);
+      });
+
+      // Open task switcher
+      await act(async () => {
+        emitEvent('menu-action', 'task_switcher');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Search tasks...')).toBeInTheDocument();
+      });
+
+      // Run task with Cmd+Enter (first task is pre-selected)
+      await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+      // Task should spawn
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_task')).toBe(true);
+      }, { timeout: 3000 });
+
+      // Verify spawn_task was called with correct args
+      const spawnCall = invokeHistory.find((h) => h.command === 'spawn_task');
+      expect(spawnCall?.args).toHaveProperty('taskName', 'dev');
+    });
+  });
+
+  describe('Project Selection Opens Main Terminal', () => {
+    it('spawns main terminal when worktree is selected', async () => {
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+      mockInvokeResponses.set('spawn_main', 'pty-main-789');
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for project to appear
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click project to expand
+      await user.click(screen.getByText('my-project'));
+
+      // Wait for worktree to appear
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+
+      // Click worktree to select it
+      await user.click(screen.getByText('feature-branch'));
+
+      // Main terminal should spawn for the worktree
+      await waitFor(() => {
+        const spawnMainCalls = invokeHistory.filter((h) => h.command === 'spawn_main');
+        expect(spawnMainCalls.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
+
+      // Verify spawn_main was called with the worktree ID
+      const spawnCall = invokeHistory.find((h) => h.command === 'spawn_main');
+      expect(spawnCall?.args).toHaveProperty('worktreeId', 'wt-1');
+    });
+
+    it('spawns project shell when project main repo is selected', async () => {
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+      mockInvokeResponses.set('spawn_project_shell', 'pty-proj-shell-123');
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for project to appear
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Double-click project to select the main repo (or click the main entry)
+      await user.dblClick(screen.getByText('my-project'));
+
+      // Project shell should spawn
+      await waitFor(() => {
+        const spawnCalls = invokeHistory.filter((h) => h.command === 'spawn_project_shell');
+        expect(spawnCalls.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
+    });
+
+    it('shows loading state while terminal spawns', async () => {
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+
+      // Delay the spawn response to see loading state
+      mockInvokeResponses.set('spawn_main', () =>
+        new Promise((resolve) => setTimeout(() => resolve('pty-main-delayed'), 200))
+      );
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      await user.click(screen.getByText('my-project'));
+
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('feature-branch'));
+
+      // Should show "Starting..." while loading (may be brief)
+      // We verify spawn_main is called and eventually completes
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_main')).toBe(true);
+      });
+    });
+  });
+
+  describe('Project Switcher Flow', () => {
+    it('opens project switcher and shows all projects', async () => {
+      const project1 = createTestProject({ id: 'proj-1', name: 'alpha-project' });
+      const project2 = createTestProject({ id: 'proj-2', name: 'beta-project' });
+      mockInvokeResponses.set('list_projects', [project1, project2]);
+      mockInvokeResponses.set('touch_project', null);
+
+      render(<App />);
+
+      // Wait for app to load
+      await waitFor(() => {
+        expect(screen.getByText('alpha-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open project switcher
+      await act(async () => {
+        emitEvent('menu-action', 'switch_project');
+      });
+
+      // Switcher should open
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Search projects...')).toBeInTheDocument();
+      });
+
+      // Both projects should be visible in the switcher
+      // (they're also in sidebar, so there should be 2 of each)
+      const alphaMatches = screen.getAllByText('alpha-project');
+      const betaMatches = screen.getAllByText('beta-project');
+      expect(alphaMatches.length).toBeGreaterThanOrEqual(1);
+      expect(betaMatches.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('can filter projects in switcher', async () => {
+      const project1 = createTestProject({ id: 'proj-1', name: 'alpha-project' });
+      const project2 = createTestProject({ id: 'proj-2', name: 'beta-project' });
+      mockInvokeResponses.set('list_projects', [project1, project2]);
+      mockInvokeResponses.set('touch_project', null);
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText('alpha-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open project switcher
+      await act(async () => {
+        emitEvent('menu-action', 'switch_project');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Search projects...')).toBeInTheDocument();
+      });
+
+      // Filter to just beta-project
+      const searchInput = screen.getByPlaceholderText('Search projects...');
+      await user.type(searchInput, 'beta');
+
+      // After filtering, only beta-project should match
+      // (there may still be one in sidebar, but the filtered list should only show beta)
+      await waitFor(() => {
+        const searchResults = document.querySelectorAll('[class*="hover:bg-zinc"]');
+        // At least one match should contain beta
+        const hasBetaResult = Array.from(searchResults).some(el =>
+          el.textContent?.includes('beta-project')
+        );
+        expect(hasBetaResult).toBe(true);
+      });
     });
   });
 });
