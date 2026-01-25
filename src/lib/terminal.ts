@@ -87,6 +87,7 @@ export function loadWebGLWithRecovery(terminal: Terminal): () => void {
  * Attaches custom keyboard handlers to an xterm.js terminal.
  *
  * Handles:
+ * - Ctrl+C: Sends interrupt signal to foreground process (in addition to \x03)
  * - Shift+Enter: Sends LF for newline insertion in multi-line input
  *   (allows multiline input in applications like Claude CLI)
  *
@@ -94,14 +95,24 @@ export function loadWebGLWithRecovery(terminal: Terminal): () => void {
  *
  * @param terminal - The xterm.js Terminal instance
  * @param write - Function to write data to the PTY
+ * @param interrupt - Optional function to send SIGINT to the PTY process
  * @returns Cleanup function to remove event listeners
  */
 export function attachKeyboardHandlers(
   terminal: Terminal,
-  write: (data: string) => void
+  write: (data: string) => void,
+  interrupt?: () => void
 ): () => void {
   terminal.attachCustomKeyEventHandler((event) => {
     if (event.type !== 'keydown') return true;
+
+    // Ctrl+C: Send interrupt signal in addition to letting xterm send \x03
+    // This ensures processes like `yes` receive SIGINT even if the PTY
+    // line discipline doesn't convert \x03 to SIGINT properly
+    if (event.ctrlKey && event.key === 'c' && !event.shiftKey && !event.altKey && !event.metaKey) {
+      interrupt?.();
+      return true; // Let xterm.js also send \x03
+    }
 
     // Shift+Enter: Send LF for newline insertion in multi-line input
     if (event.shiftKey && event.key === 'Enter') {

@@ -129,6 +129,10 @@ export async function ptyResize(
   return invoke('pty_resize', { ptyId, cols, rows });
 }
 
+export async function ptyInterrupt(ptyId: string): Promise<void> {
+  return invoke('pty_interrupt', { ptyId });
+}
+
 export async function ptyKill(ptyId: string): Promise<void> {
   return invoke('pty_kill', { ptyId });
 }

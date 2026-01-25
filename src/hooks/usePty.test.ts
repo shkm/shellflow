@@ -251,6 +251,59 @@ describe('usePty', () => {
     });
   });
 
+  describe('interrupt', () => {
+    it('sends SIGINT to the PTY', async () => {
+      mockInvokeResponses.set('spawn_main', 'pty-interrupt-test');
+      mockInvokeResponses.set('pty_interrupt', null);
+
+      const { result } = renderHook(() => usePty());
+
+      await act(async () => {
+        await result.current.spawn('worktree-1', 'main');
+      });
+
+      await act(async () => {
+        await result.current.interrupt();
+      });
+
+      const interruptCall = invokeHistory.find((h) => h.command === 'pty_interrupt');
+      expect(interruptCall).toBeDefined();
+      expect(interruptCall?.args).toEqual({ ptyId: 'pty-interrupt-test' });
+    });
+
+    it('does nothing when no PTY is spawned', async () => {
+      const { result } = renderHook(() => usePty());
+
+      await act(async () => {
+        await result.current.interrupt();
+      });
+
+      expect(invokeHistory.some((h) => h.command === 'pty_interrupt')).toBe(false);
+    });
+
+    it('handles interrupt errors gracefully', async () => {
+      mockInvokeResponses.set('spawn_main', 'pty-interrupt-error');
+      mockInvokeResponses.set('pty_interrupt', () => {
+        throw new Error('Interrupt failed');
+      });
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { result } = renderHook(() => usePty());
+
+      await act(async () => {
+        await result.current.spawn('worktree-1', 'main');
+      });
+
+      await act(async () => {
+        await result.current.interrupt();
+      });
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
+
   describe('kill', () => {
     it('kills the PTY and cleans up', async () => {
       mockInvokeResponses.set('spawn_main', 'pty-kill-test');
