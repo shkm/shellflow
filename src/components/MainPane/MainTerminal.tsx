@@ -489,14 +489,12 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
       await spawnRef.current(spawnId, type, cols, rows);
 
       // For project type, mark as ready immediately (no startup delay like main command)
-      if (type === 'project') {
+      if (type === 'project' && isMounted) {
         setIsReady(true);
       }
-
-      // If component unmounted while spawning, kill the PTY immediately
-      if (!isMounted) {
-        killRef.current();
-      }
+      // NOTE: We do NOT kill the PTY if unmounted during spawn. React may
+      // unmount/remount components during StrictMode. Orphaned PTYs are cleaned
+      // up when the process exits or app restarts.
     };
 
     initPty().catch(console.error);
@@ -523,7 +521,10 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
       if (activityTimeoutRef.current) {
         clearTimeout(activityTimeoutRef.current);
       }
-      killRef.current();
+      // NOTE: We do NOT kill the PTY here. React may unmount/remount components
+      // during re-renders, reordering, or StrictMode. PTY cleanup is handled by:
+      // 1. The pty-exit event handler (when process exits naturally)
+      // 2. App.tsx cleanup when tab is explicitly closed
     };
   }, [entityId, type]);
 

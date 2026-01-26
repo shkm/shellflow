@@ -119,9 +119,17 @@ export function useWorktrees() {
     async (projectId: string) => {
       try {
         await invoke('close_project', { projectId });
-        await loadProjects();
+        // Optimistic update: only change the specific project's isActive flag
+        // This preserves object identity for other projects, preventing unnecessary remounts
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.id === projectId ? { ...project, isActive: false } : project
+          )
+        );
       } catch (err) {
         console.error('Failed to close project:', err);
+        // On error, reload to get correct state
+        await loadProjects();
         throw err;
       }
     },

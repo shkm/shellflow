@@ -156,6 +156,7 @@ function App() {
     prevTab: prevSessionTab,
     nextTab: nextSessionTab,
     selectTabByIndex: selectSessionTabByIndex,
+    clearSessionTabs,
   } = useSessionTabs();
 
   // Per-worktree focus state (which pane has focus)
@@ -1777,9 +1778,13 @@ function App() {
     setPendingCloseProject(null);
 
     try {
+      // Call backend FIRST, before any state cleanup
+      // This prevents intermediate renders from causing terminal remounts
+      await closeProject(project.id);
+
       const projectWorktreeIds = new Set(project.worktrees.map((w) => w.id));
 
-      // Clean up UI state for project's worktrees
+      // Clean up UI state for project's worktrees (AFTER backend call completes)
       setOpenWorktreeIds((prev) => {
         const next = new Set(prev);
         for (const id of projectWorktreeIds) {
@@ -1821,6 +1826,21 @@ function App() {
         return next;
       });
 
+      // Clean up session tabs and kill PTYs for the closed project and its worktrees
+      // This ensures we don't leave orphan PTYs running
+      const sessionIdsToClose = [project.id, ...projectWorktreeIds];
+      for (const sessionId of sessionIdsToClose) {
+        const tabs = getTabsForSession(sessionId);
+        for (const tab of tabs) {
+          const ptyId = sessionTabPtyIds.get(tab.id);
+          if (ptyId) {
+            ptyKill(ptyId);
+            removeSessionPtyId(tab.id);
+          }
+        }
+        clearSessionTabs(sessionId);
+      }
+
       // Close from open projects
       setOpenProjectIds((prev) => {
         const next = new Set(prev);
@@ -1828,12 +1848,40 @@ function App() {
         return next;
       });
 
-      // Update active selection if needed
-      if (activeWorktreeId && projectWorktreeIds.has(activeWorktreeId)) {
-        setActiveWorktreeId(null);
-      }
-      if (activeProjectId === project.id) {
-        setActiveProjectId(null);
+      // Update active selection if needed - IMPORTANT: select a replacement BEFORE clearing
+      // to avoid a render cycle where activeSessionId is null (which unmounts all terminals)
+      const needsNewSelection =
+        (activeWorktreeId && projectWorktreeIds.has(activeWorktreeId)) ||
+        (activeProjectId === project.id);
+
+      if (needsNewSelection) {
+        // Find the remaining open projects (excluding the one we're closing)
+        const remainingProjects = Array.from(openProjectIds).filter(id => id !== project.id);
+        // Find the remaining open worktrees (excluding ones from the closed project)
+        const remainingWorktrees = Array.from(openWorktreeIds).filter(id => !projectWorktreeIds.has(id));
+
+        // Priority: first remaining worktree, then remaining project, then scratch terminal
+        if (remainingWorktrees.length > 0) {
+          setActiveWorktreeId(remainingWorktrees[0]);
+          // Find the project that owns this worktree
+          const owningProject = projects.find(p =>
+            p.worktrees.some(w => w.id === remainingWorktrees[0])
+          );
+          if (owningProject) {
+            setActiveProjectId(owningProject.id);
+          }
+        } else if (remainingProjects.length > 0) {
+          setActiveWorktreeId(null);
+          setActiveProjectId(remainingProjects[0]);
+        } else if (scratchTerminals.length > 0) {
+          setActiveWorktreeId(null);
+          setActiveProjectId(null);
+          setActiveScratchId(scratchTerminals[0].id);
+        } else {
+          setActiveWorktreeId(null);
+          setActiveProjectId(null);
+          setActiveScratchId(null);
+        }
       }
 
       // Close drawer and right panel when no entities remain open
@@ -1849,12 +1897,10 @@ function App() {
         setIsRightPanelOpen(false);
         rightPanelRef.current?.collapse();
       }
-
-      await closeProject(project.id);
     } catch (err) {
       console.error('Failed to close project:', err);
     }
-  }, [pendingCloseProject, activeWorktreeId, activeProjectId, openWorktreeIds, openProjectIds, scratchTerminals.length, closeProject]);
+  }, [pendingCloseProject, activeWorktreeId, activeProjectId, openWorktreeIds, openProjectIds, scratchTerminals, projects, closeProject, getTabsForSession, sessionTabPtyIds, removeSessionPtyId, clearSessionTabs]);
 
   const handleCloseWorktree = useCallback(
     (worktreeId: string) => {

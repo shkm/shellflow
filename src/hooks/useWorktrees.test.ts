@@ -127,10 +127,8 @@ describe('useWorktrees', () => {
 
       await waitFor(() => {
         expect(result.current.projects).toHaveLength(1);
+        expect(result.current.projects[0].isActive).toBe(true);
       });
-
-      // After close, return empty list
-      mockInvokeResponses.set('list_projects', []);
 
       await act(async () => {
         await result.current.closeProject('proj-1');
@@ -138,8 +136,10 @@ describe('useWorktrees', () => {
 
       expect(invokeHistory.some((h) => h.command === 'close_project')).toBe(true);
 
+      // Project stays in list but is marked as inactive (for recent projects)
       await waitFor(() => {
-        expect(result.current.projects).toHaveLength(0);
+        expect(result.current.projects).toHaveLength(1);
+        expect(result.current.projects[0].isActive).toBe(false);
       });
     });
   });

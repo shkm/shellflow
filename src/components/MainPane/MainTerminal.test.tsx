@@ -291,7 +291,10 @@ describe('MainTerminal', () => {
   });
 
   describe('cleanup', () => {
-    it('kills PTY on unmount', async () => {
+    it('does NOT kill PTY on unmount (React may remount components)', async () => {
+      // PTY cleanup is handled by App.tsx when tabs are explicitly closed,
+      // not on component unmount. This prevents losing terminal state when
+      // React unmounts/remounts components during re-renders or StrictMode.
       const { unmount } = render(<MainTerminal {...defaultProps} />);
 
       await waitFor(() => {
@@ -300,24 +303,11 @@ describe('MainTerminal', () => {
 
       unmount();
 
-      await waitFor(() => {
-        expect(invokeHistory.some((h) => h.command === 'pty_kill')).toBe(true);
-      });
-    });
+      // Give time for any async operations
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-    it('kills correct PTY on unmount', async () => {
-      const { unmount } = render(<MainTerminal {...defaultProps} />);
-
-      await waitFor(() => {
-        expect(invokeHistory.some((h) => h.command === 'spawn_main')).toBe(true);
-      });
-
-      unmount();
-
-      await waitFor(() => {
-        const killCall = invokeHistory.find((h) => h.command === 'pty_kill');
-        expect(killCall?.args).toHaveProperty('ptyId', 'pty-main-123');
-      });
+      // PTY should NOT be killed on unmount
+      expect(invokeHistory.some((h) => h.command === 'pty_kill')).toBe(false);
     });
   });
 
