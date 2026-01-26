@@ -440,6 +440,101 @@ describe('useSessionTabs', () => {
     });
   });
 
+  describe('updateTabLabel', () => {
+    it('updates the label of a tab', () => {
+      const { result } = renderHook(() => useSessionTabs());
+
+      act(() => {
+        result.current.addTab('session-1', createTab('tab-1', 'Terminal 1'));
+      });
+
+      act(() => {
+        result.current.updateTabLabel('session-1', 'tab-1', 'My Custom Title');
+      });
+
+      expect(result.current.getTabsForSession('session-1')[0].label).toBe('My Custom Title');
+    });
+
+    it('does not create new state if label is unchanged', () => {
+      const { result } = renderHook(() => useSessionTabs());
+
+      act(() => {
+        result.current.addTab('session-1', createTab('tab-1', 'Terminal 1'));
+      });
+
+      const prevTabs = result.current.sessionTabs;
+      act(() => {
+        result.current.updateTabLabel('session-1', 'tab-1', 'Terminal 1');
+      });
+
+      // Should be the exact same reference if nothing changed
+      expect(result.current.sessionTabs).toBe(prevTabs);
+    });
+
+    it('does nothing for unknown session', () => {
+      const { result } = renderHook(() => useSessionTabs());
+
+      // Should not throw
+      act(() => {
+        result.current.updateTabLabel('unknown', 'tab-1', 'New Title');
+      });
+
+      expect(result.current.getTabsForSession('unknown')).toHaveLength(0);
+    });
+
+    it('does nothing for unknown tab', () => {
+      const { result } = renderHook(() => useSessionTabs());
+
+      act(() => {
+        result.current.addTab('session-1', createTab('tab-1', 'Terminal 1'));
+      });
+
+      const prevTabs = result.current.sessionTabs;
+      act(() => {
+        result.current.updateTabLabel('session-1', 'unknown', 'New Title');
+      });
+
+      // Should be the exact same reference if nothing changed
+      expect(result.current.sessionTabs).toBe(prevTabs);
+    });
+
+    it('updates only the specified tab', () => {
+      const { result } = renderHook(() => useSessionTabs());
+
+      act(() => {
+        result.current.addTab('session-1', createTab('tab-1', 'Terminal 1'));
+      });
+      act(() => {
+        result.current.addTab('session-1', createTab('tab-2', 'Terminal 2'));
+      });
+
+      act(() => {
+        result.current.updateTabLabel('session-1', 'tab-1', 'New Title');
+      });
+
+      const tabs = result.current.getTabsForSession('session-1');
+      expect(tabs[0].label).toBe('New Title');
+      expect(tabs[1].label).toBe('Terminal 2');
+    });
+
+    it('preserves other tab properties', () => {
+      const { result } = renderHook(() => useSessionTabs());
+
+      act(() => {
+        result.current.addTab('session-1', createTab('tab-1', 'Terminal 1', true));
+      });
+
+      act(() => {
+        result.current.updateTabLabel('session-1', 'tab-1', 'New Title');
+      });
+
+      const tab = result.current.getTabsForSession('session-1')[0];
+      expect(tab.id).toBe('tab-1');
+      expect(tab.isPrimary).toBe(true);
+      expect(tab.label).toBe('New Title');
+    });
+  });
+
   describe('clearSessionTabs', () => {
     it('clears all state for a session', () => {
       const { result } = renderHook(() => useSessionTabs());

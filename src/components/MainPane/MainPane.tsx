@@ -32,6 +32,7 @@ interface MainPaneProps {
   onNotification?: (sessionId: string, tabId: string, title: string, body: string) => void;
   onThinkingChange?: (sessionId: string, tabId: string, isThinking: boolean) => void;
   onCwdChange?: (sessionId: string, cwd: string) => void;
+  onTabTitleChange?: (sessionId: string, tabId: string, title: string) => void;
 
   // Legacy props for backward compatibility during migration
   openWorktreeIds?: Set<string>;
@@ -81,6 +82,7 @@ export function MainPane({
   onNotification,
   onThinkingChange,
   onCwdChange,
+  onTabTitleChange,
   // Legacy props
   onWorktreeNotification,
   onWorktreeThinkingChange,
@@ -214,6 +216,11 @@ export function MainPane({
                 }
               : undefined;
 
+            // Handle title changes - for tab label updates
+            const handleTitleChange = (title: string) => {
+              onTabTitleChange?.(session.id, tab.id, title);
+            };
+
             return (
               <div
                 key={tab.id}
@@ -237,6 +244,7 @@ export function MainPane({
                   onNotification={handleNotification}
                   onThinkingChange={handleThinkingChange}
                   onCwdChange={handleCwdChange}
+                  onTitleChange={handleTitleChange}
                 />
               </div>
             );

@@ -32,6 +32,9 @@ export interface UseDrawerTabsReturn {
   getPtyId: (tabId: string) => string | undefined;
   removePtyId: (tabId: string) => void;
 
+  // Update tab properties
+  updateTabLabel: (entityId: string, tabId: string, label: string) => void;
+
   // Cleanup
   clearEntityTabs: (entityId: string) => void;
 }
@@ -163,6 +166,22 @@ export function useDrawerTabs(): UseDrawerTabsReturn {
     });
   }, []);
 
+  const updateTabLabel = useCallback((entityId: string, tabId: string, label: string) => {
+    setDrawerTabs((prev) => {
+      const tabs = prev.get(entityId);
+      if (!tabs) return prev;
+      const tabIndex = tabs.findIndex(t => t.id === tabId);
+      if (tabIndex === -1) return prev;
+      // Don't update if label is the same
+      if (tabs[tabIndex].label === label) return prev;
+      const next = new Map(prev);
+      const updatedTabs = [...tabs];
+      updatedTabs[tabIndex] = { ...tabs[tabIndex], label };
+      next.set(entityId, updatedTabs);
+      return next;
+    });
+  }, []);
+
   const clearEntityTabs = useCallback((entityId: string) => {
     setDrawerTabs((prev) => {
       if (!prev.has(entityId)) return prev;
@@ -204,6 +223,7 @@ export function useDrawerTabs(): UseDrawerTabsReturn {
     setPtyId,
     getPtyId,
     removePtyId,
+    updateTabLabel,
     clearEntityTabs,
   };
 }

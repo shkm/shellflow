@@ -47,9 +47,11 @@ interface MainTerminalProps {
   onNotification?: (title: string, body: string) => void;
   onThinkingChange?: (isThinking: boolean) => void;
   onCwdChange?: (cwd: string) => void;
+  /** Called when terminal title changes (via OSC escape codes) */
+  onTitleChange?: (title: string) => void;
 }
 
-export function MainTerminal({ entityId, sessionId, type = 'main', isActive, shouldAutoFocus, focusTrigger, terminalConfig, activityTimeout = 250, isLastActiveTab = true, onFocus, onNotification, onThinkingChange: onThinkingChangeProp, onCwdChange }: MainTerminalProps) {
+export function MainTerminal({ entityId, sessionId, type = 'main', isActive, shouldAutoFocus, focusTrigger, terminalConfig, activityTimeout = 250, isLastActiveTab = true, onFocus, onNotification, onThinkingChange: onThinkingChangeProp, onCwdChange, onTitleChange }: MainTerminalProps) {
   // Use sessionId for spawn if provided, otherwise fall back to entityId (for backward compatibility)
   const spawnId = sessionId ?? entityId;
 
@@ -212,6 +214,12 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
   useEffect(() => {
     onCwdChangeRef.current = onCwdChange;
   }, [onCwdChange]);
+
+  // Store onTitleChange in ref so handlers can access the latest version
+  const onTitleChangeRef = useRef(onTitleChange);
+  useEffect(() => {
+    onTitleChangeRef.current = onTitleChange;
+  }, [onTitleChange]);
 
   // Progress indicator logic:
   // - Activity (output/title): start timer, reset on more activity, turn off when timer expires
@@ -461,16 +469,20 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
       bellDisposable = terminal.onBell(() => {
         onNotificationRef.current?.('', 'Bell');
       });
-
-      // Any title change triggers activity-based thinking (with timeout)
-      // Only track when not active (background tabs only)
-      // Title changes bypass grace period since they're a strong signal of real activity
-      titleChangeDisposable = terminal.onTitleChange(() => {
-        if (!isActiveRef.current) {
-          triggerActivityRef.current(true);
-        }
-      });
     }
+
+    // Title change handler - works for all terminal types
+    // For main terminals: also triggers activity-based thinking (with timeout)
+    // Title changes bypass grace period since they're a strong signal of real activity
+    titleChangeDisposable = terminal.onTitleChange((title) => {
+      // Notify parent of title change (for tab label updates)
+      onTitleChangeRef.current?.(title);
+
+      // For main terminals, also trigger thinking indicator when not active
+      if (type === 'main' && !isActiveRef.current) {
+        triggerActivityRef.current(true);
+      }
+    });
 
     // Fit terminal and spawn process with correct size
     const initPty = async () => {

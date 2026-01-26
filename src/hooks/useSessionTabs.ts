@@ -43,6 +43,9 @@ export interface UseSessionTabsReturn {
   // Last active tab tracking (for notification routing)
   setLastActiveTabId: (sessionId: string, tabId: string) => void;
 
+  // Update tab properties
+  updateTabLabel: (sessionId: string, tabId: string, label: string) => void;
+
   // Navigation
   prevTab: (sessionId: string) => void;
   nextTab: (sessionId: string) => void;
@@ -209,6 +212,22 @@ export function useSessionTabs(): UseSessionTabsReturn {
     });
   }, []);
 
+  const updateTabLabel = useCallback((sessionId: string, tabId: string, label: string) => {
+    setSessionTabs((prev) => {
+      const tabs = prev.get(sessionId);
+      if (!tabs) return prev;
+      const tabIndex = tabs.findIndex(t => t.id === tabId);
+      if (tabIndex === -1) return prev;
+      // Don't update if label is the same
+      if (tabs[tabIndex].label === label) return prev;
+      const next = new Map(prev);
+      const updatedTabs = [...tabs];
+      updatedTabs[tabIndex] = { ...tabs[tabIndex], label };
+      next.set(sessionId, updatedTabs);
+      return next;
+    });
+  }, []);
+
   const prevTab = useCallback((sessionId: string) => {
     const tabs = tabsRef.current.get(sessionId) ?? [];
     const activeId = activeTabIdsRef.current.get(sessionId);
@@ -286,6 +305,7 @@ export function useSessionTabs(): UseSessionTabsReturn {
     getPtyId,
     removePtyId,
     setLastActiveTabId,
+    updateTabLabel,
     prevTab,
     nextTab,
     selectTabByIndex,

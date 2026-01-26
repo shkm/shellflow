@@ -133,6 +133,7 @@ function App() {
     setDrawerActiveTabIds,
     setDrawerTabCounters,
     setDrawerPtyIds,
+    updateTabLabel: updateDrawerTabLabel,
   } = useDrawerTabs();
 
   // Per-session tab state (main pane tabs)
@@ -149,6 +150,7 @@ function App() {
     incrementCounter: incrementSessionCounter,
     removePtyId: removeSessionPtyId,
     setLastActiveTabId,
+    updateTabLabel: updateSessionTabLabel,
     prevTab: prevSessionTab,
     nextTab: nextSessionTab,
     selectTabByIndex: selectSessionTabByIndex,
@@ -2677,6 +2679,7 @@ function App() {
                   onScratchNotification={handleScratchNotification}
                   onScratchThinkingChange={handleScratchThinkingChange}
                   onScratchCwdChange={handleScratchCwdChange}
+                  onTabTitleChange={updateSessionTabLabel}
                 />
               </div>
             </Panel>
@@ -2792,6 +2795,7 @@ function App() {
                             onClose={() => handleCloseDrawerTab(tab.id, entityId)}
                             onFocus={() => handleDrawerFocused(entityId)}
                             onPtyIdReady={(ptyId) => handleDrawerPtyIdReady(tab.id, ptyId)}
+                            onTitleChange={(title) => updateDrawerTabLabel(entityId, tab.id, title)}
                           />
                         )}
                       </div>

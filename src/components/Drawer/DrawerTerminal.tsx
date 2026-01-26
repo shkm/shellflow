@@ -39,9 +39,11 @@ interface DrawerTerminalProps {
   onClose?: () => void;
   onFocus?: () => void;
   onPtyIdReady?: (ptyId: string) => void;
+  /** Called when terminal title changes (via OSC escape codes) */
+  onTitleChange?: (title: string) => void;
 }
 
-export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFocus, terminalConfig, onClose, onFocus, onPtyIdReady }: DrawerTerminalProps) {
+export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFocus, terminalConfig, onClose, onFocus, onPtyIdReady, onTitleChange }: DrawerTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -88,6 +90,12 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
   useEffect(() => {
     onPtyIdReadyRef.current = onPtyIdReady;
   }, [onPtyIdReady]);
+
+  // Store onTitleChange in ref
+  const onTitleChangeRef = useRef(onTitleChange);
+  useEffect(() => {
+    onTitleChangeRef.current = onTitleChange;
+  }, [onTitleChange]);
 
   // Initialize terminal
   useEffect(() => {
@@ -176,6 +184,11 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
       writeRef.current(data);
     });
 
+    // Title change handler - notify parent for tab label updates
+    const titleChangeDisposable = terminal.onTitleChange((title) => {
+      onTitleChangeRef.current?.(title);
+    });
+
     // Register with terminal registry on focus, unregister on blur
     const handleTerminalFocus = () => {
       registerActiveTerminal(copyPasteFns);
@@ -212,6 +225,7 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
     return () => {
       isMounted = false;
       onDataDisposable.dispose();
+      titleChangeDisposable.dispose();
       cleanupKeyboardHandlers();
       webglCleanup?.();
       containerRef.current?.removeEventListener('focusin', handleFocus);

@@ -292,6 +292,107 @@ describe('useDrawerTabs', () => {
     });
   });
 
+  describe('updateTabLabel', () => {
+    it('updates the label of a tab', () => {
+      const { result } = renderHook(() => useDrawerTabs());
+
+      act(() => {
+        result.current.addTab('entity-1', createTab('tab-1', 'Terminal 1'));
+      });
+
+      act(() => {
+        result.current.updateTabLabel('entity-1', 'tab-1', 'My Custom Title');
+      });
+
+      expect(result.current.getTabsForEntity('entity-1')[0].label).toBe('My Custom Title');
+    });
+
+    it('does not create new state if label is unchanged', () => {
+      const { result } = renderHook(() => useDrawerTabs());
+
+      act(() => {
+        result.current.addTab('entity-1', createTab('tab-1', 'Terminal 1'));
+      });
+
+      const prevTabs = result.current.drawerTabs;
+      act(() => {
+        result.current.updateTabLabel('entity-1', 'tab-1', 'Terminal 1');
+      });
+
+      // Should be the exact same reference if nothing changed
+      expect(result.current.drawerTabs).toBe(prevTabs);
+    });
+
+    it('does nothing for unknown entity', () => {
+      const { result } = renderHook(() => useDrawerTabs());
+
+      // Should not throw
+      act(() => {
+        result.current.updateTabLabel('unknown', 'tab-1', 'New Title');
+      });
+
+      expect(result.current.getTabsForEntity('unknown')).toHaveLength(0);
+    });
+
+    it('does nothing for unknown tab', () => {
+      const { result } = renderHook(() => useDrawerTabs());
+
+      act(() => {
+        result.current.addTab('entity-1', createTab('tab-1', 'Terminal 1'));
+      });
+
+      const prevTabs = result.current.drawerTabs;
+      act(() => {
+        result.current.updateTabLabel('entity-1', 'unknown', 'New Title');
+      });
+
+      // Should be the exact same reference if nothing changed
+      expect(result.current.drawerTabs).toBe(prevTabs);
+    });
+
+    it('updates only the specified tab', () => {
+      const { result } = renderHook(() => useDrawerTabs());
+
+      act(() => {
+        result.current.addTab('entity-1', createTab('tab-1', 'Terminal 1'));
+      });
+      act(() => {
+        result.current.addTab('entity-1', createTab('tab-2', 'Terminal 2'));
+      });
+
+      act(() => {
+        result.current.updateTabLabel('entity-1', 'tab-1', 'New Title');
+      });
+
+      const tabs = result.current.getTabsForEntity('entity-1');
+      expect(tabs[0].label).toBe('New Title');
+      expect(tabs[1].label).toBe('Terminal 2');
+    });
+
+    it('preserves other tab properties', () => {
+      const { result } = renderHook(() => useDrawerTabs());
+
+      act(() => {
+        result.current.addTab('entity-1', {
+          id: 'tab-1',
+          label: 'Terminal 1',
+          type: 'task',
+          taskName: 'dev',
+        });
+      });
+
+      act(() => {
+        result.current.updateTabLabel('entity-1', 'tab-1', 'New Title');
+      });
+
+      const tab = result.current.getTabsForEntity('entity-1')[0];
+      expect(tab.id).toBe('tab-1');
+      expect(tab.type).toBe('task');
+      expect(tab.taskName).toBe('dev');
+      expect(tab.label).toBe('New Title');
+    });
+  });
+
   describe('clearEntityTabs', () => {
     it('clears all state for an entity', () => {
       const { result } = renderHook(() => useDrawerTabs());
