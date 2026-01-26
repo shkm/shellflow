@@ -117,11 +117,11 @@ describe('useWorktrees', () => {
     });
   });
 
-  describe('closeProject', () => {
-    it('closes a project and refreshes the list', async () => {
-      const project = createTestProject({ id: 'proj-1', name: 'to-close' });
+  describe('hideProject', () => {
+    it('hides a project and updates the list', async () => {
+      const project = createTestProject({ id: 'proj-1', name: 'to-hide' });
       mockInvokeResponses.set('list_projects', [project]);
-      mockInvokeResponses.set('close_project', null);
+      mockInvokeResponses.set('hide_project', null);
 
       const { result } = renderHook(() => useWorktrees());
 
@@ -131,12 +131,12 @@ describe('useWorktrees', () => {
       });
 
       await act(async () => {
-        await result.current.closeProject('proj-1');
+        await result.current.hideProject('proj-1');
       });
 
-      expect(invokeHistory.some((h) => h.command === 'close_project')).toBe(true);
+      expect(invokeHistory.some((h) => h.command === 'hide_project')).toBe(true);
 
-      // Project stays in list but is marked as inactive (for recent projects)
+      // Project stays in list but is marked as hidden (isActive = false)
       await waitFor(() => {
         expect(result.current.projects).toHaveLength(1);
         expect(result.current.projects[0].isActive).toBe(false);

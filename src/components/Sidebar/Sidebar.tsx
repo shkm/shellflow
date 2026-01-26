@@ -81,6 +81,7 @@ interface SidebarProps {
   onDeleteWorktree: (worktreeId: string) => void;
   onCloseWorktree: (worktreeId: string) => void;
   onCloseProject: (projectOrId: Project | string) => void;
+  onHideProject: (projectOrId: Project | string) => void;
   onMergeWorktree: (worktreeId: string) => void;
   onToggleDrawer: () => void;
   onToggleRightPanel: () => void;
@@ -147,6 +148,7 @@ export function Sidebar({
   onDeleteWorktree,
   onCloseWorktree,
   onCloseProject,
+  onHideProject,
   onMergeWorktree,
   onToggleDrawer,
   onToggleRightPanel,
@@ -332,6 +334,13 @@ export function Sidebar({
   const handleCloseProject = () => {
     if (contextMenu) {
       onCloseProject(contextMenu.project);
+      setContextMenu(null);
+    }
+  };
+
+  const handleHideProject = () => {
+    if (contextMenu) {
+      onHideProject(contextMenu.project);
       setContextMenu(null);
     }
   };
@@ -719,6 +728,10 @@ export function Sidebar({
             {
               label: 'Close Project',
               onClick: handleCloseProject,
+            },
+            {
+              label: 'Hide Project',
+              onClick: handleHideProject,
             },
           ]}
           onClose={() => setContextMenu(null)}

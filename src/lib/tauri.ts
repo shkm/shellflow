@@ -18,8 +18,8 @@ export async function listProjects(): Promise<Project[]> {
   return invoke<Project[]>('list_projects');
 }
 
-export async function closeProject(projectId: string): Promise<void> {
-  return invoke('close_project', { projectId });
+export async function hideProject(projectId: string): Promise<void> {
+  return invoke('hide_project', { projectId });
 }
 
 export async function touchProject(projectId: string): Promise<void> {

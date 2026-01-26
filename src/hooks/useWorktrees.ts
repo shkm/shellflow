@@ -115,10 +115,10 @@ export function useWorktrees() {
     [loadProjects]
   );
 
-  const closeProject = useCallback(
+  const hideProject = useCallback(
     async (projectId: string) => {
       try {
-        await invoke('close_project', { projectId });
+        await invoke('hide_project', { projectId });
         // Optimistic update: only change the specific project's isActive flag
         // This preserves object identity for other projects, preventing unnecessary remounts
         setProjects((prev) =>
@@ -127,7 +127,7 @@ export function useWorktrees() {
           )
         );
       } catch (err) {
-        console.error('Failed to close project:', err);
+        console.error('Failed to hide project:', err);
         // On error, reload to get correct state
         await loadProjects();
         throw err;
@@ -180,7 +180,7 @@ export function useWorktrees() {
     loading,
     error,
     addProject,
-    closeProject,
+    hideProject,
     activateProject,
     createWorktree,
     deleteWorktree,

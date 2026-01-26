@@ -49,7 +49,7 @@ const MAX_ZOOM = 10; // maximum zoom level
 type FocusedPane = 'main' | 'drawer';
 
 function App() {
-  const { projects, addProject, closeProject, activateProject, createWorktree, renameWorktree, reorderProjectsOptimistic, reorderWorktreesOptimistic, refresh: refreshProjects } = useWorktrees();
+  const { projects, addProject, hideProject, activateProject, createWorktree, renameWorktree, reorderProjectsOptimistic, reorderWorktreesOptimistic, refresh: refreshProjects } = useWorktrees();
 
   // Guard to prevent dialog re-entry when escape key bubbles back from native dialog
   const isAddProjectDialogOpen = useRef(false);
@@ -1771,6 +1771,8 @@ function App() {
   }, [projects]);
 
   // Actually close the project (called after confirmation)
+  // "Close" means: dispose sessions and collapse in sidebar (project remains visible)
+  // This does NOT hide the project - use hideProject for that
   const confirmCloseProject = useCallback(async () => {
     const project = pendingCloseProject;
     if (!project) return;
@@ -1778,11 +1780,14 @@ function App() {
     setPendingCloseProject(null);
 
     try {
-      // Call backend FIRST, before any state cleanup
-      // This prevents intermediate renders from causing terminal remounts
-      await closeProject(project.id);
-
       const projectWorktreeIds = new Set(project.worktrees.map((w) => w.id));
+
+      // Collapse the project in the sidebar
+      setExpandedProjects((prev) => {
+        const next = new Set(prev);
+        next.delete(project.id);
+        return next;
+      });
 
       // Clean up UI state for project's worktrees (AFTER backend call completes)
       setOpenWorktreeIds((prev) => {
@@ -1900,7 +1905,124 @@ function App() {
     } catch (err) {
       console.error('Failed to close project:', err);
     }
-  }, [pendingCloseProject, activeWorktreeId, activeProjectId, openWorktreeIds, openProjectIds, scratchTerminals, projects, closeProject, getTabsForSession, sessionTabPtyIds, removeSessionPtyId, clearSessionTabs]);
+  }, [pendingCloseProject, activeWorktreeId, activeProjectId, openWorktreeIds, openProjectIds, scratchTerminals, projects, getTabsForSession, sessionTabPtyIds, removeSessionPtyId, clearSessionTabs]);
+
+  // Hide a project - removes from sidebar but keeps in project list
+  // This first closes the project (disposes sessions), then hides it
+  const handleHideProject = useCallback(async (projectOrId: Project | string) => {
+    const project = typeof projectOrId === 'string'
+      ? projects.find(p => p.id === projectOrId)
+      : projectOrId;
+    if (!project) return;
+
+    // First close the project (dispose sessions, clean up UI)
+    // We do this inline rather than calling handleCloseProject to avoid the confirmation modal
+    const projectWorktreeIds = new Set(project.worktrees.map((w) => w.id));
+
+    // Clean up UI state
+    setOpenWorktreeIds((prev) => {
+      const next = new Set(prev);
+      for (const id of projectWorktreeIds) {
+        next.delete(id);
+      }
+      return next;
+    });
+    setDrawerTabs((prev) => {
+      const next = new Map(prev);
+      for (const id of projectWorktreeIds) {
+        next.delete(id);
+      }
+      next.delete(project.id);
+      return next;
+    });
+    setDrawerActiveTabIds((prev) => {
+      const next = new Map(prev);
+      for (const id of projectWorktreeIds) {
+        next.delete(id);
+      }
+      next.delete(project.id);
+      return next;
+    });
+    setDrawerTabCounters((prev) => {
+      const next = new Map(prev);
+      for (const id of projectWorktreeIds) {
+        next.delete(id);
+      }
+      next.delete(project.id);
+      return next;
+    });
+    setFocusStates((prev) => {
+      const next = new Map(prev);
+      for (const id of projectWorktreeIds) {
+        next.delete(id);
+      }
+      next.delete(project.id);
+      return next;
+    });
+
+    // Kill PTYs
+    const sessionIdsToClose = [project.id, ...projectWorktreeIds];
+    for (const sessionId of sessionIdsToClose) {
+      const tabs = getTabsForSession(sessionId);
+      for (const tab of tabs) {
+        const ptyId = sessionTabPtyIds.get(tab.id);
+        if (ptyId) {
+          ptyKill(ptyId);
+          removeSessionPtyId(tab.id);
+        }
+      }
+      clearSessionTabs(sessionId);
+    }
+
+    // Remove from open projects
+    setOpenProjectIds((prev) => {
+      const next = new Set(prev);
+      next.delete(project.id);
+      return next;
+    });
+
+    // Update active selection if needed
+    const needsNewSelection =
+      (activeWorktreeId && projectWorktreeIds.has(activeWorktreeId)) ||
+      (activeProjectId === project.id);
+
+    if (needsNewSelection) {
+      const remainingProjects = Array.from(openProjectIds).filter(id => id !== project.id);
+      const remainingWorktrees = Array.from(openWorktreeIds).filter(id => !projectWorktreeIds.has(id));
+
+      if (remainingWorktrees.length > 0) {
+        setActiveWorktreeId(remainingWorktrees[0]);
+        const owningProject = projects.find(p => p.worktrees.some(w => w.id === remainingWorktrees[0]));
+        if (owningProject) {
+          setActiveProjectId(owningProject.id);
+        }
+      } else if (remainingProjects.length > 0) {
+        setActiveWorktreeId(null);
+        setActiveProjectId(remainingProjects[0]);
+      } else if (scratchTerminals.length > 0) {
+        setActiveWorktreeId(null);
+        setActiveProjectId(null);
+        setActiveScratchId(scratchTerminals[0].id);
+      } else {
+        setActiveWorktreeId(null);
+        setActiveProjectId(null);
+        setActiveScratchId(null);
+      }
+    }
+
+    // Close panels if nothing remains
+    const remainingOpenWorktrees = Array.from(openWorktreeIds).filter(id => !projectWorktreeIds.has(id));
+    const remainingOpenProjects = Array.from(openProjectIds).filter(id => id !== project.id);
+    if (remainingOpenWorktrees.length === 0 && remainingOpenProjects.length === 0 && scratchTerminals.length === 0) {
+      setIsDrawerOpen(false);
+      drawerPanelRef.current?.collapse();
+      setIsRightPanelOpen(false);
+      rightPanelRef.current?.collapse();
+    }
+
+    // Now hide via backend (sets isActive = false)
+    await hideProject(project.id);
+  }, [projects, activeWorktreeId, activeProjectId, openWorktreeIds, openProjectIds, scratchTerminals, getTabsForSession, sessionTabPtyIds, removeSessionPtyId, clearSessionTabs, hideProject]);
 
   const handleCloseWorktree = useCallback(
     (worktreeId: string) => {
@@ -2684,6 +2806,7 @@ function App() {
               onDeleteWorktree={handleDeleteWorktree}
               onCloseWorktree={handleCloseWorktree}
               onCloseProject={handleCloseProject}
+              onHideProject={handleHideProject}
               onMergeWorktree={handleMergeWorktree}
               onToggleDrawer={handleToggleDrawer}
               onToggleRightPanel={handleToggleRightPanel}

@@ -43,6 +43,7 @@ const createDefaultProps = (overrides: Partial<Parameters<typeof Sidebar>[0]> = 
   activeScratchCwd: null,
   homeDir: '/Users/test',
   autoEditWorktreeId: null,
+  editingScratchId: null,
   focusToRestoreRef: { current: null },
   onFocusMain: vi.fn(),
   onToggleProject: vi.fn(),
@@ -53,6 +54,7 @@ const createDefaultProps = (overrides: Partial<Parameters<typeof Sidebar>[0]> = 
   onDeleteWorktree: vi.fn(),
   onCloseWorktree: vi.fn(),
   onCloseProject: vi.fn(),
+  onHideProject: vi.fn(),
   onMergeWorktree: vi.fn(),
   onToggleDrawer: vi.fn(),
   onToggleRightPanel: vi.fn(),
@@ -69,6 +71,7 @@ const createDefaultProps = (overrides: Partial<Parameters<typeof Sidebar>[0]> = 
   onRenameScratch: vi.fn(),
   onReorderScratchTerminals: vi.fn(),
   onAutoEditConsumed: vi.fn(),
+  onEditingScratchConsumed: vi.fn(),
   ...overrides,
 });
 

@@ -68,7 +68,7 @@ fn list_projects(state: State<'_, Arc<AppState>>) -> Result<Vec<Project>> {
 }
 
 #[tauri::command]
-fn close_project(state: State<'_, Arc<AppState>>, project_id: &str) -> Result<()> {
+fn hide_project(state: State<'_, Arc<AppState>>, project_id: &str) -> Result<()> {
     {
         let mut persisted = state.persisted.write();
         if let Some(project) = persisted.projects.iter_mut().find(|p| p.id == project_id) {
@@ -76,7 +76,7 @@ fn close_project(state: State<'_, Arc<AppState>>, project_id: &str) -> Result<()
             for wt in &project.worktrees {
                 watcher::stop_watching(&wt.id);
             }
-            // Mark as inactive (keeps in recent list)
+            // Mark as hidden (keeps in project list for reopening)
             project.is_active = false;
         }
     }
@@ -1591,7 +1591,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             add_project,
             list_projects,
-            close_project,
+            hide_project,
             touch_project,
             create_worktree,
             list_worktrees,

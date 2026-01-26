@@ -44,9 +44,7 @@ export function ProjectSwitcher({
 
     const lowerQuery = query.toLowerCase();
     return sorted.filter(
-      (project) =>
-        project.name.toLowerCase().includes(lowerQuery) ||
-        project.path.toLowerCase().includes(lowerQuery)
+      (project) => project.name.toLowerCase().includes(lowerQuery)
     );
   }, [projects, query]);
 
@@ -80,7 +78,7 @@ export function ProjectSwitcher({
         {sortedAndFilteredProjects.map((project, index) => {
           const isHighlighted = index === highlightedIndex;
           const isSelected = project.id === activeProjectId;
-          const isClosed = !project.isActive;
+          const isHidden = !project.isActive;
 
           return (
             <ModalListItem
@@ -89,13 +87,13 @@ export function ProjectSwitcher({
               onClick={() => handleSelect(index)}
               onMouseEnter={() => setHighlightedIndex(index)}
               rightContent={
-                isClosed && <span className="text-xs" style={{ color: 'var(--modal-item-text-muted)' }}>Closed</span>
+                isHidden && <span className="text-xs" style={{ color: 'var(--modal-item-text-muted)' }}>Hidden</span>
               }
             >
               <div
                 className="text-sm truncate"
                 style={{
-                  color: isSelected ? 'rgb(96, 165, 250)' : isClosed ? 'var(--modal-item-text-muted)' : undefined,
+                  color: isSelected ? 'rgb(96, 165, 250)' : isHidden ? 'var(--modal-item-text-muted)' : undefined,
                 }}
               >
                 {project.name}

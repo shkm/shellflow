@@ -64,14 +64,14 @@ describe('ProjectSwitcher', () => {
       expect(activeProject).toHaveStyle({ color: 'rgb(96, 165, 250)' });
     });
 
-    it('shows closed badge for inactive projects', () => {
+    it('shows hidden badge for inactive projects', () => {
       const projects = [
-        createTestProject({ id: 'p1', name: 'Closed Project', isActive: false }),
+        createTestProject({ id: 'p1', name: 'Hidden Project', isActive: false }),
       ];
 
       render(<ProjectSwitcher {...defaultProps} projects={projects} />);
 
-      expect(screen.getByText('Closed')).toBeInTheDocument();
+      expect(screen.getByText('Hidden')).toBeInTheDocument();
     });
 
     it('renders keyboard hints', () => {
@@ -121,7 +121,7 @@ describe('ProjectSwitcher', () => {
       expect(screen.queryByText('Backend Service')).not.toBeInTheDocument();
     });
 
-    it('filters projects by path', async () => {
+    it('does not filter projects by path (only by name)', async () => {
       const projects = [
         createTestProject({ id: 'p1', name: 'Project A', path: '/home/user/react-app' }),
         createTestProject({ id: 'p2', name: 'Project B', path: '/home/user/rust-api' }),
@@ -130,10 +130,13 @@ describe('ProjectSwitcher', () => {
 
       render(<ProjectSwitcher {...defaultProps} projects={projects} />);
 
+      // Searching by path should not match
       await user.type(screen.getByPlaceholderText('Search projects...'), 'react');
 
-      expect(screen.getByText('Project A')).toBeInTheDocument();
+      // Neither project has "react" in its name, so no matches
+      expect(screen.queryByText('Project A')).not.toBeInTheDocument();
       expect(screen.queryByText('Project B')).not.toBeInTheDocument();
+      expect(screen.getByText('No projects found')).toBeInTheDocument();
     });
 
     it('is case insensitive', async () => {
