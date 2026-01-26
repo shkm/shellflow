@@ -33,20 +33,20 @@ export type ActionId =
   | 'zoomIn'
   | 'zoomOut'
   | 'zoomReset'
-  // Worktree menu
-  | 'worktreePrev'
-  | 'worktreeNext'
+  // Navigate menu
+  | 'sessionPrev'
+  | 'sessionNext'
   | 'previousView'
   | 'switchFocus'
-  | 'worktree1'
-  | 'worktree2'
-  | 'worktree3'
-  | 'worktree4'
-  | 'worktree5'
-  | 'worktree6'
-  | 'worktree7'
-  | 'worktree8'
-  | 'worktree9'
+  | 'session1'
+  | 'session2'
+  | 'session3'
+  | 'session4'
+  | 'session5'
+  | 'session6'
+  | 'session7'
+  | 'session8'
+  | 'session9'
   | 'renameBranch'
   | 'renameSession'
   | 'mergeWorktree'
@@ -100,20 +100,20 @@ const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
   zoomOut: () => true,
   zoomReset: () => true,
 
-  // Worktree menu
-  worktreePrev: (ctx) => ctx.openWorktreeCount > 0,
-  worktreeNext: (ctx) => ctx.openWorktreeCount > 0,
+  // Navigate menu
+  sessionPrev: (ctx) => ctx.openWorktreeCount > 0,
+  sessionNext: (ctx) => ctx.openWorktreeCount > 0,
   previousView: (ctx) => !!ctx.previousView,
   switchFocus: (ctx) => !!ctx.activeEntityId,
-  worktree1: (ctx) => ctx.openWorktreeCount >= 1,
-  worktree2: (ctx) => ctx.openWorktreeCount >= 2,
-  worktree3: (ctx) => ctx.openWorktreeCount >= 3,
-  worktree4: (ctx) => ctx.openWorktreeCount >= 4,
-  worktree5: (ctx) => ctx.openWorktreeCount >= 5,
-  worktree6: (ctx) => ctx.openWorktreeCount >= 6,
-  worktree7: (ctx) => ctx.openWorktreeCount >= 7,
-  worktree8: (ctx) => ctx.openWorktreeCount >= 8,
-  worktree9: (ctx) => ctx.openWorktreeCount >= 9,
+  session1: (ctx) => ctx.openWorktreeCount >= 1,
+  session2: (ctx) => ctx.openWorktreeCount >= 2,
+  session3: (ctx) => ctx.openWorktreeCount >= 3,
+  session4: (ctx) => ctx.openWorktreeCount >= 4,
+  session5: (ctx) => ctx.openWorktreeCount >= 5,
+  session6: (ctx) => ctx.openWorktreeCount >= 6,
+  session7: (ctx) => ctx.openWorktreeCount >= 7,
+  session8: (ctx) => ctx.openWorktreeCount >= 8,
+  session9: (ctx) => ctx.openWorktreeCount >= 9,
   renameBranch: (ctx) => !!ctx.activeWorktreeId,
   renameSession: (ctx) => !!ctx.activeScratchId,
   mergeWorktree: (ctx) => !!ctx.activeWorktreeId,
@@ -148,19 +148,19 @@ const ACTION_TO_MENU_ID: Record<ActionId, string> = {
   zoomIn: 'zoom_in',
   zoomOut: 'zoom_out',
   zoomReset: 'zoom_reset',
-  worktreePrev: 'worktree_prev',
-  worktreeNext: 'worktree_next',
+  sessionPrev: 'session_prev',
+  sessionNext: 'session_next',
   previousView: 'previous_view',
   switchFocus: 'switch_focus',
-  worktree1: 'worktree1',
-  worktree2: 'worktree2',
-  worktree3: 'worktree3',
-  worktree4: 'worktree4',
-  worktree5: 'worktree5',
-  worktree6: 'worktree6',
-  worktree7: 'worktree7',
-  worktree8: 'worktree8',
-  worktree9: 'worktree9',
+  session1: 'session1',
+  session2: 'session2',
+  session3: 'session3',
+  session4: 'session4',
+  session5: 'session5',
+  session6: 'session6',
+  session7: 'session7',
+  session8: 'session8',
+  session9: 'session9',
   renameBranch: 'rename_branch',
   renameSession: 'rename_session',
   mergeWorktree: 'merge_worktree',
@@ -251,21 +251,21 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   zoomOut: { label: 'Zoom Out', category: 'View', showInPalette: true },
   zoomReset: { label: 'Reset Zoom', category: 'View', showInPalette: true },
 
-  // Navigate menu (worktree navigation)
-  worktreePrev: { label: 'Previous Worktree', category: 'Navigate', showInPalette: true },
-  worktreeNext: { label: 'Next Worktree', category: 'Navigate', showInPalette: true },
-  previousView: { label: 'Previous View', category: 'Navigate', showInPalette: true },
+  // Navigate menu (session navigation)
+  sessionPrev: { label: 'Previous Session', category: 'Navigate', showInPalette: true },
+  sessionNext: { label: 'Next Session', category: 'Navigate', showInPalette: true },
+  previousView: { label: 'Previous Session', category: 'Navigate', showInPalette: true },
   switchFocus: { label: 'Switch Focus', category: 'Navigate', showInPalette: true },
-  // Worktree 1-9 are hidden from palette (clutter, rarely used via palette)
-  worktree1: { label: 'Go to Worktree 1', category: 'Navigate', showInPalette: false },
-  worktree2: { label: 'Go to Worktree 2', category: 'Navigate', showInPalette: false },
-  worktree3: { label: 'Go to Worktree 3', category: 'Navigate', showInPalette: false },
-  worktree4: { label: 'Go to Worktree 4', category: 'Navigate', showInPalette: false },
-  worktree5: { label: 'Go to Worktree 5', category: 'Navigate', showInPalette: false },
-  worktree6: { label: 'Go to Worktree 6', category: 'Navigate', showInPalette: false },
-  worktree7: { label: 'Go to Worktree 7', category: 'Navigate', showInPalette: false },
-  worktree8: { label: 'Go to Worktree 8', category: 'Navigate', showInPalette: false },
-  worktree9: { label: 'Go to Worktree 9', category: 'Navigate', showInPalette: false },
+  // Session 1-9 are hidden from palette (clutter, rarely used via palette)
+  session1: { label: 'Go to Session 1', category: 'Navigate', showInPalette: false },
+  session2: { label: 'Go to Session 2', category: 'Navigate', showInPalette: false },
+  session3: { label: 'Go to Session 3', category: 'Navigate', showInPalette: false },
+  session4: { label: 'Go to Session 4', category: 'Navigate', showInPalette: false },
+  session5: { label: 'Go to Session 5', category: 'Navigate', showInPalette: false },
+  session6: { label: 'Go to Session 6', category: 'Navigate', showInPalette: false },
+  session7: { label: 'Go to Session 7', category: 'Navigate', showInPalette: false },
+  session8: { label: 'Go to Session 8', category: 'Navigate', showInPalette: false },
+  session9: { label: 'Go to Session 9', category: 'Navigate', showInPalette: false },
   renameBranch: { label: 'Rename Branch', category: 'Navigate', showInPalette: true },
   renameSession: { label: 'Rename Session', category: 'Navigate', showInPalette: true },
   mergeWorktree: { label: 'Merge Worktree', category: 'Navigate', showInPalette: true },

@@ -186,19 +186,19 @@ pub fn setup_menu(app: &tauri::App, mappings: &MappingsConfig) -> Result<(), Box
         .build()?;
 
     // === Worktree Menu ===
-    let prev_worktree = MenuItemBuilder::with_id("worktree_prev", "Previous Worktree")
+    let prev_session = MenuItemBuilder::with_id("session_prev", "Previous Session")
         .accelerator(mappings.worktree_prev.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree_prev", prev_worktree.clone());
+    dynamic_items.insert("session_prev", prev_session.clone());
 
-    let next_worktree = MenuItemBuilder::with_id("worktree_next", "Next Worktree")
+    let next_session = MenuItemBuilder::with_id("session_next", "Next Session")
         .accelerator(mappings.worktree_next.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree_next", next_worktree.clone());
+    dynamic_items.insert("session_next", next_session.clone());
 
-    let previous_view = MenuItemBuilder::with_id("previous_view", "Previous View")
+    let previous_view = MenuItemBuilder::with_id("previous_view", "Previous Session")
         .accelerator(mappings.previous_view.to_accelerator())
         .enabled(false)
         .build(app)?;
@@ -211,59 +211,59 @@ pub fn setup_menu(app: &tauri::App, mappings: &MappingsConfig) -> Result<(), Box
     dynamic_items.insert("switch_focus", switch_focus.clone());
 
     // Session 1-9 (sidebar navigation)
-    let entity1 = MenuItemBuilder::with_id("worktree1", "Session 1")
+    let entity1 = MenuItemBuilder::with_id("session1", "Session 1")
         .accelerator(mappings.session1.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree1", entity1.clone());
+    dynamic_items.insert("session1", entity1.clone());
 
-    let entity2 = MenuItemBuilder::with_id("worktree2", "Session 2")
+    let entity2 = MenuItemBuilder::with_id("session2", "Session 2")
         .accelerator(mappings.session2.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree2", entity2.clone());
+    dynamic_items.insert("session2", entity2.clone());
 
-    let entity3 = MenuItemBuilder::with_id("worktree3", "Session 3")
+    let entity3 = MenuItemBuilder::with_id("session3", "Session 3")
         .accelerator(mappings.session3.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree3", entity3.clone());
+    dynamic_items.insert("session3", entity3.clone());
 
-    let entity4 = MenuItemBuilder::with_id("worktree4", "Session 4")
+    let entity4 = MenuItemBuilder::with_id("session4", "Session 4")
         .accelerator(mappings.session4.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree4", entity4.clone());
+    dynamic_items.insert("session4", entity4.clone());
 
-    let entity5 = MenuItemBuilder::with_id("worktree5", "Session 5")
+    let entity5 = MenuItemBuilder::with_id("session5", "Session 5")
         .accelerator(mappings.session5.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree5", entity5.clone());
+    dynamic_items.insert("session5", entity5.clone());
 
-    let entity6 = MenuItemBuilder::with_id("worktree6", "Session 6")
+    let entity6 = MenuItemBuilder::with_id("session6", "Session 6")
         .accelerator(mappings.session6.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree6", entity6.clone());
+    dynamic_items.insert("session6", entity6.clone());
 
-    let entity7 = MenuItemBuilder::with_id("worktree7", "Session 7")
+    let entity7 = MenuItemBuilder::with_id("session7", "Session 7")
         .accelerator(mappings.session7.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree7", entity7.clone());
+    dynamic_items.insert("session7", entity7.clone());
 
-    let entity8 = MenuItemBuilder::with_id("worktree8", "Session 8")
+    let entity8 = MenuItemBuilder::with_id("session8", "Session 8")
         .accelerator(mappings.session8.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree8", entity8.clone());
+    dynamic_items.insert("session8", entity8.clone());
 
-    let entity9 = MenuItemBuilder::with_id("worktree9", "Session 9")
+    let entity9 = MenuItemBuilder::with_id("session9", "Session 9")
         .accelerator(mappings.session9.to_accelerator())
         .enabled(false)
         .build(app)?;
-    dynamic_items.insert("worktree9", entity9.clone());
+    dynamic_items.insert("session9", entity9.clone());
 
     let rename_branch = MenuItemBuilder::with_id("rename_branch", "Rename Branch…")
         .accelerator(mappings.rename_branch.to_accelerator())
@@ -282,8 +282,8 @@ pub fn setup_menu(app: &tauri::App, mappings: &MappingsConfig) -> Result<(), Box
     dynamic_items.insert("delete_worktree", delete_worktree.clone());
 
     let worktree_submenu = SubmenuBuilder::new(app, "Navigate")
-        .item(&prev_worktree)
-        .item(&next_worktree)
+        .item(&prev_session)
+        .item(&next_session)
         .separator()
         .item(&previous_view)
         .item(&switch_focus)

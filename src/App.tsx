@@ -2194,7 +2194,7 @@ function App() {
     zoomIn: handleZoomIn,
     zoomOut: handleZoomOut,
     zoomReset: handleZoomReset,
-    worktreePrev: () => {
+    sessionPrev: () => {
       if (openEntitiesInOrder.length === 0) return;
       const currentIndex = getCurrentEntityIndex();
       const prevIndex = currentIndex !== -1
@@ -2202,7 +2202,7 @@ function App() {
         : openEntitiesInOrder.length - 1;
       selectEntityAtIndex(prevIndex);
     },
-    worktreeNext: () => {
+    sessionNext: () => {
       if (openEntitiesInOrder.length === 0) return;
       const currentIndex = getCurrentEntityIndex();
       const nextIndex = currentIndex !== -1
@@ -2212,15 +2212,15 @@ function App() {
     },
     previousView: handleSwitchToPreviousView,
     switchFocus: handleSwitchFocus,
-    worktree1: () => selectEntityAtIndex(0),
-    worktree2: () => selectEntityAtIndex(1),
-    worktree3: () => selectEntityAtIndex(2),
-    worktree4: () => selectEntityAtIndex(3),
-    worktree5: () => selectEntityAtIndex(4),
-    worktree6: () => selectEntityAtIndex(5),
-    worktree7: () => selectEntityAtIndex(6),
-    worktree8: () => selectEntityAtIndex(7),
-    worktree9: () => selectEntityAtIndex(8),
+    session1: () => selectEntityAtIndex(0),
+    session2: () => selectEntityAtIndex(1),
+    session3: () => selectEntityAtIndex(2),
+    session4: () => selectEntityAtIndex(3),
+    session5: () => selectEntityAtIndex(4),
+    session6: () => selectEntityAtIndex(5),
+    session7: () => selectEntityAtIndex(6),
+    session8: () => selectEntityAtIndex(7),
+    session9: () => selectEntityAtIndex(8),
     renameBranch: () => activeWorktreeId && handleRenameBranch(activeWorktreeId),
     mergeWorktree: () => activeWorktreeId && handleMergeWorktree(activeWorktreeId),
     deleteWorktree: () => activeWorktreeId && handleDeleteWorktree(activeWorktreeId),
@@ -2307,8 +2307,8 @@ function App() {
     onCloseProject: () => activeProjectId && handleCloseProject(activeProjectId),
 
     // Navigation actions
-    onNavigatePrev: () => actionHandlers.worktreePrev?.(),
-    onNavigateNext: () => actionHandlers.worktreeNext?.(),
+    onNavigatePrev: () => actionHandlers.sessionPrev?.(),
+    onNavigateNext: () => actionHandlers.sessionNext?.(),
     onNavigateBack: handleSwitchToPreviousView,
     onNavigateToProject: () => {
       // Switch from worktree/scratch to project view
