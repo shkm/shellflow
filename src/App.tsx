@@ -137,6 +137,7 @@ function App() {
 
   // Per-session tab state (main pane tabs)
   const {
+    sessionTabs,
     sessionPtyIds: sessionTabPtyIds,
     sessionLastActiveTabIds,
     getTabsForSession,
@@ -328,8 +329,7 @@ function App() {
     return result;
   }, [openWorktreeIds, openProjectIds, scratchTerminals]);
 
-  // Get current session's tabs (main pane tabs)
-  const activeSessionTabs = getTabsForSession(activeSessionId);
+  // Get current session's active tab
   const activeSessionTabId = getActiveTabIdForSession(activeSessionId);
   const lastActiveSessionTabId = activeSessionId ? sessionLastActiveTabIds.get(activeSessionId) ?? null : null;
 
@@ -2656,7 +2656,7 @@ function App() {
                   sessions={sessions}
                   openSessionIds={openSessionIds}
                   activeSessionId={activeSessionId}
-                  sessionTabs={activeSessionTabs}
+                  allSessionTabs={sessionTabs}
                   activeSessionTabId={activeSessionTabId}
                   lastActiveSessionTabId={lastActiveSessionTabId}
                   isCtrlKeyHeld={isCtrlKeyHeld && !isPickerOpen}

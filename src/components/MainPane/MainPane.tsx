@@ -11,8 +11,8 @@ interface MainPaneProps {
   openSessionIds: Set<string>;
   activeSessionId: string | null;
 
-  // Session tabs props
-  sessionTabs: SessionTab[];
+  // Session tabs props - Map of all session tabs to keep terminals alive across session switches
+  allSessionTabs: Map<string, SessionTab[]>;
   activeSessionTabId: string | null;
   lastActiveSessionTabId: string | null;
   isCtrlKeyHeld?: boolean;
@@ -64,7 +64,7 @@ export function MainPane({
   sessions,
   openSessionIds,
   activeSessionId,
-  sessionTabs,
+  allSessionTabs,
   activeSessionTabId,
   lastActiveSessionTabId,
   isCtrlKeyHeld = false,
@@ -136,9 +136,6 @@ export function MainPane({
     );
   }
 
-  // Get the active session
-  const activeSession = sessions.find(s => s.id === activeSessionId);
-
   return (
     <div className="h-full bg-zinc-950 flex flex-col">
       {/* Config error banner */}
@@ -146,7 +143,7 @@ export function MainPane({
 
       {/* Session tab bar (only shown when multiple tabs exist) */}
       <SessionTabBar
-        tabs={sessionTabs}
+        tabs={allSessionTabs.get(activeSessionId) ?? []}
         activeTabId={activeSessionTabId}
         isCtrlKeyHeld={isCtrlKeyHeld}
         onSelectTab={onSelectSessionTab}
@@ -155,90 +152,95 @@ export function MainPane({
         onReorderTabs={onReorderSessionTabs}
       />
 
-      {/* Terminal container */}
+      {/* Terminal container - render ALL terminals for ALL sessions to keep them alive */}
       <div className="flex-1 relative">
-        {sessionTabs.map((tab) => {
-          if (!activeSession) return null;
+        {Array.from(allSessionTabs.entries()).flatMap(([sessionId, tabs]) => {
+          const session = sessions.find(s => s.id === sessionId);
+          if (!session) return [];
 
-          const isActiveTab = tab.id === activeSessionTabId;
-          const terminalType = getTerminalType(activeSession.kind);
-          // Determine if this tab is the "last active" for notification routing
-          // If there's no lastActiveSessionTabId set, default to the current active tab
-          const isLastActiveTab = lastActiveSessionTabId
-            ? tab.id === lastActiveSessionTabId
-            : isActiveTab;
+          const isActiveSession = sessionId === activeSessionId;
+          const terminalType = getTerminalType(session.kind);
 
-          // Handle notifications - route based on explicit vs thinking
-          const handleNotification = (title: string, body: string) => {
-            if (onNotification) {
-              onNotification(activeSession.id, tab.id, title, body);
-            } else {
-              // Legacy handlers (always fire for any tab's notification)
-              if (activeSession.kind === 'worktree') {
-                onWorktreeNotification?.(activeSession.id, title, body);
-              } else if (activeSession.kind === 'project') {
-                onProjectNotification?.(activeSession.id, title, body);
+          return tabs.map((tab) => {
+            const isActiveTab = isActiveSession && tab.id === activeSessionTabId;
+            // Determine if this tab is the "last active" for notification routing
+            // If there's no lastActiveSessionTabId set, default to the current active tab
+            const isLastActiveTab = lastActiveSessionTabId
+              ? tab.id === lastActiveSessionTabId
+              : isActiveTab;
+
+            // Handle notifications - route based on explicit vs thinking
+            const handleNotification = (title: string, body: string) => {
+              if (onNotification) {
+                onNotification(session.id, tab.id, title, body);
               } else {
-                onScratchNotification?.(activeSession.id, title, body);
-              }
-            }
-          };
-
-          // Handle thinking changes - only route if this is the last active tab
-          const handleThinkingChange = (isThinking: boolean) => {
-            if (onThinkingChange) {
-              onThinkingChange(activeSession.id, tab.id, isThinking);
-            } else {
-              // Legacy handlers - only fire if this is the last active tab
-              if (isLastActiveTab) {
-                if (activeSession.kind === 'worktree') {
-                  onWorktreeThinkingChange?.(activeSession.id, isThinking);
-                } else if (activeSession.kind === 'project') {
-                  onProjectThinkingChange?.(activeSession.id, isThinking);
+                // Legacy handlers (always fire for any tab's notification)
+                if (session.kind === 'worktree') {
+                  onWorktreeNotification?.(session.id, title, body);
+                } else if (session.kind === 'project') {
+                  onProjectNotification?.(session.id, title, body);
                 } else {
-                  onScratchThinkingChange?.(activeSession.id, isThinking);
+                  onScratchNotification?.(session.id, title, body);
                 }
               }
-            }
-          };
+            };
 
-          // Handle cwd changes - only for scratch terminals
-          const handleCwdChange = activeSession.kind === 'scratch'
-            ? (cwd: string) => {
-                if (onCwdChange) {
-                  onCwdChange(activeSession.id, cwd);
-                } else {
-                  onScratchCwdChange?.(activeSession.id, cwd);
+            // Handle thinking changes - only route if this is the last active tab
+            const handleThinkingChange = (isThinking: boolean) => {
+              if (onThinkingChange) {
+                onThinkingChange(session.id, tab.id, isThinking);
+              } else {
+                // Legacy handlers - only fire if this is the last active tab
+                if (isLastActiveTab) {
+                  if (session.kind === 'worktree') {
+                    onWorktreeThinkingChange?.(session.id, isThinking);
+                  } else if (session.kind === 'project') {
+                    onProjectThinkingChange?.(session.id, isThinking);
+                  } else {
+                    onScratchThinkingChange?.(session.id, isThinking);
+                  }
                 }
               }
-            : undefined;
+            };
 
-          return (
-            <div
-              key={tab.id}
-              className={`absolute inset-0 ${
-                isActiveTab
-                  ? 'visible z-10'
-                  : 'invisible z-0 pointer-events-none'
-              }`}
-            >
-              <MainTerminal
-                entityId={tab.id}
-                sessionId={activeSession.id}
-                type={tab.isPrimary ? terminalType : 'scratch'}
-                isActive={isActiveTab}
-                shouldAutoFocus={isActiveTab && shouldAutoFocus}
-                focusTrigger={isActiveTab ? focusTrigger : undefined}
-                terminalConfig={terminalConfig}
-                activityTimeout={activityTimeout}
-                isLastActiveTab={isLastActiveTab}
-                onFocus={() => onFocus(activeSession.id, tab.id)}
-                onNotification={handleNotification}
-                onThinkingChange={handleThinkingChange}
-                onCwdChange={handleCwdChange}
-              />
-            </div>
-          );
+            // Handle cwd changes - only for scratch terminals
+            const handleCwdChange = session.kind === 'scratch'
+              ? (cwd: string) => {
+                  if (onCwdChange) {
+                    onCwdChange(session.id, cwd);
+                  } else {
+                    onScratchCwdChange?.(session.id, cwd);
+                  }
+                }
+              : undefined;
+
+            return (
+              <div
+                key={tab.id}
+                className={`absolute inset-0 ${
+                  isActiveTab
+                    ? 'visible z-10'
+                    : 'invisible z-0 pointer-events-none'
+                }`}
+              >
+                <MainTerminal
+                  entityId={tab.id}
+                  sessionId={session.id}
+                  type={tab.isPrimary ? terminalType : 'scratch'}
+                  isActive={isActiveTab}
+                  shouldAutoFocus={isActiveTab && shouldAutoFocus}
+                  focusTrigger={isActiveTab ? focusTrigger : undefined}
+                  terminalConfig={terminalConfig}
+                  activityTimeout={activityTimeout}
+                  isLastActiveTab={isLastActiveTab}
+                  onFocus={() => onFocus(session.id, tab.id)}
+                  onNotification={handleNotification}
+                  onThinkingChange={handleThinkingChange}
+                  onCwdChange={handleCwdChange}
+                />
+              </div>
+            );
+          });
         })}
       </div>
     </div>

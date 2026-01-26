@@ -30,7 +30,7 @@ describe('MainPane', () => {
     sessions: [] as Session[],
     openSessionIds: new Set<string>(),
     activeSessionId: null as string | null,
-    sessionTabs: [] as SessionTab[],
+    allSessionTabs: new Map<string, SessionTab[]>(),
     activeSessionTabId: null as string | null,
     lastActiveSessionTabId: null as string | null,
     isCtrlKeyHeld: false,
@@ -43,6 +43,11 @@ describe('MainPane', () => {
     shouldAutoFocus: false,
     configErrors: [],
     onFocus: vi.fn(),
+  };
+
+  // Helper to create allSessionTabs Map from sessionId and tabs
+  const createAllSessionTabs = (sessionId: string, tabs: SessionTab[]): Map<string, SessionTab[]> => {
+    return new Map([[sessionId, tabs]]);
   };
 
   const createSession = (
@@ -116,7 +121,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -137,7 +142,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['proj-1'])}
           activeSessionId="proj-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -167,7 +172,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['wt-1'])}
           activeSessionId="wt-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -190,7 +195,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -199,13 +204,19 @@ describe('MainPane', () => {
       expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toBeInTheDocument();
     });
 
-    it('only renders tabs for the active session', () => {
+    it('renders tabs for all sessions to keep terminals alive', () => {
       const sessions = [
         createSession('scratch-1', 'scratch', 'Terminal 1', '/home'),
         createSession('scratch-2', 'scratch', 'Terminal 2', '/home'),
       ];
-      // Tabs only for scratch-1 (the active session)
-      const sessionTabs = [createSessionTab('scratch-1')];
+      const session1Tabs = [createSessionTab('scratch-1')];
+      const session2Tabs = [createSessionTab('scratch-2')];
+
+      // Create a map with tabs for both sessions
+      const allTabs = new Map<string, SessionTab[]>([
+        ['scratch-1', session1Tabs],
+        ['scratch-2', session2Tabs],
+      ]);
 
       render(
         <MainPane
@@ -213,13 +224,18 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1', 'scratch-2'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
-          activeSessionTabId={sessionTabs[0].id}
+          allSessionTabs={allTabs}
+          activeSessionTabId={session1Tabs[0].id}
         />
       );
 
-      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
-      // scratch-2 tabs are not rendered (they would be in a separate session)
+      // Both sessions' tabs are rendered (to keep terminals alive)
+      expect(screen.getByTestId(`terminal-${session1Tabs[0].id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${session2Tabs[0].id}`)).toBeInTheDocument();
+
+      // Active session's tab is marked active, other session's tab is inactive
+      expect(screen.getByTestId(`terminal-${session1Tabs[0].id}`)).toHaveAttribute('data-active', 'true');
+      expect(screen.getByTestId(`terminal-${session2Tabs[0].id}`)).toHaveAttribute('data-active', 'false');
     });
   });
 
@@ -237,7 +253,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -259,7 +275,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -272,7 +288,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[1].id}
         />
       );
@@ -293,7 +309,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['s-1'])}
           activeSessionId="s-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -311,7 +327,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['p-1'])}
           activeSessionId="p-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -331,7 +347,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['w-1'])}
           activeSessionId="w-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -354,7 +370,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['w-1'])}
           activeSessionId="w-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
         />
       );
@@ -376,7 +392,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           onFocus={onFocus}
         />
@@ -402,7 +418,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           configErrors={configErrors}
         />
@@ -428,7 +444,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           lastActiveSessionTabId={sessionTabs[1].id}
         />
@@ -449,7 +465,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           lastActiveSessionTabId={null}
         />
@@ -475,7 +491,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           onSelectSessionTab={onSelectSessionTab}
         />
@@ -500,7 +516,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           onCloseSessionTab={onCloseSessionTab}
         />
@@ -524,7 +540,7 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
-          sessionTabs={sessionTabs}
+          allSessionTabs={createAllSessionTabs(sessions[0].id, sessionTabs)}
           activeSessionTabId={sessionTabs[0].id}
           onAddSessionTab={onAddSessionTab}
         />
@@ -532,6 +548,147 @@ describe('MainPane', () => {
 
       // Terminals render
       expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+    });
+  });
+
+  describe('terminal persistence across session switches (regression test)', () => {
+    it('does not recreate terminals when switching between sessions', async () => {
+      const { MainTerminal } = await import('./MainTerminal');
+      const mockMainTerminal = vi.mocked(MainTerminal);
+      mockMainTerminal.mockClear();
+
+      const sessions = [
+        createSession('session-1', 'scratch', 'Terminal 1', '/home'),
+        createSession('session-2', 'scratch', 'Terminal 2', '/home'),
+      ];
+      const session1Tabs = [createSessionTab('session-1')];
+      const session2Tabs = [createSessionTab('session-2')];
+      const allTabs = new Map<string, SessionTab[]>([
+        ['session-1', session1Tabs],
+        ['session-2', session2Tabs],
+      ]);
+
+      // Initial render with session-1 active
+      const { rerender } = render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['session-1', 'session-2'])}
+          activeSessionId="session-1"
+          allSessionTabs={allTabs}
+          activeSessionTabId={session1Tabs[0].id}
+        />
+      );
+
+      // Both terminals should be rendered (one visible, one hidden)
+      expect(screen.getByTestId(`terminal-${session1Tabs[0].id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${session2Tabs[0].id}`)).toBeInTheDocument();
+
+      // Record how many times MainTerminal was called after initial render
+      const initialCallCount = mockMainTerminal.mock.calls.length;
+      expect(initialCallCount).toBe(2); // One for each session
+
+      // Switch to session-2
+      rerender(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['session-1', 'session-2'])}
+          activeSessionId="session-2"
+          allSessionTabs={allTabs}
+          activeSessionTabId={session2Tabs[0].id}
+        />
+      );
+
+      // Both terminals should still exist (not recreated)
+      expect(screen.getByTestId(`terminal-${session1Tabs[0].id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${session2Tabs[0].id}`)).toBeInTheDocument();
+
+      // Switch back to session-1
+      rerender(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['session-1', 'session-2'])}
+          activeSessionId="session-1"
+          allSessionTabs={allTabs}
+          activeSessionTabId={session1Tabs[0].id}
+        />
+      );
+
+      // Original session-1 terminal should still be there (same DOM element)
+      const terminal1 = screen.getByTestId(`terminal-${session1Tabs[0].id}`);
+      expect(terminal1).toBeInTheDocument();
+      expect(terminal1).toHaveAttribute('data-active', 'true');
+
+      // The mock component should not have been called with new instances
+      // (React reuses the same component instance due to stable keys)
+      // Note: React may call the render function again for props updates,
+      // but the key point is the component is not unmounted/remounted
+    });
+
+    it('preserves terminal DOM elements when switching sessions', () => {
+      const sessions = [
+        createSession('session-1', 'scratch', 'Terminal 1', '/home'),
+        createSession('session-2', 'scratch', 'Terminal 2', '/home'),
+      ];
+      const session1Tabs = [createSessionTab('session-1')];
+      const session2Tabs = [createSessionTab('session-2')];
+      const allTabs = new Map<string, SessionTab[]>([
+        ['session-1', session1Tabs],
+        ['session-2', session2Tabs],
+      ]);
+
+      const { rerender } = render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['session-1', 'session-2'])}
+          activeSessionId="session-1"
+          allSessionTabs={allTabs}
+          activeSessionTabId={session1Tabs[0].id}
+        />
+      );
+
+      // Get reference to the terminal DOM element
+      const terminal1Before = screen.getByTestId(`terminal-${session1Tabs[0].id}`);
+      expect(terminal1Before).toHaveAttribute('data-active', 'true');
+
+      // Switch to session-2
+      rerender(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['session-1', 'session-2'])}
+          activeSessionId="session-2"
+          allSessionTabs={allTabs}
+          activeSessionTabId={session2Tabs[0].id}
+        />
+      );
+
+      // Session-1 terminal should still exist but be inactive
+      const terminal1During = screen.getByTestId(`terminal-${session1Tabs[0].id}`);
+      expect(terminal1During).toHaveAttribute('data-active', 'false');
+
+      // Switch back to session-1
+      rerender(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['session-1', 'session-2'])}
+          activeSessionId="session-1"
+          allSessionTabs={allTabs}
+          activeSessionTabId={session1Tabs[0].id}
+        />
+      );
+
+      // Session-1 terminal should be active again - same element preserved
+      const terminal1After = screen.getByTestId(`terminal-${session1Tabs[0].id}`);
+      expect(terminal1After).toHaveAttribute('data-active', 'true');
+
+      // Verify it's the same DOM element (not recreated)
+      // This is the key assertion - if the element was recreated, this would be a different node
+      expect(terminal1Before).toBe(terminal1After);
     });
   });
 });
