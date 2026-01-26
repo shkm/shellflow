@@ -1,14 +1,25 @@
 import { GitBranch, FolderPlus, Terminal, Keyboard } from 'lucide-react';
 import { MainTerminal } from './MainTerminal';
+import { SessionTabBar } from './SessionTabBar';
 import { TerminalConfig, ConfigError } from '../../hooks/useConfig';
 import { ConfigErrorBanner } from '../ConfigErrorBanner';
-import { Session, SessionKind } from '../../types';
+import { Session, SessionKind, SessionTab } from '../../types';
 
 interface MainPaneProps {
   // Unified session props
   sessions: Session[];
   openSessionIds: Set<string>;
   activeSessionId: string | null;
+
+  // Session tabs props
+  sessionTabs: SessionTab[];
+  activeSessionTabId: string | null;
+  lastActiveSessionTabId: string | null;
+  isCtrlKeyHeld?: boolean;
+  onSelectSessionTab: (tabId: string) => void;
+  onCloseSessionTab: (tabId: string) => void;
+  onAddSessionTab: () => void;
+  onReorderSessionTabs: (oldIndex: number, newIndex: number) => void;
 
   // Common props
   terminalConfig: TerminalConfig;
@@ -17,9 +28,9 @@ interface MainPaneProps {
   /** Counter that triggers focus when incremented */
   focusTrigger?: number;
   configErrors: ConfigError[];
-  onFocus: (sessionId: string) => void;
-  onNotification?: (sessionId: string, title: string, body: string) => void;
-  onThinkingChange?: (sessionId: string, isThinking: boolean) => void;
+  onFocus: (sessionId: string, tabId?: string) => void;
+  onNotification?: (sessionId: string, tabId: string, title: string, body: string) => void;
+  onThinkingChange?: (sessionId: string, tabId: string, isThinking: boolean) => void;
   onCwdChange?: (sessionId: string, cwd: string) => void;
 
   // Legacy props for backward compatibility during migration
@@ -53,6 +64,14 @@ export function MainPane({
   sessions,
   openSessionIds,
   activeSessionId,
+  sessionTabs,
+  activeSessionTabId,
+  lastActiveSessionTabId,
+  isCtrlKeyHeld = false,
+  onSelectSessionTab,
+  onCloseSessionTab,
+  onAddSessionTab,
+  onReorderSessionTabs,
   terminalConfig,
   activityTimeout,
   shouldAutoFocus,
@@ -117,81 +136,103 @@ export function MainPane({
     );
   }
 
-  // Get open sessions in their defined order
-  const openSessions = sessions.filter(s => openSessionIds.has(s.id));
+  // Get the active session
+  const activeSession = sessions.find(s => s.id === activeSessionId);
 
   return (
     <div className="h-full bg-zinc-950 flex flex-col">
       {/* Config error banner */}
       <ConfigErrorBanner errors={configErrors} />
 
+      {/* Session tab bar (only shown when multiple tabs exist) */}
+      <SessionTabBar
+        tabs={sessionTabs}
+        activeTabId={activeSessionTabId}
+        isCtrlKeyHeld={isCtrlKeyHeld}
+        onSelectTab={onSelectSessionTab}
+        onCloseTab={onCloseSessionTab}
+        onAddTab={onAddSessionTab}
+        onReorderTabs={onReorderSessionTabs}
+      />
+
       {/* Terminal container */}
       <div className="flex-1 relative">
-        {openSessions.map((session) => {
-          const isActive = session.id === activeSessionId;
-          const terminalType = getTerminalType(session.kind);
+        {sessionTabs.map((tab) => {
+          if (!activeSession) return null;
 
-          // Handle notifications - use unified handler or fall back to legacy
+          const isActiveTab = tab.id === activeSessionTabId;
+          const terminalType = getTerminalType(activeSession.kind);
+          // Determine if this tab is the "last active" for notification routing
+          // If there's no lastActiveSessionTabId set, default to the current active tab
+          const isLastActiveTab = lastActiveSessionTabId
+            ? tab.id === lastActiveSessionTabId
+            : isActiveTab;
+
+          // Handle notifications - route based on explicit vs thinking
           const handleNotification = (title: string, body: string) => {
             if (onNotification) {
-              onNotification(session.id, title, body);
+              onNotification(activeSession.id, tab.id, title, body);
             } else {
-              // Legacy handlers
-              if (session.kind === 'worktree') {
-                onWorktreeNotification?.(session.id, title, body);
-              } else if (session.kind === 'project') {
-                onProjectNotification?.(session.id, title, body);
+              // Legacy handlers (always fire for any tab's notification)
+              if (activeSession.kind === 'worktree') {
+                onWorktreeNotification?.(activeSession.id, title, body);
+              } else if (activeSession.kind === 'project') {
+                onProjectNotification?.(activeSession.id, title, body);
               } else {
-                onScratchNotification?.(session.id, title, body);
+                onScratchNotification?.(activeSession.id, title, body);
               }
             }
           };
 
-          // Handle thinking changes - use unified handler or fall back to legacy
+          // Handle thinking changes - only route if this is the last active tab
           const handleThinkingChange = (isThinking: boolean) => {
             if (onThinkingChange) {
-              onThinkingChange(session.id, isThinking);
+              onThinkingChange(activeSession.id, tab.id, isThinking);
             } else {
-              // Legacy handlers
-              if (session.kind === 'worktree') {
-                onWorktreeThinkingChange?.(session.id, isThinking);
-              } else if (session.kind === 'project') {
-                onProjectThinkingChange?.(session.id, isThinking);
-              } else {
-                onScratchThinkingChange?.(session.id, isThinking);
+              // Legacy handlers - only fire if this is the last active tab
+              if (isLastActiveTab) {
+                if (activeSession.kind === 'worktree') {
+                  onWorktreeThinkingChange?.(activeSession.id, isThinking);
+                } else if (activeSession.kind === 'project') {
+                  onProjectThinkingChange?.(activeSession.id, isThinking);
+                } else {
+                  onScratchThinkingChange?.(activeSession.id, isThinking);
+                }
               }
             }
           };
 
           // Handle cwd changes - only for scratch terminals
-          const handleCwdChange = session.kind === 'scratch'
+          const handleCwdChange = activeSession.kind === 'scratch'
             ? (cwd: string) => {
                 if (onCwdChange) {
-                  onCwdChange(session.id, cwd);
+                  onCwdChange(activeSession.id, cwd);
                 } else {
-                  onScratchCwdChange?.(session.id, cwd);
+                  onScratchCwdChange?.(activeSession.id, cwd);
                 }
               }
             : undefined;
 
           return (
             <div
-              key={session.id}
+              key={tab.id}
               className={`absolute inset-0 ${
-                isActive
+                isActiveTab
                   ? 'visible z-10'
                   : 'invisible z-0 pointer-events-none'
               }`}
             >
               <MainTerminal
-                entityId={session.id}
-                type={terminalType}
-                isActive={isActive}
-                shouldAutoFocus={isActive && shouldAutoFocus}
-                focusTrigger={isActive ? focusTrigger : undefined}
+                entityId={tab.id}
+                sessionId={activeSession.id}
+                type={tab.isPrimary ? terminalType : 'scratch'}
+                isActive={isActiveTab}
+                shouldAutoFocus={isActiveTab && shouldAutoFocus}
+                focusTrigger={isActiveTab ? focusTrigger : undefined}
                 terminalConfig={terminalConfig}
                 activityTimeout={activityTimeout}
-                onFocus={() => onFocus(session.id)}
+                isLastActiveTab={isLastActiveTab}
+                onFocus={() => onFocus(activeSession.id, tab.id)}
                 onNotification={handleNotification}
                 onThinkingChange={handleThinkingChange}
                 onCwdChange={handleCwdChange}

@@ -42,6 +42,13 @@ export interface SessionIndicators {
   idle: boolean;
 }
 
+// Tab within a session (main pane tabs)
+export interface SessionTab {
+  id: string;           // e.g., "worktree-abc-session-1"
+  label: string;        // e.g., "Terminal 1"
+  isPrimary: boolean;   // First tab runs configured command
+}
+
 export interface Worktree {
   id: string;
   name: string;

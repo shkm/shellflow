@@ -115,24 +115,45 @@
     },
 
     // ============================================================
-    // Scratch terminal (not drawer focused)
+    // Main pane focused - session tabs (applies to all session types)
+    // ============================================================
+    {
+      "context": "mainFocused && !pickerOpen && !modalOpen",
+      "bindings": {
+        "cmd-t": "session::newTab",
+        "cmd-w": "session::closeTab",
+        "cmd-shift-w": "session::closeSession",
+        "cmd-h": "session::prevTab",
+        "cmd-l": "session::nextTab",
+        "ctrl-1": "session::selectTab1",
+        "ctrl-2": "session::selectTab2",
+        "ctrl-3": "session::selectTab3",
+        "ctrl-4": "session::selectTab4",
+        "ctrl-5": "session::selectTab5",
+        "ctrl-6": "session::selectTab6",
+        "ctrl-7": "session::selectTab7",
+        "ctrl-8": "session::selectTab8",
+        "ctrl-9": "session::selectTab9"
+      }
+    },
+
+    // ============================================================
+    // Scratch terminal (not drawer focused) - new scratch and other actions
     // ============================================================
     {
       "context": "scratchFocused && !drawerFocused",
       "bindings": {
-        "cmd-w": "scratch::close",
         "cmd-n": "scratch::new",
         "cmd-shift-n": "scratch::new"
       }
     },
 
     // ============================================================
-    // Worktree (not drawer focused)
+    // Worktree (not drawer focused) - worktree-specific actions
     // ============================================================
     {
       "context": "worktreeFocused && !drawerFocused",
       "bindings": {
-        "cmd-w": "worktree::close",
         "cmd-n": "worktree::new",
         "cmd-shift-n": "scratch::new",
         "F2": "worktree::renameBranch"
@@ -145,7 +166,6 @@
     {
       "context": "projectFocused && !drawerFocused",
       "bindings": {
-        "cmd-w": "project::close",
         "cmd-n": "worktree::new",
         "cmd-shift-n": "scratch::new"
       }

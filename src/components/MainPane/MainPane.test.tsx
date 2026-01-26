@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MainPane } from './MainPane';
-import { Session } from '../../types';
+import { Session, SessionTab } from '../../types';
 import { resetMocks, mockInvokeResponses, defaultTestConfig } from '../../test/setup';
 
 // Mock the MainTerminal component to avoid xterm complexity
@@ -13,11 +13,31 @@ vi.mock('./MainTerminal', () => ({
   )),
 }));
 
+// Mock the SessionTabBar component
+vi.mock('./SessionTabBar', () => ({
+  SessionTabBar: vi.fn(() => null),
+}));
+
 describe('MainPane', () => {
+  // Helper to create a default session tab
+  const createSessionTab = (sessionId: string, index: number = 1, isPrimary: boolean = true): SessionTab => ({
+    id: `${sessionId}-session-${index}`,
+    label: `Terminal ${index}`,
+    isPrimary,
+  });
+
   const defaultProps = {
     sessions: [] as Session[],
     openSessionIds: new Set<string>(),
     activeSessionId: null as string | null,
+    sessionTabs: [] as SessionTab[],
+    activeSessionTabId: null as string | null,
+    lastActiveSessionTabId: null as string | null,
+    isCtrlKeyHeld: false,
+    onSelectSessionTab: vi.fn(),
+    onCloseSessionTab: vi.fn(),
+    onAddSessionTab: vi.fn(),
+    onReorderSessionTabs: vi.fn(),
     terminalConfig: defaultTestConfig.main,
     activityTimeout: 250,
     shouldAutoFocus: false,
@@ -88,6 +108,7 @@ describe('MainPane', () => {
   describe('session rendering', () => {
     it('renders terminal for open scratch session', () => {
       const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [createSessionTab('scratch-1')];
 
       render(
         <MainPane
@@ -95,10 +116,12 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      const terminal = screen.getByTestId('terminal-scratch-1');
+      const terminal = screen.getByTestId(`terminal-${sessionTabs[0].id}`);
       expect(terminal).toBeInTheDocument();
       expect(terminal).toHaveAttribute('data-type', 'scratch');
       expect(terminal).toHaveAttribute('data-active', 'true');
@@ -106,6 +129,7 @@ describe('MainPane', () => {
 
     it('renders terminal for open project session', () => {
       const sessions = [createSession('proj-1', 'project', 'My Project', '/projects/myproj')];
+      const sessionTabs = [createSessionTab('proj-1')];
 
       render(
         <MainPane
@@ -113,10 +137,12 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['proj-1'])}
           activeSessionId="proj-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      const terminal = screen.getByTestId('terminal-proj-1');
+      const terminal = screen.getByTestId(`terminal-${sessionTabs[0].id}`);
       expect(terminal).toBeInTheDocument();
       expect(terminal).toHaveAttribute('data-type', 'project');
     });
@@ -133,6 +159,7 @@ describe('MainPane', () => {
           branch: 'feature-branch',
         },
       ];
+      const sessionTabs = [createSessionTab('wt-1')];
 
       render(
         <MainPane
@@ -140,39 +167,21 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['wt-1'])}
           activeSessionId="wt-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      const terminal = screen.getByTestId('terminal-wt-1');
+      const terminal = screen.getByTestId(`terminal-${sessionTabs[0].id}`);
       expect(terminal).toBeInTheDocument();
       expect(terminal).toHaveAttribute('data-type', 'main');
     });
 
-    it('renders multiple open sessions', () => {
-      const sessions = [
-        createSession('scratch-1', 'scratch', 'Terminal 1', '/home'),
-        createSession('proj-1', 'project', 'Project', '/projects/proj'),
-        { ...createSession('wt-1', 'worktree', 'Feature', '/wt/1'), projectId: 'proj-1', branch: 'feature' },
-      ];
-
-      render(
-        <MainPane
-          {...defaultProps}
-          sessions={sessions}
-          openSessionIds={new Set(['scratch-1', 'proj-1', 'wt-1'])}
-          activeSessionId="scratch-1"
-        />
-      );
-
-      expect(screen.getByTestId('terminal-scratch-1')).toBeInTheDocument();
-      expect(screen.getByTestId('terminal-proj-1')).toBeInTheDocument();
-      expect(screen.getByTestId('terminal-wt-1')).toBeInTheDocument();
-    });
-
-    it('only renders open sessions', () => {
-      const sessions = [
-        createSession('scratch-1', 'scratch', 'Terminal 1', '/home'),
-        createSession('scratch-2', 'scratch', 'Terminal 2', '/home'),
+    it('renders multiple tabs for the same session', () => {
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
       ];
 
       render(
@@ -181,20 +190,22 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-scratch-1')).toBeInTheDocument();
-      expect(screen.queryByTestId('terminal-scratch-2')).not.toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toBeInTheDocument();
     });
-  });
 
-  describe('active session visibility', () => {
-    it('marks active session as active', () => {
+    it('only renders tabs for the active session', () => {
       const sessions = [
         createSession('scratch-1', 'scratch', 'Terminal 1', '/home'),
         createSession('scratch-2', 'scratch', 'Terminal 2', '/home'),
       ];
+      // Tabs only for scratch-1 (the active session)
+      const sessionTabs = [createSessionTab('scratch-1')];
 
       render(
         <MainPane
@@ -202,47 +213,79 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1', 'scratch-2'])}
           activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-scratch-1')).toHaveAttribute('data-active', 'true');
-      expect(screen.getByTestId('terminal-scratch-2')).toHaveAttribute('data-active', 'false');
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+      // scratch-2 tabs are not rendered (they would be in a separate session)
+    });
+  });
+
+  describe('active tab visibility', () => {
+    it('marks active tab as active', () => {
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
+      ];
+
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+        />
+      );
+
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-active', 'true');
+      expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toHaveAttribute('data-active', 'false');
     });
 
-    it('updates active state when activeSessionId changes', () => {
-      const sessions = [
-        createSession('scratch-1', 'scratch', 'Terminal 1', '/home'),
-        createSession('scratch-2', 'scratch', 'Terminal 2', '/home'),
+    it('updates active state when activeSessionTabId changes', () => {
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
       ];
 
       const { rerender } = render(
         <MainPane
           {...defaultProps}
           sessions={sessions}
-          openSessionIds={new Set(['scratch-1', 'scratch-2'])}
+          openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-scratch-1')).toHaveAttribute('data-active', 'true');
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-active', 'true');
 
       rerender(
         <MainPane
           {...defaultProps}
           sessions={sessions}
-          openSessionIds={new Set(['scratch-1', 'scratch-2'])}
-          activeSessionId="scratch-2"
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[1].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-scratch-1')).toHaveAttribute('data-active', 'false');
-      expect(screen.getByTestId('terminal-scratch-2')).toHaveAttribute('data-active', 'true');
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-active', 'false');
+      expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toHaveAttribute('data-active', 'true');
     });
   });
 
   describe('session kind to terminal type mapping', () => {
-    it('maps scratch to scratch type', () => {
+    it('maps scratch to scratch type (for primary tab)', () => {
       const sessions = [createSession('s-1', 'scratch', 'Term', '/home')];
+      const sessionTabs = [createSessionTab('s-1')];
 
       render(
         <MainPane
@@ -250,14 +293,17 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['s-1'])}
           activeSessionId="s-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-s-1')).toHaveAttribute('data-type', 'scratch');
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-type', 'scratch');
     });
 
-    it('maps project to project type', () => {
+    it('maps project to project type (for primary tab)', () => {
       const sessions = [createSession('p-1', 'project', 'Proj', '/proj')];
+      const sessionTabs = [createSessionTab('p-1')];
 
       render(
         <MainPane
@@ -265,15 +311,41 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['p-1'])}
           activeSessionId="p-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-p-1')).toHaveAttribute('data-type', 'project');
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-type', 'project');
     });
 
-    it('maps worktree to main type', () => {
+    it('maps worktree to main type (for primary tab)', () => {
       const sessions: Session[] = [
         { id: 'w-1', kind: 'worktree', name: 'WT', path: '/wt', order: 0, projectId: 'p-1', branch: 'main' },
+      ];
+      const sessionTabs = [createSessionTab('w-1')];
+
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['w-1'])}
+          activeSessionId="w-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+        />
+      );
+
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-type', 'main');
+    });
+
+    it('secondary tabs use scratch type regardless of session kind', () => {
+      const sessions: Session[] = [
+        { id: 'w-1', kind: 'worktree', name: 'WT', path: '/wt', order: 0, projectId: 'p-1', branch: 'main' },
+      ];
+      const sessionTabs = [
+        createSessionTab('w-1', 1, true),   // primary - should be main type
+        createSessionTab('w-1', 2, false),  // secondary - should be scratch type
       ];
 
       render(
@@ -282,10 +354,13 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['w-1'])}
           activeSessionId="w-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
         />
       );
 
-      expect(screen.getByTestId('terminal-w-1')).toHaveAttribute('data-type', 'main');
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toHaveAttribute('data-type', 'main');
+      expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toHaveAttribute('data-type', 'scratch');
     });
   });
 
@@ -293,6 +368,7 @@ describe('MainPane', () => {
     it('renders terminals with expected props', () => {
       const onFocus = vi.fn();
       const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [createSessionTab('scratch-1')];
 
       render(
         <MainPane
@@ -300,12 +376,14 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
           onFocus={onFocus}
         />
       );
 
       // Verify the terminal is rendered with expected attributes
-      const terminal = screen.getByTestId('terminal-scratch-1');
+      const terminal = screen.getByTestId(`terminal-${sessionTabs[0].id}`);
       expect(terminal).toBeInTheDocument();
       expect(terminal).toHaveAttribute('data-type', 'scratch');
       expect(terminal).toHaveAttribute('data-active', 'true');
@@ -315,6 +393,7 @@ describe('MainPane', () => {
   describe('config errors', () => {
     it('renders terminal alongside config error banner', () => {
       const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [createSessionTab('scratch-1')];
       const configErrors = [{ file: '/test/config.json', message: 'Test error' }];
 
       render(
@@ -323,12 +402,136 @@ describe('MainPane', () => {
           sessions={sessions}
           openSessionIds={new Set(['scratch-1'])}
           activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
           configErrors={configErrors}
         />
       );
 
       // Terminal should still be rendered when there are config errors
-      expect(screen.getByTestId('terminal-scratch-1')).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+    });
+  });
+
+  describe('lastActiveSessionTabId', () => {
+    it('passes lastActiveSessionTabId correctly to terminals', () => {
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
+      ];
+
+      // Tab 1 is active, but tab 2 was last active (e.g., user just switched to tab 1)
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+          lastActiveSessionTabId={sessionTabs[1].id}
+        />
+      );
+
+      // Both terminals should render
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toBeInTheDocument();
+    });
+
+    it('defaults lastActiveTab to activeTab when not set', () => {
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [createSessionTab('scratch-1')];
+
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+          lastActiveSessionTabId={null}
+        />
+      );
+
+      // Terminal should render
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+    });
+  });
+
+  describe('tab bar integration', () => {
+    it('passes onSelectSessionTab to SessionTabBar', () => {
+      const onSelectSessionTab = vi.fn();
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
+      ];
+
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+          onSelectSessionTab={onSelectSessionTab}
+        />
+      );
+
+      // Both terminals render
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`terminal-${sessionTabs[1].id}`)).toBeInTheDocument();
+    });
+
+    it('passes onCloseSessionTab to SessionTabBar', () => {
+      const onCloseSessionTab = vi.fn();
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
+      ];
+
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+          onCloseSessionTab={onCloseSessionTab}
+        />
+      );
+
+      // Terminals render
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
+    });
+
+    it('passes onAddSessionTab to SessionTabBar', () => {
+      const onAddSessionTab = vi.fn();
+      const sessions = [createSession('scratch-1', 'scratch', 'Terminal 1', '/home')];
+      const sessionTabs = [
+        createSessionTab('scratch-1', 1, true),
+        createSessionTab('scratch-1', 2, false),
+      ];
+
+      render(
+        <MainPane
+          {...defaultProps}
+          sessions={sessions}
+          openSessionIds={new Set(['scratch-1'])}
+          activeSessionId="scratch-1"
+          sessionTabs={sessionTabs}
+          activeSessionTabId={sessionTabs[0].id}
+          onAddSessionTab={onAddSessionTab}
+        />
+      );
+
+      // Terminals render
+      expect(screen.getByTestId(`terminal-${sessionTabs[0].id}`)).toBeInTheDocument();
     });
   });
 });

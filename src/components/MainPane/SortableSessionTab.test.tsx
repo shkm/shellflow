@@ -1,0 +1,198 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { SortableSessionTab } from './SortableSessionTab';
+import { SessionTab } from '../../types';
+
+// Mock dnd-kit
+vi.mock('@dnd-kit/sortable', () => ({
+  useSortable: vi.fn(() => ({
+    attributes: { 'aria-describedby': 'sortable-description' },
+    listeners: { onPointerDown: vi.fn() },
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: undefined,
+    isDragging: false,
+  })),
+}));
+
+describe('SortableSessionTab', () => {
+  const createTab = (id: string, label: string, isPrimary = false): SessionTab => ({
+    id,
+    label,
+    isPrimary,
+  });
+
+  const defaultProps = {
+    tab: createTab('tab-1', 'Terminal 1', true),
+    isActive: false,
+    isAnyDragging: false,
+    shortcutNumber: null as number | null,
+    isCtrlKeyHeld: false,
+    onSelect: vi.fn(),
+    onClose: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('rendering', () => {
+    it('renders tab label', () => {
+      render(<SortableSessionTab {...defaultProps} />);
+      expect(screen.getByText('Terminal 1')).toBeInTheDocument();
+    });
+
+    it('renders terminal icon when ctrl is not held', () => {
+      render(<SortableSessionTab {...defaultProps} />);
+      // Terminal icon from lucide-react is rendered as SVG
+      const tabElement = screen.getByText('Terminal 1').closest('div');
+      expect(tabElement?.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('renders shortcut number instead of icon when ctrl is held', () => {
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          isCtrlKeyHeld={true}
+          shortcutNumber={1}
+        />
+      );
+      expect(screen.getByText('1')).toBeInTheDocument();
+    });
+
+    it('does not show shortcut number when ctrl is held but shortcutNumber is null', () => {
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          isCtrlKeyHeld={true}
+          shortcutNumber={null}
+        />
+      );
+      // Should show terminal icon, not a number
+      expect(screen.queryByText(/^\d$/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('active state styling', () => {
+    it('has active styling when isActive is true', () => {
+      render(<SortableSessionTab {...defaultProps} isActive={true} />);
+      const tabElement = screen.getByText('Terminal 1').closest('div');
+      expect(tabElement).toHaveClass('bg-zinc-800', 'text-zinc-100');
+    });
+
+    it('has inactive styling when isActive is false', () => {
+      render(<SortableSessionTab {...defaultProps} isActive={false} />);
+      const tabElement = screen.getByText('Terminal 1').closest('div');
+      expect(tabElement).toHaveClass('bg-zinc-900', 'text-zinc-400');
+    });
+  });
+
+  describe('interactions', () => {
+    it('calls onSelect when clicked', () => {
+      const onSelect = vi.fn();
+      render(<SortableSessionTab {...defaultProps} onSelect={onSelect} />);
+
+      const tabElement = screen.getByText('Terminal 1').closest('div');
+      fireEvent.click(tabElement!);
+
+      expect(onSelect).toHaveBeenCalled();
+    });
+
+    it('calls onClose when close button is clicked', () => {
+      const onClose = vi.fn();
+      render(<SortableSessionTab {...defaultProps} onClose={onClose} />);
+
+      // Find the close button (button with X icon)
+      const closeButton = screen.getByRole('button');
+      fireEvent.click(closeButton);
+
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it('prevents onSelect when close button is clicked', () => {
+      const onSelect = vi.fn();
+      const onClose = vi.fn();
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          onSelect={onSelect}
+          onClose={onClose}
+        />
+      );
+
+      const closeButton = screen.getByRole('button');
+      fireEvent.click(closeButton);
+
+      // onClose should be called, but onSelect should not
+      expect(onClose).toHaveBeenCalled();
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it('does not call onClose when dragging', () => {
+      const onClose = vi.fn();
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          onClose={onClose}
+          isAnyDragging={true}
+        />
+      );
+
+      const closeButton = screen.getByRole('button');
+      fireEvent.click(closeButton);
+
+      expect(onClose).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('shortcut numbers', () => {
+    it('shows shortcut number 1 when ctrl is held', () => {
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          isCtrlKeyHeld={true}
+          shortcutNumber={1}
+        />
+      );
+      expect(screen.getByText('1')).toBeInTheDocument();
+    });
+
+    it('shows shortcut number 9 when ctrl is held', () => {
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          isCtrlKeyHeld={true}
+          shortcutNumber={9}
+        />
+      );
+      expect(screen.getByText('9')).toBeInTheDocument();
+    });
+
+    it('does not show shortcut when ctrl is not held even if shortcutNumber is set', () => {
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          isCtrlKeyHeld={false}
+          shortcutNumber={1}
+        />
+      );
+      // Should not have the number displayed
+      expect(screen.queryByText('1')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('truncation', () => {
+    it('truncates long labels', () => {
+      const longLabel = 'This is a very long terminal label that should be truncated';
+      render(
+        <SortableSessionTab
+          {...defaultProps}
+          tab={createTab('tab-1', longLabel)}
+        />
+      );
+
+      const labelElement = screen.getByText(longLabel);
+      expect(labelElement).toHaveClass('truncate');
+    });
+  });
+});

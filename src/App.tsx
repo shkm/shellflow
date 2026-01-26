@@ -23,6 +23,7 @@ import { useConfig } from './hooks/useConfig';
 import { useScratchTerminals } from './hooks/useScratchTerminals';
 import { useIndicators } from './hooks/useIndicators';
 import { useDrawerTabs } from './hooks/useDrawerTabs';
+import { useSessionTabs, SessionTab } from './hooks/useSessionTabs';
 import { selectFolder, shutdown, ptyKill, ptyForceKill, stashChanges, stashPop, reorderProjects, reorderWorktrees, expandActionPrompt, ActionPromptContext, updateActionAvailability, touchProject } from './lib/tauri';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { ActionContext, getMenuAvailability } from './lib/actions';
@@ -133,6 +134,24 @@ function App() {
     setDrawerTabCounters,
     setDrawerPtyIds,
   } = useDrawerTabs();
+
+  // Per-session tab state (main pane tabs)
+  const {
+    sessionPtyIds: sessionTabPtyIds,
+    sessionLastActiveTabIds,
+    getTabsForSession,
+    getActiveTabIdForSession,
+    addTab: addSessionTab,
+    removeTab: removeSessionTab,
+    setActiveTab: setActiveSessionTab,
+    reorderTabs: reorderSessionTabs,
+    incrementCounter: incrementSessionCounter,
+    removePtyId: removeSessionPtyId,
+    setLastActiveTabId,
+    prevTab: prevSessionTab,
+    nextTab: nextSessionTab,
+    selectTabByIndex: selectSessionTabByIndex,
+  } = useSessionTabs();
 
   // Per-worktree focus state (which pane has focus)
   const [focusStates, setFocusStates] = useState<Map<string, FocusedPane>>(new Map());
@@ -308,6 +327,41 @@ function App() {
     for (const scratch of scratchTerminals) result.add(scratch.id);
     return result;
   }, [openWorktreeIds, openProjectIds, scratchTerminals]);
+
+  // Get current session's tabs (main pane tabs)
+  const activeSessionTabs = getTabsForSession(activeSessionId);
+  const activeSessionTabId = getActiveTabIdForSession(activeSessionId);
+  const lastActiveSessionTabId = activeSessionId ? sessionLastActiveTabIds.get(activeSessionId) ?? null : null;
+
+  // Create initial session tab when a session becomes active and has no tabs
+  useEffect(() => {
+    if (!activeSessionId) return;
+    const tabs = getTabsForSession(activeSessionId);
+    if (tabs.length > 0) return;
+
+    // Create the primary tab (runs the configured command)
+    const counter = incrementSessionCounter(activeSessionId);
+    const newTab: SessionTab = {
+      id: `${activeSessionId}-session-${counter}`,
+      label: `Terminal ${counter}`,
+      isPrimary: true,
+    };
+    addSessionTab(activeSessionId, newTab);
+  }, [activeSessionId, getTabsForSession, incrementSessionCounter, addSessionTab]);
+
+  // Track last active tab when switching away from a session
+  const prevActiveSessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prevSessionId = prevActiveSessionIdRef.current;
+    if (prevSessionId && prevSessionId !== activeSessionId) {
+      // Switching away from prevSessionId, record which tab was active
+      const lastTab = getActiveTabIdForSession(prevSessionId);
+      if (lastTab) {
+        setLastActiveTabId(prevSessionId, lastTab);
+      }
+    }
+    prevActiveSessionIdRef.current = activeSessionId;
+  }, [activeSessionId, getActiveTabIdForSession, setLastActiveTabId]);
 
   // Indicator states for worktrees and projects
   const {
@@ -732,6 +786,48 @@ function App() {
       return next;
     });
   }, [activeEntityId, drawerTabCounters]);
+
+  // Session tab handlers (main pane tabs)
+  const handleAddSessionTab = useCallback(() => {
+    if (!activeSessionId) return;
+
+    const counter = incrementSessionCounter(activeSessionId);
+    const newTab: SessionTab = {
+      id: `${activeSessionId}-session-${counter}`,
+      label: `Terminal ${counter}`,
+      isPrimary: false, // Additional tabs are not primary (run shell, not configured command)
+    };
+    addSessionTab(activeSessionId, newTab);
+  }, [activeSessionId, incrementSessionCounter, addSessionTab]);
+
+  // Will be defined after close handlers - just a placeholder reference for now
+  const handleCloseSessionTabRef = useRef<(tabId: string) => void>(() => {});
+  const handleCloseCurrentSessionRef = useRef<() => void>(() => {});
+
+  const handleSelectSessionTab = useCallback((tabId: string) => {
+    if (!activeSessionId) return;
+    setActiveSessionTab(activeSessionId, tabId);
+  }, [activeSessionId, setActiveSessionTab]);
+
+  const handleReorderSessionTabs = useCallback((oldIndex: number, newIndex: number) => {
+    if (!activeSessionId) return;
+    reorderSessionTabs(activeSessionId, oldIndex, newIndex);
+  }, [activeSessionId, reorderSessionTabs]);
+
+  const handlePrevSessionTab = useCallback(() => {
+    if (!activeSessionId) return;
+    prevSessionTab(activeSessionId);
+  }, [activeSessionId, prevSessionTab]);
+
+  const handleNextSessionTab = useCallback(() => {
+    if (!activeSessionId) return;
+    nextSessionTab(activeSessionId);
+  }, [activeSessionId, nextSessionTab]);
+
+  const handleSelectSessionTabByIndex = useCallback((index: number) => {
+    if (!activeSessionId) return;
+    selectSessionTabByIndex(activeSessionId, index);
+  }, [activeSessionId, selectSessionTabByIndex]);
 
   // Trigger an action for a worktree (creates action tab in drawer)
   const handleTriggerAction = useCallback(async (
@@ -1899,6 +1995,45 @@ function App() {
     };
   }, [handleMergeComplete, drawerTabs, handleCloseDrawerTab]);
 
+  // Session tab close handlers (defined here so they can reference close handlers above)
+  const handleCloseCurrentSession = useCallback(() => {
+    if (activeScratchId) {
+      handleCloseScratch(activeScratchId);
+    } else if (activeWorktreeId) {
+      handleCloseWorktree(activeWorktreeId);
+    } else if (activeProjectId) {
+      handleCloseProject(activeProjectId);
+    }
+  }, [activeScratchId, activeWorktreeId, activeProjectId, handleCloseScratch, handleCloseWorktree, handleCloseProject]);
+
+  const handleCloseSessionTab = useCallback((tabId: string) => {
+    if (!activeSessionId) return;
+
+    const tabs = getTabsForSession(activeSessionId);
+    const remaining = tabs.filter(t => t.id !== tabId);
+
+    // Kill the PTY for this tab if it exists
+    const ptyId = sessionTabPtyIds.get(tabId);
+    if (ptyId) {
+      ptyKill(ptyId);
+      removeSessionPtyId(tabId);
+    }
+
+    // If closing the last tab, close the entire session instead
+    if (remaining.length === 0) {
+      handleCloseCurrentSession();
+      return;
+    }
+
+    removeSessionTab(activeSessionId, tabId);
+  }, [activeSessionId, getTabsForSession, sessionTabPtyIds, removeSessionTab, removeSessionPtyId, handleCloseCurrentSession]);
+
+  // Update refs so callbacks in earlier code can use these
+  useEffect(() => {
+    handleCloseSessionTabRef.current = handleCloseSessionTab;
+    handleCloseCurrentSessionRef.current = handleCloseCurrentSession;
+  }, [handleCloseSessionTab, handleCloseCurrentSession]);
+
   // === Action System ===
   // Build the context that determines action availability
   const actionContext: ActionContext = useMemo(() => ({
@@ -1953,6 +2088,7 @@ function App() {
     switchProject: handleToggleProjectSwitcher,
     newWorktree: () => activeProjectId && handleAddWorktree(activeProjectId),
     newScratchTerminal: handleAddScratchTerminal,
+    newTab: handleAddSessionTab,
     closeTab: () => {
       // Priority: drawer tab (if focused) > scratch terminal > worktree > project terminal
       if (isDrawerOpen && activeFocusState === 'drawer' && activeDrawerTabId) {
@@ -2085,6 +2221,14 @@ function App() {
       }
     },
 
+    // Session tab actions (main pane tabs)
+    onNewSessionTab: handleAddSessionTab,
+    onCloseSessionTab: () => activeSessionTabId && handleCloseSessionTab(activeSessionTabId),
+    onCloseSession: handleCloseCurrentSession,
+    onPrevSessionTab: handlePrevSessionTab,
+    onNextSessionTab: handleNextSessionTab,
+    onSelectSessionTab: handleSelectSessionTabByIndex,
+
     // Scratch actions
     onCloseScratch: () => activeScratchId && handleCloseScratch(activeScratchId),
     onNewScratch: handleAddScratchTerminal,
@@ -2157,7 +2301,9 @@ function App() {
     },
   }), [
     activeDrawerTabId, activeDrawerTabs, isDrawerOpen, activeScratchId, activeWorktreeId, activeProjectId,
+    activeSessionTabId,
     handleCloseDrawerTab, handleToggleDrawer, handleToggleDrawerExpand, handleSelectDrawerTab, handleAddDrawerTab,
+    handleAddSessionTab, handleCloseSessionTab, handleCloseCurrentSession, handlePrevSessionTab, handleNextSessionTab, handleSelectSessionTabByIndex,
     handleCloseScratch, handleAddScratchTerminal, handleCloseWorktree, handleAddWorktree, handleCloseProject,
     handleSwitchToPreviousView, handleSwitchFocus, handleZoomIn, handleZoomOut, handleZoomReset,
     handleToggleRightPanel, handleToggleCommandPalette, handleToggleTaskSwitcher, handleToggleProjectSwitcher,
@@ -2510,6 +2656,14 @@ function App() {
                   sessions={sessions}
                   openSessionIds={openSessionIds}
                   activeSessionId={activeSessionId}
+                  sessionTabs={activeSessionTabs}
+                  activeSessionTabId={activeSessionTabId}
+                  lastActiveSessionTabId={lastActiveSessionTabId}
+                  isCtrlKeyHeld={isCtrlKeyHeld && !isPickerOpen}
+                  onSelectSessionTab={handleSelectSessionTab}
+                  onCloseSessionTab={handleCloseSessionTab}
+                  onAddSessionTab={handleAddSessionTab}
+                  onReorderSessionTabs={handleReorderSessionTabs}
                   terminalConfig={mainTerminalConfig}
                   activityTimeout={config.indicators.activityTimeout}
                   shouldAutoFocus={activeFocusState === 'main'}

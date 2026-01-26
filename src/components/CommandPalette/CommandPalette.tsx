@@ -35,6 +35,7 @@ const OLD_TO_NEW_ACTION: Partial<Record<ActionId, MappingsActionId>> = {
   taskSwitcher: 'task::switcher',
   newWorktree: 'worktree::new',
   newScratchTerminal: 'scratch::new',
+  newTab: 'session::newTab',
   renameBranch: 'worktree::renameBranch',
 };
 

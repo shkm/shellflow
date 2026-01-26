@@ -768,4 +768,136 @@ describe('App', () => {
       }, { timeout: 3000 });
     });
   });
+
+  describe('Session Tabs', () => {
+    it('creates initial tab when scratch terminal starts', async () => {
+      render(<App />);
+
+      // Wait for scratch terminal with initial tab
+      await waitFor(
+        () => {
+          expect(screen.getByText('Terminal 1')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      // Should spawn scratch terminal
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_scratch_terminal')).toBe(true);
+      });
+    });
+
+    it('creates initial tab when worktree is selected', async () => {
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+      mockInvokeResponses.set('spawn_main', 'pty-main-789');
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for project to appear
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      await user.click(screen.getByText('my-project'));
+
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('feature-branch'));
+
+      // Main terminal should spawn for the worktree
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_main')).toBe(true);
+      }, { timeout: 3000 });
+
+      // Spawn should use the worktree ID (session ID), not a tab ID
+      const spawnCall = invokeHistory.find((h) => h.command === 'spawn_main');
+      expect(spawnCall?.args).toHaveProperty('worktreeId', 'wt-1');
+    });
+
+    it('maintains separate tabs for different sessions', async () => {
+      // This tests that switching between sessions preserves their respective tabs
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+      mockInvokeResponses.set('spawn_main', 'pty-main-789');
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // First, scratch terminal starts with Terminal 1
+      await waitFor(
+        () => {
+          expect(screen.getByText('Terminal 1')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      // Switch to worktree
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      });
+      await user.click(screen.getByText('my-project'));
+
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+      await user.click(screen.getByText('feature-branch'));
+
+      // Worktree should spawn
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_main')).toBe(true);
+      });
+    });
+
+    it('uses correct session ID for spawn when tab is active', async () => {
+      // This verifies that the sessionId prop is correctly passed to MainTerminal
+      const worktree = createTestWorktree({ id: 'wt-1', name: 'feature-branch' });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+      mockInvokeResponses.set('touch_project', null);
+      mockInvokeResponses.set('spawn_main', 'pty-main-xyz');
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      await user.click(screen.getByText('my-project'));
+
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+      await user.click(screen.getByText('feature-branch'));
+
+      await waitFor(() => {
+        const spawnCalls = invokeHistory.filter((h) => h.command === 'spawn_main');
+        expect(spawnCalls.length).toBeGreaterThan(0);
+        // The worktreeId should match the session ID, not a tab ID
+        const lastSpawn = spawnCalls[spawnCalls.length - 1];
+        expect(lastSpawn.args.worktreeId).toBe('wt-1');
+        expect(lastSpawn.args.worktreeId).not.toContain('-session-');
+      }, { timeout: 3000 });
+    });
+  });
 });

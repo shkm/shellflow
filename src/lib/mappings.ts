@@ -17,6 +17,7 @@ import { parseContextExpr, matchesContext, type ParsedContextExpr } from './cont
 export type ActionNamespace =
   | 'app'
   | 'drawer'
+  | 'session'
   | 'scratch'
   | 'worktree'
   | 'project'

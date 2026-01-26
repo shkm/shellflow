@@ -19,6 +19,7 @@ export type ActionId =
   | 'switchProject'
   | 'newWorktree'
   | 'newScratchTerminal'
+  | 'newTab'
   | 'closeTab'
   | 'openInFinder'
   | 'openInTerminal'
@@ -81,6 +82,8 @@ const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
   newWorktree: (ctx) => !!ctx.activeProjectId && !ctx.activeScratchId,
   // newScratchTerminal: always available (has dedicated Cmd+Shift+N shortcut)
   newScratchTerminal: () => true,
+  // newTab: available when there's an active session (entity)
+  newTab: (ctx) => !!ctx.activeEntityId,
   closeTab: (ctx) => (ctx.isDrawerOpen && !!ctx.activeDrawerTabId) || !!ctx.activeEntityId,
   openInFinder: (ctx) => !!ctx.activeEntityId,
   openInTerminal: (ctx) => !!ctx.activeEntityId,
@@ -130,6 +133,7 @@ const ACTION_TO_MENU_ID: Record<ActionId, string> = {
   switchProject: 'switch_project',
   newWorktree: 'new_worktree',
   newScratchTerminal: 'new_scratch_terminal',
+  newTab: 'new_tab',
   closeTab: 'close_tab',
   openInFinder: 'open_in_finder',
   openInTerminal: 'open_in_terminal',
@@ -228,6 +232,7 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   switchProject: { label: 'Switch Project', category: 'File', showInPalette: true },
   newWorktree: { label: 'New Worktree', category: 'File', showInPalette: true },
   newScratchTerminal: { label: 'New Scratch Terminal', category: 'File', showInPalette: true },
+  newTab: { label: 'New Tab', category: 'File', showInPalette: true },
   closeTab: { label: 'Close', category: 'File', showInPalette: true },
   openInFinder: { label: 'Open in Finder', category: 'File', showInPalette: true },
   openInTerminal: { label: 'Open in Terminal', category: 'File', showInPalette: true },

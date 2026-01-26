@@ -33,6 +33,14 @@ export interface ActionHandlerCallbacks {
   onAddDrawerTab: () => void;
   onSelectDrawerTab: (index: number) => void;
 
+  // Session tab actions (main pane tabs)
+  onNewSessionTab: () => void;
+  onCloseSessionTab: () => void;
+  onCloseSession: () => void;
+  onPrevSessionTab: () => void;
+  onNextSessionTab: () => void;
+  onSelectSessionTab: (index: number) => void;
+
   // Scratch actions
   onCloseScratch: () => void;
   onNewScratch: () => void;
@@ -102,6 +110,22 @@ export function createActionHandlers(callbacks: ActionHandlerCallbacks): ActionH
     'drawer::selectTab7': () => callbacks.onSelectDrawerTab(6),
     'drawer::selectTab8': () => callbacks.onSelectDrawerTab(7),
     'drawer::selectTab9': () => callbacks.onSelectDrawerTab(8),
+
+    // Session tab actions (main pane tabs)
+    'session::newTab': callbacks.onNewSessionTab,
+    'session::closeTab': callbacks.onCloseSessionTab,
+    'session::closeSession': callbacks.onCloseSession,
+    'session::prevTab': callbacks.onPrevSessionTab,
+    'session::nextTab': callbacks.onNextSessionTab,
+    'session::selectTab1': () => callbacks.onSelectSessionTab(0),
+    'session::selectTab2': () => callbacks.onSelectSessionTab(1),
+    'session::selectTab3': () => callbacks.onSelectSessionTab(2),
+    'session::selectTab4': () => callbacks.onSelectSessionTab(3),
+    'session::selectTab5': () => callbacks.onSelectSessionTab(4),
+    'session::selectTab6': () => callbacks.onSelectSessionTab(5),
+    'session::selectTab7': () => callbacks.onSelectSessionTab(6),
+    'session::selectTab8': () => callbacks.onSelectSessionTab(7),
+    'session::selectTab9': () => callbacks.onSelectSessionTab(8),
 
     // Scratch actions
     'scratch::close': callbacks.onCloseScratch,

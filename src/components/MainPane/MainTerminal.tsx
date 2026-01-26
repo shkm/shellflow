@@ -32,6 +32,8 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
 
 interface MainTerminalProps {
   entityId: string;
+  /** The session ID (worktree/project/scratch) - used for spawn and working directory */
+  sessionId?: string;
   type?: 'main' | 'project' | 'scratch';
   isActive: boolean;
   shouldAutoFocus: boolean;
@@ -39,13 +41,21 @@ interface MainTerminalProps {
   focusTrigger?: number;
   terminalConfig: TerminalConfig;
   activityTimeout?: number;
+  /** Whether this tab was the last active when leaving the session (for notification routing) */
+  isLastActiveTab?: boolean;
   onFocus?: () => void;
   onNotification?: (title: string, body: string) => void;
   onThinkingChange?: (isThinking: boolean) => void;
   onCwdChange?: (cwd: string) => void;
 }
 
-export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocus, focusTrigger, terminalConfig, activityTimeout = 250, onFocus, onNotification, onThinkingChange, onCwdChange }: MainTerminalProps) {
+export function MainTerminal({ entityId, sessionId, type = 'main', isActive, shouldAutoFocus, focusTrigger, terminalConfig, activityTimeout = 250, isLastActiveTab = true, onFocus, onNotification, onThinkingChange: onThinkingChangeProp, onCwdChange }: MainTerminalProps) {
+  // Use sessionId for spawn if provided, otherwise fall back to entityId (for backward compatibility)
+  const spawnId = sessionId ?? entityId;
+
+  // Wrap onThinkingChange to only fire if this is the last active tab
+  // (thinking indicators should only show from the tab that was active when leaving session)
+  const onThinkingChange = isLastActiveTab ? onThinkingChangeProp : undefined;
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -473,7 +483,7 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
       const rows = terminal.rows;
 
       spawnedAtRef.current = Date.now();
-      await spawnRef.current(entityId, type, cols, rows);
+      await spawnRef.current(spawnId, type, cols, rows);
 
       // For project type, mark as ready immediately (no startup delay like main command)
       if (type === 'project') {
@@ -538,8 +548,8 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     const cols = terminal.cols;
     const rows = terminal.rows;
     spawnedAtRef.current = Date.now();
-    await spawn(entityId, currentMode, cols, rows);
-  }, [spawn, entityId, currentMode]);
+    await spawn(spawnId, currentMode, cols, rows);
+  }, [spawn, spawnId, currentMode]);
 
   // Launch shell handler for when the user wants a shell instead of the main command
   const handleLaunchShell = useCallback(async () => {
@@ -566,8 +576,8 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     const cols = terminal.cols;
     const rows = terminal.rows;
     spawnedAtRef.current = Date.now();
-    await spawn(entityId, 'shell', cols, rows);
-  }, [spawn, entityId]);
+    await spawn(spawnId, 'shell', cols, rows);
+  }, [spawn, spawnId]);
 
   // Launch main task handler for when the user wants to switch from shell to main command
   const handleLaunchMain = useCallback(async () => {
@@ -594,8 +604,8 @@ export function MainTerminal({ entityId, type = 'main', isActive, shouldAutoFocu
     const cols = terminal.cols;
     const rows = terminal.rows;
     spawnedAtRef.current = Date.now();
-    await spawn(entityId, type, cols, rows);
-  }, [spawn, entityId, type]);
+    await spawn(spawnId, type, cols, rows);
+  }, [spawn, spawnId, type]);
 
   // Store resize function in ref to avoid dependency issues
   const resizeRef = useRef(resize);
