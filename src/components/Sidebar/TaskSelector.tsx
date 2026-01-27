@@ -65,19 +65,19 @@ export function TaskSelector({
     runningTask?.taskName === selectedTask;
 
   return (
-    <div className="flex items-center gap-1 h-8 px-1 border-t border-zinc-800 flex-shrink-0">
+    <div className="flex items-center gap-1 h-8 px-1 border-t border-theme-0 flex-shrink-0">
       {/* Task dropdown */}
       <div ref={dropdownRef} className="relative flex-1 min-w-0">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center justify-between w-full gap-1 px-2 py-0.5 text-xs text-zinc-300 bg-zinc-800 rounded hover:bg-zinc-700"
+          className="flex items-center justify-between w-full gap-1 px-2 py-0.5 text-xs text-theme-1 bg-theme-2 rounded hover:bg-theme-3"
         >
           <span className="truncate">{currentTask?.name || 'Select task...'}</span>
-          <ChevronDown size={14} className="flex-shrink-0 text-zinc-500" />
+          <ChevronDown size={14} className="flex-shrink-0 text-theme-3" />
         </button>
 
         {isOpen && (
-          <div className="absolute bottom-full left-0 right-0 mb-1 py-1 bg-zinc-800 border border-zinc-700 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+          <div className="absolute bottom-full left-0 right-0 mb-1 py-1 bg-theme-2 border border-theme-0 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
             {tasks.map((task) => {
               const isRunning = allRunningTasks.some(
                 (t) => t.taskName === task.name && t.status === 'running'
@@ -89,8 +89,8 @@ export function TaskSelector({
                     onSelectTask(task.name);
                     setIsOpen(false);
                   }}
-                  className={`w-full px-2 py-1 text-sm text-left hover:bg-zinc-700 flex items-center gap-2 ${
-                    task.name === selectedTask ? 'text-blue-400' : 'text-zinc-300'
+                  className={`w-full px-2 py-1 text-sm text-left hover:bg-theme-3 flex items-center gap-2 ${
+                    task.name === selectedTask ? 'text-blue-400' : 'text-theme-1'
                   }`}
                 >
                   <div className="w-2 flex-shrink-0">
@@ -100,7 +100,7 @@ export function TaskSelector({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="truncate">{task.name}</div>
-                    <div className="text-xs text-zinc-500 truncate">{task.command}</div>
+                    <div className="text-xs text-theme-3 truncate">{task.command}</div>
                   </div>
                 </button>
               );
@@ -113,7 +113,7 @@ export function TaskSelector({
       {isSelectedTaskStopping ? (
         <button
           onClick={onForceKillTask}
-          className="p-1.5 rounded text-orange-400 hover:bg-zinc-800 flex-shrink-0 animate-pulse"
+          className="p-1.5 rounded text-orange-400 hover:bg-theme-2 flex-shrink-0 animate-pulse"
           title="Force kill task (SIGKILL)"
         >
           <Skull size={16} />
@@ -121,7 +121,7 @@ export function TaskSelector({
       ) : isSelectedTaskRunning ? (
         <button
           onClick={onStopTask}
-          className="p-1.5 rounded text-red-400 hover:bg-zinc-800 flex-shrink-0"
+          className="p-1.5 rounded text-red-400 hover:bg-theme-2 flex-shrink-0"
           title="Stop task"
         >
           <Square size={16} />
@@ -135,8 +135,8 @@ export function TaskSelector({
           disabled={!selectedTask}
           className={`p-1.5 rounded flex-shrink-0 ${
             selectedTask
-              ? 'text-green-400 hover:bg-zinc-800'
-              : 'text-zinc-600 cursor-not-allowed'
+              ? 'text-green-400 hover:bg-theme-2'
+              : 'text-theme-4 cursor-not-allowed'
           }`}
           title={selectedTask ? 'Start task' : 'Select a task first'}
         >

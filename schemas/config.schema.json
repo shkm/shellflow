@@ -418,6 +418,39 @@
         "$ref": "#/$defs/task"
       },
       "default": []
+    },
+    "theme": {
+      "description": "Theme configuration. Can be a single theme name (ignores system preference) or an object with light/dark themes (switches based on system preference).",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Single theme name (ignores system preference)",
+          "examples": ["Catppuccin Mocha", "Dracula", "One Dark Pro"]
+        },
+        {
+          "type": "object",
+          "description": "Different themes for light and dark mode (switches based on system preference)",
+          "properties": {
+            "light": {
+              "type": "string",
+              "description": "Theme to use when system is in light mode"
+            },
+            "dark": {
+              "type": "string",
+              "description": "Theme to use when system is in dark mode"
+            }
+          },
+          "required": ["light", "dark"],
+          "additionalProperties": false
+        }
+      ],
+      "default": { "light": "Catppuccin Latte", "dark": "Catppuccin Mocha" }
+    },
+    "themeBorderStyle": {
+      "type": "string",
+      "enum": ["theme", "subtle", "visible"],
+      "description": "How to handle borders when adapting themes. 'theme' uses exactly what the theme specifies (including transparent). 'subtle' adds subtle borders only where none exist. 'visible' always ensures visible borders.",
+      "default": "subtle"
     }
   },
   "additionalProperties": false,

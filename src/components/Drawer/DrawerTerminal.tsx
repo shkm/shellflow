@@ -8,6 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { useDrawerXtermTheme } from '../../theme';
 import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
 import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
@@ -50,6 +51,9 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const initializedRef = useRef(false);
+
+  // Get theme from context (uses sideBar.background for visual hierarchy)
+  const xtermTheme = useDrawerXtermTheme();
 
   useTerminalFontSync(terminalRef, fitAddonRef, terminalConfig);
 
@@ -120,29 +124,7 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
           }
         },
       },
-      theme: {
-        background: '#18181b',
-        foreground: '#fafafa',
-        cursor: '#fafafa',
-        cursorAccent: '#18181b',
-        selectionBackground: '#3f3f46',
-        black: '#18181b',
-        red: '#ef4444',
-        green: '#22c55e',
-        yellow: '#eab308',
-        blue: '#3b82f6',
-        magenta: '#a855f7',
-        cyan: '#06b6d4',
-        white: '#f4f4f5',
-        brightBlack: '#52525b',
-        brightRed: '#f87171',
-        brightGreen: '#4ade80',
-        brightYellow: '#facc15',
-        brightBlue: '#60a5fa',
-        brightMagenta: '#c084fc',
-        brightCyan: '#22d3ee',
-        brightWhite: '#ffffff',
-      },
+      theme: xtermTheme,
     });
 
     const fitAddon = new FitAddon();
@@ -250,6 +232,13 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
     };
   }, [id, entityId, directory, command]);
 
+  // Update terminal theme when it changes
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.options.theme = xtermTheme;
+    }
+  }, [xtermTheme]);
+
   // Listen for pty-exit event to auto-close the tab
   useEffect(() => {
     if (!ptyId) return;
@@ -331,14 +320,14 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
   }, [shouldAutoFocus]);
 
   return (
-    <div className="relative w-full h-full" style={{ backgroundColor: '#18181b', padding: terminalConfig.padding }}>
+    <div className="relative w-full h-full" style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding }}>
       <div
         ref={containerRef}
         className="w-full h-full"
       />
       {isDragOver && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-900/60 pointer-events-none border-2 border-dashed border-zinc-500 rounded">
-          <span className="text-zinc-300 text-sm">Drop files to insert path</span>
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-theme-1/60 pointer-events-none border-2 border-dashed border-theme-2 rounded">
+          <span className="text-theme-1 text-sm">Drop files to insert path</span>
         </div>
       )}
     </div>

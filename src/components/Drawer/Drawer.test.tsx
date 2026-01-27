@@ -145,9 +145,9 @@ describe('Drawer', () => {
 
       render(<Drawer {...defaultProps} tabs={tabs} taskStatuses={taskStatuses} />);
 
-      // Should show neutral square icon (zinc color)
+      // Should show neutral square icon (theme muted color)
       const tabElement = screen.getByText('Build').closest('div');
-      const neutralIcon = tabElement?.querySelector('.text-zinc-500');
+      const neutralIcon = tabElement?.querySelector('.text-theme-3');
       expect(neutralIcon).toBeInTheDocument();
     });
 
@@ -171,7 +171,7 @@ describe('Drawer', () => {
 
       // Active tab should have different styling
       const activeTab = screen.getByText('Terminal 1').closest('button, div[role="button"], div');
-      expect(activeTab?.className).toMatch(/bg-zinc|border-b/);
+      expect(activeTab?.className).toMatch(/bg-theme|border-b/);
     });
 
     it('calls onSelectTab when tab is clicked', async () => {

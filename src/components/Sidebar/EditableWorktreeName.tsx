@@ -176,7 +176,7 @@ export function EditableWorktreeName({
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={isSubmitting}
-          className={`bg-zinc-800 text-zinc-100 text-sm px-1 py-0 rounded border-none focus:outline-none min-w-0 w-full selection:bg-zinc-600 selection:text-zinc-100 ${isSubmitting ? 'opacity-50' : ''}`}
+          className={`bg-theme-2 text-theme-0 text-sm px-1 py-0 rounded border-none focus:outline-none min-w-0 w-full selection:bg-theme-4 selection:text-theme-0 ${isSubmitting ? 'opacity-50' : ''}`}
           onClick={(e) => e.stopPropagation()}
         />
         {error && (

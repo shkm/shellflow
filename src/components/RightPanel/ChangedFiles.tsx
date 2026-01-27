@@ -17,7 +17,7 @@ const statusConfig: Record<FileChange['status'], { color: string; label: string 
   modified: { color: 'text-yellow-400', label: 'M' },
   deleted: { color: 'text-red-400', label: 'D' },
   renamed: { color: 'text-blue-400', label: 'R' },
-  untracked: { color: 'text-zinc-400', label: '?' },
+  untracked: { color: 'text-theme-2', label: '?' },
 };
 
 export function ChangedFiles({
@@ -54,13 +54,13 @@ export function ChangedFiles({
   return (
     <div className="flex flex-col h-full select-none">
       {showModeToggle && (
-        <div className="px-3 py-2 border-b border-zinc-800 flex gap-1">
+        <div className="px-3 py-2 border-b border-theme-0 flex gap-1">
           <button
             onClick={() => onModeChange?.('uncommitted')}
             className={`px-2 py-1 text-xs rounded ${
               mode === 'uncommitted'
-                ? 'bg-zinc-700 text-zinc-200'
-                : 'text-zinc-400 hover:bg-zinc-800'
+                ? 'bg-theme-3 text-theme-1'
+                : 'text-theme-2 hover:bg-theme-2'
             }`}
           >
             Uncommitted
@@ -69,16 +69,16 @@ export function ChangedFiles({
             onClick={() => onModeChange?.('branch')}
             className={`px-2 py-1 text-xs rounded ${
               mode === 'branch'
-                ? 'bg-zinc-700 text-zinc-200'
-                : 'text-zinc-400 hover:bg-zinc-800'
+                ? 'bg-theme-3 text-theme-1'
+                : 'text-theme-2 hover:bg-theme-2'
             }`}
           >
             Branch
           </button>
         </div>
       )}
-      <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between">
-        <span className="text-xs text-zinc-500">
+      <div className="px-3 py-2 border-b border-theme-0 flex items-center justify-between">
+        <span className="text-xs text-theme-3">
           {files.length} {files.length === 1 ? 'file' : 'files'}
         </span>
         {hasChanges && (
@@ -91,11 +91,11 @@ export function ChangedFiles({
       </div>
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-center text-zinc-500 text-sm">
+          <div className="p-4 text-center text-theme-3 text-sm">
             Loading...
           </div>
         ) : files.length === 0 || !isGitRepo ? (
-          <div className="p-4 text-center text-zinc-500 text-sm">
+          <div className="p-4 text-center text-theme-3 text-sm">
             {getEmptyMessage()}
           </div>
         ) : (
@@ -108,15 +108,15 @@ export function ChangedFiles({
                   key={file.path}
                   className={`flex items-center gap-2 px-3 py-1.5 group ${
                     isSelected
-                      ? 'bg-zinc-700'
-                      : 'hover:bg-zinc-800'
+                      ? 'bg-theme-3'
+                      : 'hover:bg-theme-2'
                   } ${onFileClick ? 'cursor-pointer' : ''}`}
                   onClick={() => onFileClick?.(file.path)}
                 >
                   <span className={`flex-shrink-0 w-4 text-xs font-mono ${config.color}`}>
                     {config.label}
                   </span>
-                  <span className="text-sm text-zinc-300 truncate flex-1" title={file.path}>
+                  <span className="text-sm text-theme-1 truncate flex-1" title={file.path}>
                     {file.path}
                   </span>
                   {(file.insertions !== undefined || file.deletions !== undefined) && (

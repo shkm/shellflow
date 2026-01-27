@@ -90,7 +90,7 @@ describe('ChangedFiles', () => {
 
       const indicator = screen.getByText('?');
       expect(indicator).toBeInTheDocument();
-      expect(indicator.className).toContain('text-zinc-400');
+      expect(indicator.className).toContain('text-theme-2');
     });
   });
 
@@ -233,9 +233,9 @@ describe('ChangedFiles', () => {
       const uncommittedBtn = screen.getByText('Uncommitted');
       const branchBtn = screen.getByText('Branch');
 
-      // Uncommitted should be active (has bg-zinc-700)
-      expect(uncommittedBtn.className).toContain('bg-zinc-700');
-      expect(branchBtn.className).not.toContain('bg-zinc-700');
+      // Uncommitted should be active (has bg-theme-3)
+      expect(uncommittedBtn.className).toContain('bg-theme-3');
+      expect(branchBtn.className).not.toContain('bg-theme-3');
     });
 
     it('highlights branch mode when active', () => {
@@ -244,8 +244,8 @@ describe('ChangedFiles', () => {
       const uncommittedBtn = screen.getByText('Uncommitted');
       const branchBtn = screen.getByText('Branch');
 
-      expect(branchBtn.className).toContain('bg-zinc-700');
-      expect(uncommittedBtn.className).not.toContain('bg-zinc-700');
+      expect(branchBtn.className).toContain('bg-theme-3');
+      expect(uncommittedBtn.className).not.toContain('bg-theme-3');
     });
 
     it('calls onModeChange when clicking toggle buttons', async () => {
@@ -316,8 +316,8 @@ describe('ChangedFiles', () => {
       const selectedItem = screen.getByText('src/app.ts').closest('li');
       const unselectedItem = screen.getByText('src/utils.ts').closest('li');
 
-      expect(selectedItem?.className).toContain('bg-zinc-700');
-      expect(unselectedItem?.className).not.toContain('bg-zinc-700');
+      expect(selectedItem?.className).toContain('bg-theme-3');
+      expect(unselectedItem?.className).not.toContain('bg-theme-3');
     });
 
     it('does not highlight any file when selectedFile is null', () => {
@@ -331,8 +331,8 @@ describe('ChangedFiles', () => {
       const item2 = screen.getByText('src/utils.ts').closest('li');
 
       // Neither should have selected background
-      expect(item1?.className).not.toContain('bg-zinc-700');
-      expect(item2?.className).not.toContain('bg-zinc-700');
+      expect(item1?.className).not.toContain('bg-theme-3');
+      expect(item2?.className).not.toContain('bg-theme-3');
     });
 
     it('updates highlight when selectedFile changes', () => {
@@ -345,7 +345,7 @@ describe('ChangedFiles', () => {
       );
 
       // First file should be highlighted
-      expect(screen.getByText('src/app.ts').closest('li')?.className).toContain('bg-zinc-700');
+      expect(screen.getByText('src/app.ts').closest('li')?.className).toContain('bg-theme-3');
 
       // Change selected file
       rerender(
@@ -353,8 +353,8 @@ describe('ChangedFiles', () => {
       );
 
       // Second file should now be highlighted
-      expect(screen.getByText('src/utils.ts').closest('li')?.className).toContain('bg-zinc-700');
-      expect(screen.getByText('src/app.ts').closest('li')?.className).not.toContain('bg-zinc-700');
+      expect(screen.getByText('src/utils.ts').closest('li')?.className).toContain('bg-theme-3');
+      expect(screen.getByText('src/app.ts').closest('li')?.className).not.toContain('bg-theme-3');
     });
   });
 });

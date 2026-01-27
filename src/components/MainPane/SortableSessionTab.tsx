@@ -53,14 +53,14 @@ export function SortableSessionTab({
       {...attributes}
       {...listeners}
       onClick={onSelect}
-      className={`flex items-center gap-2 px-3 border-r border-zinc-800 min-w-0 active:cursor-grabbing ${
+      className={`flex items-center gap-2 px-3 border-r border-theme-0 min-w-0 active:cursor-grabbing ${
         isActive
-          ? 'bg-zinc-800 text-zinc-100'
-          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+          ? 'bg-theme-2 text-theme-0'
+          : 'bg-theme-1 text-theme-2 hover:bg-theme-2 hover:text-theme-1'
       } ${isDragging ? 'opacity-0' : ''}`}
     >
       {isCtrlKeyHeld && shortcutNumber !== null ? (
-        <span className="text-xs font-medium text-zinc-400 w-3.5 text-center flex-shrink-0">{shortcutNumber}</span>
+        <span className="text-xs font-medium text-theme-2 w-3.5 text-center flex-shrink-0">{shortcutNumber}</span>
       ) : isNotified && !isActive ? (
         <BellDot size={14} className="flex-shrink-0 text-blue-400" />
       ) : isThinking ? (
@@ -84,7 +84,7 @@ export function SortableSessionTab({
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`p-0.5 rounded hover:bg-zinc-700 flex-shrink-0 ${isAnyDragging ? 'pointer-events-none' : ''}`}
+        className={`p-0.5 rounded hover:bg-theme-3 flex-shrink-0 ${isAnyDragging ? 'pointer-events-none' : ''}`}
       >
         <X size={12} />
       </button>

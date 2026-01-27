@@ -100,6 +100,13 @@ export interface WorktreeConfig {
   delete: DeleteConfig;
 }
 
+/** Theme configuration - can be a single theme name or light/dark object */
+export type ThemeConfig = string | { light: string; dark: string };
+
+// Import and re-export ThemeBorderStyle from theme types
+import type { ThemeBorderStyle } from '../theme/types';
+export type { ThemeBorderStyle };
+
 
 export interface Config {
   main: MainConfig;
@@ -113,6 +120,10 @@ export interface Config {
   worktree: WorktreeConfig;
   /** Opacity (0.0 to 1.0) applied to unfocused panes (main terminal or drawer) */
   unfocusedOpacity: number;
+  /** Theme configuration - can be a single theme name or light/dark object */
+  theme?: ThemeConfig;
+  /** How to handle borders when adapting themes */
+  themeBorderStyle?: ThemeBorderStyle;
 }
 
 /** An error from parsing a config file */
@@ -169,6 +180,7 @@ const defaultConfig: Config = {
     },
   },
   unfocusedOpacity: 1,
+  themeBorderStyle: 'subtle',
 };
 
 export function useConfig(projectPath?: string) {

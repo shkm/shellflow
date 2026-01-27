@@ -135,7 +135,7 @@ export function Drawer({
 
   function renderTaskIcon(statusInfo: TaskStatusInfo | undefined) {
     if (!statusInfo) {
-      return <Square size={14} className="flex-shrink-0 text-zinc-500" />;
+      return <Square size={14} className="flex-shrink-0 text-theme-3" />;
     }
     if (statusInfo.status === 'stopped') {
       const code = statusInfo.exitCode;
@@ -143,7 +143,7 @@ export function Drawer({
         return <Check size={14} className="flex-shrink-0 text-green-500/50" />;
       }
       if (code !== undefined && code >= 128) {
-        return <Square size={14} className="flex-shrink-0 text-zinc-500" />;
+        return <Square size={14} className="flex-shrink-0 text-theme-3" />;
       }
       return <X size={14} className="flex-shrink-0 text-red-400/50" />;
     }
@@ -151,9 +151,9 @@ export function Drawer({
   }
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900">
+    <div className="flex flex-col h-full bg-theme-1">
       {isOpen && worktreeId && (
-        <div className="flex items-stretch h-8 bg-zinc-900 border-b border-zinc-800 select-none flex-shrink-0">
+        <div className="flex items-stretch h-8 bg-theme-1 border-b border-theme-0 select-none flex-shrink-0">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -183,7 +183,7 @@ export function Drawer({
             </SortableContext>
             <DragOverlay dropAnimation={null}>
               {activeDragTab && (
-                <div className="flex items-center gap-2 px-3 h-8 bg-zinc-700 text-zinc-100 border border-zinc-600 rounded shadow-lg">
+                <div className="flex items-center gap-2 px-3 h-8 bg-theme-3 text-theme-0 border border-theme-1 rounded shadow-lg">
                   {activeDragTab.type === 'task' ? (
                     renderTaskIcon(taskStatuses.get(activeDragTab.taskName ?? ''))
                   ) : activeDragTab.command ? (
@@ -196,17 +196,17 @@ export function Drawer({
               )}
             </DragOverlay>
           </DndContext>
-          <div className="flex items-stretch border-l border-zinc-800 flex-shrink-0">
+          <div className="flex items-stretch border-l border-theme-0 flex-shrink-0">
             <button
               onClick={onAddTab}
-              className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+              className="p-2 text-theme-3 hover:text-theme-1 hover:bg-theme-2"
               title="New terminal (Cmd+T)"
             >
               <Plus size={16} />
             </button>
             <button
               onClick={onToggleExpand}
-              className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+              className="p-2 text-theme-3 hover:text-theme-1 hover:bg-theme-2"
               title={isExpanded ? "Restore drawer (Shift+Esc)" : "Expand drawer (Shift+Esc)"}
             >
               {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}

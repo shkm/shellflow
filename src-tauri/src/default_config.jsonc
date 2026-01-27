@@ -93,6 +93,28 @@
     "rebaseWorktreeWithConflicts": "In the git worktree at \"{{ worktree_dir }}\", complete the rebase of branch \"{{ branch }}\" onto \"{{ target_branch }}\".\n\nThe following files have conflicts:\n{% for file in conflicted_files %}- {{ file }}\n{% endfor %}\n\nAll conflict information is provided above - do not run git status or other diagnostic commands.\n\nRead only the conflicted files listed, resolve each conflict appropriately based on the code context, stage the resolved files with `git add`, then run `git rebase --continue`.\n\nNote: Rebasing may involve multiple commits. After running `git rebase --continue`, check if there are more conflicts. If so, repeat the process until the rebase is complete."
   }
 
+  // Theme configuration - uses VSCode themes.
+  // Can be a single theme name or light/dark object for system preference switching.
+  // When omitted, defaults to: { "light": "Catppuccin Latte", "dark": "Catppuccin Mocha" }
+  //
+  // Single theme (ignores system preference):
+  // "theme": "Catppuccin Mocha"
+  //
+  // Light/dark themes (switches based on system preference):
+  // "theme": {
+  //   "light": "Catppuccin Latte",
+  //   "dark": "Catppuccin Mocha"
+  // }
+  //
+  // Bundled themes: Catppuccin (Mocha, Macchiato, Frappé, Latte), One Dark Pro, Dracula, Nord, Gruvbox
+  // Custom themes: Place VSCode theme JSON files in ~/.config/shellflow/themes/
+
+  // How to handle borders when adapting themes:
+  //   - "theme": Use exactly what the theme specifies (including transparent)
+  //   - "subtle": Add subtle borders only where none exist (default)
+  //   - "visible": Always ensure visible borders
+  // "themeBorderStyle": "subtle"
+
   // Keyboard mappings are now defined in ~/.config/shellflow/mappings.jsonc
   // See src/lib/defaultMappings.jsonc for default keybindings
 

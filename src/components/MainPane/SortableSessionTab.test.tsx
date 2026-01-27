@@ -77,13 +77,13 @@ describe('SortableSessionTab', () => {
     it('has active styling when isActive is true', () => {
       render(<SortableSessionTab {...defaultProps} isActive={true} />);
       const tabElement = screen.getByText('Terminal 1').closest('div');
-      expect(tabElement).toHaveClass('bg-zinc-800', 'text-zinc-100');
+      expect(tabElement).toHaveClass('bg-theme-2', 'text-theme-0');
     });
 
     it('has inactive styling when isActive is false', () => {
       render(<SortableSessionTab {...defaultProps} isActive={false} />);
       const tabElement = screen.getByText('Terminal 1').closest('div');
-      expect(tabElement).toHaveClass('bg-zinc-900', 'text-zinc-400');
+      expect(tabElement).toHaveClass('bg-theme-1', 'text-theme-2');
     });
   });
 

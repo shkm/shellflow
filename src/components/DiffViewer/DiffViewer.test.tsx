@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { DiffViewer } from './DiffViewer';
 import { resetMocks, mockInvokeResponses } from '../../test/setup';
 import type { DiffContent } from '../../types';
+import { ThemeProvider } from '../../theme';
 
 // Mock Monaco DiffEditor
 vi.mock('@monaco-editor/react', () => ({
@@ -15,7 +16,18 @@ vi.mock('@monaco-editor/react', () => ({
       <div data-testid="side-by-side">{String(options?.renderSideBySide)}</div>
     </div>
   )),
+  loader: { init: vi.fn(() => Promise.resolve({ editor: { defineTheme: vi.fn(), setTheme: vi.fn() } })) },
 }));
+
+// Helper to wrap component with ThemeProvider
+function renderWithTheme(ui: React.ReactElement) {
+  const result = render(<ThemeProvider>{ui}</ThemeProvider>);
+  return {
+    ...result,
+    rerenderWithTheme: (newUi: React.ReactElement) =>
+      result.rerender(<ThemeProvider>{newUi}</ThemeProvider>),
+  };
+}
 
 describe('DiffViewer', () => {
   const defaultProps = {
@@ -43,7 +55,7 @@ describe('DiffViewer', () => {
       // Make invoke hang by not setting a response
       mockInvokeResponses.set('get_file_diff_content', new Promise(() => {}));
 
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       expect(screen.getByText('Loading diff...')).toBeInTheDocument();
     });
@@ -55,7 +67,7 @@ describe('DiffViewer', () => {
     });
 
     it('renders Monaco diff editor with correct content', async () => {
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('monaco-diff-editor')).toBeInTheDocument();
@@ -67,7 +79,7 @@ describe('DiffViewer', () => {
     });
 
     it('shows correct labels for uncommitted mode', async () => {
-      render(<DiffViewer {...defaultProps} mode="uncommitted" />);
+      renderWithTheme(<DiffViewer {...defaultProps} mode="uncommitted" />);
 
       await waitFor(() => {
         expect(screen.getByText('HEAD')).toBeInTheDocument();
@@ -83,7 +95,7 @@ describe('DiffViewer', () => {
       };
       mockInvokeResponses.set('get_file_diff_content', branchDiffContent);
 
-      render(<DiffViewer {...defaultProps} mode="branch" />);
+      renderWithTheme(<DiffViewer {...defaultProps} mode="branch" />);
 
       await waitFor(() => {
         expect(screen.getByText('main')).toBeInTheDocument();
@@ -92,7 +104,7 @@ describe('DiffViewer', () => {
     });
 
     it('defaults to split view mode', async () => {
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('side-by-side')).toHaveTextContent('true');
@@ -100,7 +112,7 @@ describe('DiffViewer', () => {
 
       // Split button should be active
       const splitButton = screen.getByText('Split');
-      expect(splitButton.className).toContain('bg-zinc-600');
+      expect(splitButton.className).toContain('bg-theme-4');
     });
   });
 
@@ -111,7 +123,7 @@ describe('DiffViewer', () => {
 
     it('switches to unified view when clicking Unified button', async () => {
       const user = userEvent.setup();
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('monaco-diff-editor')).toBeInTheDocument();
@@ -123,12 +135,12 @@ describe('DiffViewer', () => {
 
       // Unified button should now be active
       const unifiedButton = screen.getByText('Unified');
-      expect(unifiedButton.className).toContain('bg-zinc-600');
+      expect(unifiedButton.className).toContain('bg-theme-4');
     });
 
     it('switches back to split view when clicking Split button', async () => {
       const user = userEvent.setup();
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('monaco-diff-editor')).toBeInTheDocument();
@@ -150,7 +162,7 @@ describe('DiffViewer', () => {
         throw new Error('Failed to read file');
       });
 
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText(/Failed to load diff/)).toBeInTheDocument();
@@ -163,7 +175,7 @@ describe('DiffViewer', () => {
         throw 'String error';
       });
 
-      render(<DiffViewer {...defaultProps} />);
+      renderWithTheme(<DiffViewer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText(/Failed to load diff/)).toBeInTheDocument();
@@ -178,7 +190,7 @@ describe('DiffViewer', () => {
     });
 
     it('refetches when filePath changes', async () => {
-      const { rerender } = render(<DiffViewer {...defaultProps} filePath="src/app.ts" />);
+      const { rerenderWithTheme } = renderWithTheme(<DiffViewer {...defaultProps} filePath="src/app.ts" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('monaco-diff-editor')).toBeInTheDocument();
@@ -191,7 +203,7 @@ describe('DiffViewer', () => {
       };
       mockInvokeResponses.set('get_file_diff_content', newDiffContent);
 
-      rerender(<DiffViewer {...defaultProps} filePath="src/utils.ts" />);
+      rerenderWithTheme(<DiffViewer {...defaultProps} filePath="src/utils.ts" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('original-content')).toHaveTextContent('new original');
@@ -199,7 +211,7 @@ describe('DiffViewer', () => {
     });
 
     it('refetches when mode changes', async () => {
-      const { rerender } = render(<DiffViewer {...defaultProps} mode="uncommitted" />);
+      const { rerenderWithTheme } = renderWithTheme(<DiffViewer {...defaultProps} mode="uncommitted" />);
 
       await waitFor(() => {
         expect(screen.getByText('HEAD')).toBeInTheDocument();
@@ -212,7 +224,7 @@ describe('DiffViewer', () => {
       };
       mockInvokeResponses.set('get_file_diff_content', branchDiffContent);
 
-      rerender(<DiffViewer {...defaultProps} mode="branch" />);
+      rerenderWithTheme(<DiffViewer {...defaultProps} mode="branch" />);
 
       await waitFor(() => {
         expect(screen.getByText('main')).toBeInTheDocument();
@@ -224,7 +236,7 @@ describe('DiffViewer', () => {
     it('passes projectPath to the fetch call', async () => {
       mockInvokeResponses.set('get_file_diff_content', mockDiffContent);
 
-      render(<DiffViewer {...defaultProps} projectPath="/path/to/project" />);
+      renderWithTheme(<DiffViewer {...defaultProps} projectPath="/path/to/project" />);
 
       await waitFor(() => {
         expect(screen.getByTestId('monaco-diff-editor')).toBeInTheDocument();

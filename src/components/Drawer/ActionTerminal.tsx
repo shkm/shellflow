@@ -6,6 +6,7 @@ import { listen } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { useDrawerXtermTheme } from '../../theme';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
 import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
 import { spawnAction, ptyWrite, ptyResize, ptyKill, watchMergeState, stopMergeWatcher, watchRebaseState, stopRebaseWatcher, cleanupWorktree, MergeOptions, MergeStrategy } from '../../lib/tauri';
@@ -69,6 +70,9 @@ export function ActionTerminal({
   const [isPtyReady, setIsPtyReady] = useState(false);
   const [isMergeComplete, setIsMergeComplete] = useState(false);
 
+  // Get theme from context
+  const xtermTheme = useDrawerXtermTheme();
+
   // Editable merge options (initialized from props)
   const [deleteWorktree, setDeleteWorktree] = useState(initialMergeOptions?.deleteWorktree ?? false);
   const [deleteLocalBranch, setDeleteLocalBranch] = useState(initialMergeOptions?.deleteLocalBranch ?? false);
@@ -113,29 +117,7 @@ export function ActionTerminal({
           }
         },
       },
-      theme: {
-        background: '#18181b',
-        foreground: '#fafafa',
-        cursor: '#fafafa',
-        cursorAccent: '#18181b',
-        selectionBackground: '#3f3f46',
-        black: '#18181b',
-        red: '#ef4444',
-        green: '#22c55e',
-        yellow: '#eab308',
-        blue: '#3b82f6',
-        magenta: '#a855f7',
-        cyan: '#06b6d4',
-        white: '#f4f4f5',
-        brightBlack: '#52525b',
-        brightRed: '#f87171',
-        brightGreen: '#4ade80',
-        brightYellow: '#facc15',
-        brightBlue: '#60a5fa',
-        brightMagenta: '#c084fc',
-        brightCyan: '#22d3ee',
-        brightWhite: '#ffffff',
-      },
+      theme: xtermTheme,
     });
 
     const fitAddon = new FitAddon();
@@ -421,8 +403,15 @@ export function ActionTerminal({
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [isMergeComplete, isActive, handleComplete]);
 
+  // Update terminal theme when it changes
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.options.theme = xtermTheme;
+    }
+  }, [xtermTheme]);
+
   return (
-    <div className="w-full h-full flex flex-col" style={{ backgroundColor: '#18181b', padding: terminalConfig.padding }}>
+    <div className="w-full h-full flex flex-col" style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding }}>
       <div ref={containerRef} className="w-full flex-1 min-h-0" />
       {isMergeComplete && (
         <div
@@ -440,13 +429,13 @@ export function ActionTerminal({
               Complete
             </button>
           </div>
-          <div className="flex flex-wrap gap-4 text-zinc-300">
+          <div className="flex flex-wrap gap-4 text-theme-1">
             <label className="flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={deleteWorktree}
                 onChange={(e) => setDeleteWorktree(e.target.checked)}
-                className="rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-900"
+                className="rounded border-theme-1 bg-theme-2 text-green-500 focus:ring-green-500 focus:ring-offset-theme-1"
               />
               Delete worktree
             </label>
@@ -455,7 +444,7 @@ export function ActionTerminal({
                 type="checkbox"
                 checked={deleteLocalBranch}
                 onChange={(e) => setDeleteLocalBranch(e.target.checked)}
-                className="rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-900"
+                className="rounded border-theme-1 bg-theme-2 text-green-500 focus:ring-green-500 focus:ring-offset-theme-1"
               />
               Delete local branch
             </label>
@@ -464,7 +453,7 @@ export function ActionTerminal({
                 type="checkbox"
                 checked={deleteRemoteBranch}
                 onChange={(e) => setDeleteRemoteBranch(e.target.checked)}
-                className="rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-900"
+                className="rounded border-theme-1 bg-theme-2 text-green-500 focus:ring-green-500 focus:ring-offset-theme-1"
               />
               Delete remote branch
             </label>

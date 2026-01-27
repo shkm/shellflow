@@ -32,7 +32,7 @@ export function ShutdownScreen({ isVisible }: ShutdownScreenProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-theme-0">
       <div className="flex flex-col items-center gap-4">
         {/* Spinner or checkmark */}
         {isComplete ? (
@@ -40,14 +40,14 @@ export function ShutdownScreen({ isVisible }: ShutdownScreenProps) {
             ✓
           </div>
         ) : (
-          <div className="w-10 h-10 border-3 border-zinc-700 border-t-zinc-300 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-3 border-theme-0 border-t-theme-1 rounded-full animate-spin" />
         )}
 
         {/* Title */}
-        <h1 className="text-lg font-medium text-zinc-200">Shutting down</h1>
+        <h1 className="text-lg font-medium text-theme-1">Shutting down</h1>
 
         {/* Status message */}
-        <p className="text-sm text-zinc-500">{message}</p>
+        <p className="text-sm text-theme-3">{message}</p>
       </div>
     </div>
   );

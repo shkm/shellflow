@@ -27,6 +27,8 @@ interface MainPaneProps {
 
   // Common props
   terminalConfig: TerminalConfig;
+  /** Editor config for diff viewer (uses base config without zoom) */
+  editorConfig: TerminalConfig;
   activityTimeout: number;
   shouldAutoFocus: boolean;
   /** Counter that triggers focus when incremented */
@@ -79,6 +81,7 @@ export function MainPane({
   onAddSessionTab,
   onReorderSessionTabs,
   terminalConfig,
+  editorConfig,
   activityTimeout,
   shouldAutoFocus,
   focusTrigger,
@@ -201,41 +204,41 @@ export function MainPane({
 
   if (!hasOpenSessions || !activeSessionId) {
     return (
-      <div className="flex flex-col h-full bg-zinc-950 text-zinc-400 select-none items-center justify-center px-8">
-        <h1 className="text-2xl font-semibold text-zinc-200 mb-2">Shellflow</h1>
-        <p className="text-zinc-500 mb-8 text-center max-w-md">
+      <div className="flex flex-col h-full bg-theme-0 text-theme-2 select-none items-center justify-center px-8">
+        <h1 className="text-2xl font-semibold text-theme-1 mb-2">Shellflow</h1>
+        <p className="text-theme-3 mb-8 text-center max-w-md">
           The terminal wrapper with worktree orchestration.
         </p>
 
         <div className="flex flex-col gap-4 text-sm max-w-sm">
           <div className="flex items-start gap-3">
-            <FolderPlus size={18} className="text-zinc-500 mt-0.5 flex-shrink-0" />
+            <FolderPlus size={18} className="text-theme-3 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="text-zinc-300">Add a project</span>
-              <span className="text-zinc-500"> — open any git repository to get started</span>
+              <span className="text-theme-1">Add a project</span>
+              <span className="text-theme-3"> — open any git repository to get started</span>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <GitBranch size={18} className="text-zinc-500 mt-0.5 flex-shrink-0" />
+            <GitBranch size={18} className="text-theme-3 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="text-zinc-300">Create worktrees</span>
-              <span className="text-zinc-500"> — each worktree is an isolated branch with its own terminal</span>
+              <span className="text-theme-1">Create worktrees</span>
+              <span className="text-theme-3"> — each worktree is an isolated branch with its own terminal</span>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <Terminal size={18} className="text-zinc-500 mt-0.5 flex-shrink-0" />
+            <Terminal size={18} className="text-theme-3 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="text-zinc-300">Run commands in parallel</span>
-              <span className="text-zinc-500"> — switch between worktrees without losing context</span>
+              <span className="text-theme-1">Run commands in parallel</span>
+              <span className="text-theme-3"> — switch between worktrees without losing context</span>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <Keyboard size={18} className="text-zinc-500 mt-0.5 flex-shrink-0" />
+            <Keyboard size={18} className="text-theme-3 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="text-zinc-300">Use keyboard shortcuts</span>
-              <span className="text-zinc-500"> — press </span>
-              <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 text-xs font-mono">⌘⇧P</kbd>
-              <span className="text-zinc-500"> for the command palette</span>
+              <span className="text-theme-1">Use keyboard shortcuts</span>
+              <span className="text-theme-3"> — press </span>
+              <kbd className="px-1.5 py-0.5 bg-theme-2 rounded text-theme-2 text-xs font-mono">⌘⇧P</kbd>
+              <span className="text-theme-3"> for the command palette</span>
             </div>
           </div>
         </div>
@@ -244,7 +247,7 @@ export function MainPane({
   }
 
   return (
-    <div className="h-full bg-zinc-950 flex flex-col">
+    <div className="h-full bg-theme-0 flex flex-col">
       {/* Config error banner */}
       <ConfigErrorBanner errors={configErrors} />
 
@@ -343,6 +346,7 @@ export function MainPane({
                   mode={tab.diff.mode}
                   projectPath={tab.diff.projectPath}
                   onClose={() => onCloseSessionTab(tab.id)}
+                  terminalConfig={editorConfig}
                 />
               );
             } else if (tab.command) {

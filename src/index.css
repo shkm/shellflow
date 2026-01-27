@@ -4,9 +4,39 @@
   --sidebar-width: 240px;
   --right-panel-width: 280px;
 
+  /* Body/document - defaults, overridden by theme */
+  --body-bg: #09090b;
+  --body-fg: #fafafa;
+
+  /* Background scale (darkest to lightest) */
+  --bg-0: #09090b;
+  --bg-1: #18181b;
+  --bg-2: #27272a;
+  --bg-3: #3f3f46;
+  --bg-4: #52525b;
+
+  /* Text colors (brightest to dimmest) */
+  --fg-0: #fafafa;
+  --fg-1: #e4e4e7;
+  --fg-2: #a1a1aa;
+  --fg-3: #71717a;
+  --fg-4: #52525b;
+
+  /* Borders */
+  --border-0: #27272a;
+  --border-1: #3f3f46;
+  --border-2: #52525b;
+
+  /* Sidebar */
+  --sidebar-bg: #18181b;
+  --sidebar-fg: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-item-hover: #27272a;
+  --sidebar-item-active: #3f3f46;
+
   /* Modal theming */
   --modal-backdrop: rgba(0, 0, 0, 0.5);
-  --modal-bg: rgba(46, 46, 50, 0.98);
+  --modal-bg: rgba(39, 39, 42, 0.98);
   --modal-border: rgba(255, 255, 255, 0.08);
   --modal-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.5);
 
@@ -29,7 +59,7 @@
   --kbd-border: rgba(255, 255, 255, 0.1);
   --kbd-text: rgba(255, 255, 255, 0.5);
 
-  /* Modal buttons */
+  /* Buttons */
   --btn-secondary-bg: rgba(255, 255, 255, 0.08);
   --btn-secondary-bg-hover: rgba(255, 255, 255, 0.14);
   --btn-secondary-border: rgba(255, 255, 255, 0.1);
@@ -49,6 +79,32 @@
   --btn-purple-bg-hover: rgba(147, 51, 234, 0.95);
   --btn-purple-border: rgba(192, 132, 252, 0.3);
   --btn-purple-text: rgba(255, 255, 255, 1);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+
+  /* Accent color */
+  --accent: #60a5fa;
+  --accent-fg: #ffffff;
+
+  /* Status colors */
+  --success: #22c55e;
+  --warning: #eab308;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Panel resize handles */
+  --resize-handle: #3f3f46;
+  --resize-handle-hover: #52525b;
+
+  /* Tab bar */
+  --tab-bg: transparent;
+  --tab-bg-hover: #27272a;
+  --tab-bg-active: #3f3f46;
+  --tab-fg: #a1a1aa;
+  --tab-fg-active: #fafafa;
+  --tab-border: #3f3f46;
 }
 
 html,
@@ -61,7 +117,8 @@ body,
 }
 
 body {
-  @apply bg-zinc-900 text-zinc-100;
+  background-color: var(--body-bg);
+  color: var(--body-fg);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
@@ -93,7 +150,7 @@ textarea,
 /* Overlay scrollbars - prevent layout shift when scrollbars appear/disappear */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -107,12 +164,12 @@ textarea,
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Reserve scrollbar gutter to prevent layout shift in vertical scrolling */
@@ -161,14 +218,38 @@ textarea,
 }
 
 .xterm .xterm-scrollable-element > .scrollbar > .slider {
-  background: rgba(255, 255, 255, 0.3) !important;
+  background: var(--scrollbar-thumb) !important;
   border-radius: 4px !important;
   width: 6px !important;
   left: 1px !important;
 }
 
 .xterm .xterm-scrollable-element > .scrollbar > .slider:hover {
-  background: rgba(255, 255, 255, 0.5) !important;
+  background: var(--scrollbar-thumb-hover) !important;
+}
+
+/* Monaco editor scrollbar - style to match app */
+.monaco-editor .scrollbar .slider {
+  border-radius: 4px !important;
+}
+
+.monaco-diff-editor .scrollbar .slider {
+  border-radius: 4px !important;
+}
+
+/* Hide vertical scrollbar in diff editor but keep overview ruler (diff markers) */
+.monaco-diff-editor .monaco-scrollable-element > .scrollbar.vertical {
+  display: none !important;
+}
+
+/* Hide decorations overview ruler (not the diff markers) */
+.monaco-diff-editor .decorationsOverviewRuler {
+  display: none !important;
+}
+
+/* Replace diagonal fill pattern with subtle solid color */
+.monaco-diff-editor .diagonal-fill {
+  background: var(--bg-2) !important;
 }
 
 /* macOS title bar drag region */
@@ -223,3 +304,84 @@ textarea,
 .modal-toggle:hover {
   background: var(--modal-item-highlight) !important;
 }
+
+/* ========================================
+   Theme-aware utility classes
+   These replace hardcoded Tailwind colors
+   ======================================== */
+
+/* Backgrounds */
+.bg-theme-0 { background-color: var(--bg-0); }
+.bg-theme-1 { background-color: var(--bg-1); }
+.bg-theme-2 { background-color: var(--bg-2); }
+.bg-theme-3 { background-color: var(--bg-3); }
+.bg-theme-4 { background-color: var(--bg-4); }
+
+/* Backgrounds with opacity variants */
+.bg-theme-2\/50 { background-color: color-mix(in srgb, var(--bg-2) 50%, transparent); }
+.bg-theme-2\/95 { background-color: color-mix(in srgb, var(--bg-2) 95%, transparent); }
+.bg-theme-3\/50 { background-color: color-mix(in srgb, var(--bg-3) 50%, transparent); }
+
+/* Text colors */
+.text-theme-0 { color: var(--fg-0); }
+.text-theme-1 { color: var(--fg-1); }
+.text-theme-2 { color: var(--fg-2); }
+.text-theme-3 { color: var(--fg-3); }
+.text-theme-4 { color: var(--fg-4); }
+
+/* Borders */
+.border-theme-0 { border-color: var(--border-0); }
+.border-theme-1 { border-color: var(--border-1); }
+.border-theme-2 { border-color: var(--border-2); }
+
+/* Sidebar-specific */
+.bg-sidebar { background-color: var(--sidebar-bg); }
+.text-sidebar { color: var(--sidebar-fg); }
+.border-sidebar { border-color: var(--sidebar-border); }
+.bg-sidebar-hover { background-color: var(--sidebar-item-hover); }
+.bg-sidebar-active { background-color: var(--sidebar-item-active); }
+
+/* Status colors */
+.text-accent { color: var(--accent); }
+.bg-accent { background-color: var(--accent); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
+.text-info { color: var(--info); }
+
+/* Resize handles */
+.bg-resize-handle { background-color: var(--resize-handle); }
+.hover\:bg-resize-handle-hover:hover { background-color: var(--resize-handle-hover); }
+
+/* Tab bar */
+.bg-tab { background-color: var(--tab-bg); }
+.bg-tab-hover { background-color: var(--tab-bg-hover); }
+.bg-tab-active { background-color: var(--tab-bg-active); }
+.text-tab { color: var(--tab-fg); }
+.text-tab-active { color: var(--tab-fg-active); }
+.border-tab { border-color: var(--tab-border); }
+
+/* Hover states - using :hover pseudo-class */
+.hover\:bg-theme-2:hover { background-color: var(--bg-2); }
+.hover\:bg-theme-3:hover { background-color: var(--bg-3); }
+.hover\:bg-theme-4:hover { background-color: var(--bg-4); }
+.hover\:text-theme-0:hover { color: var(--fg-0); }
+.hover\:text-theme-1:hover { color: var(--fg-1); }
+.hover\:text-theme-2:hover { color: var(--fg-2); }
+.hover\:text-accent:hover { color: var(--accent); }
+.hover\:text-error:hover { color: var(--error); }
+
+/* Placeholder colors */
+.placeholder-theme-3::placeholder { color: var(--fg-3); }
+.placeholder-theme-4::placeholder { color: var(--fg-4); }
+
+/* Border opacity variants */
+.border-theme-1\/50 { border-color: color-mix(in srgb, var(--border-1) 50%, transparent); }
+.border-sidebar\/50 { border-color: color-mix(in srgb, var(--sidebar-border) 50%, transparent); }
+
+/* Background opacity variants for drag overlays */
+.bg-theme-1\/60 { background-color: color-mix(in srgb, var(--bg-1) 60%, transparent); }
+
+/* Focus ring offset - for styled checkboxes */
+.focus\:ring-offset-theme-1:focus { --tw-ring-offset-color: var(--bg-1); }
+.focus\:ring-offset-theme-2:focus { --tw-ring-offset-color: var(--bg-2); }

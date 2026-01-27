@@ -34,6 +34,11 @@ pub struct RawConfig {
     pub mappings: MappingsConfig,
     #[serde(rename = "unfocusedOpacity")]
     pub unfocused_opacity: f64,
+    /// Theme configuration. Can be a single theme name (string) or an object with light/dark themes.
+    pub theme: Option<ThemeConfig>,
+    /// How to handle borders when adapting themes.
+    #[serde(rename = "themeBorderStyle", default)]
+    pub theme_border_style: ThemeBorderStyle,
 }
 
 impl Default for RawConfig {
@@ -50,6 +55,8 @@ impl Default for RawConfig {
             scratch: ScratchConfig::default(),
             mappings: MappingsConfig::default(),
             unfocused_opacity: 1.0,
+            theme: None, // Uses default Catppuccin themes when None
+            theme_border_style: ThemeBorderStyle::default(),
         }
     }
 }
@@ -70,6 +77,11 @@ pub struct Config {
     /// Opacity (0.0 to 1.0) applied to unfocused panes (main terminal or drawer)
     #[serde(rename = "unfocusedOpacity")]
     pub unfocused_opacity: f64,
+    /// Theme configuration. Can be a single theme name or an object with light/dark themes.
+    pub theme: Option<ThemeConfig>,
+    /// How to handle borders when adapting themes.
+    #[serde(rename = "themeBorderStyle")]
+    pub theme_border_style: ThemeBorderStyle,
 }
 
 impl Config {
@@ -87,6 +99,8 @@ impl Config {
             scratch: raw.scratch,
             mappings: raw.mappings,
             unfocused_opacity: raw.unfocused_opacity,
+            theme: raw.theme,
+            theme_border_style: raw.theme_border_style,
         }
     }
 }
@@ -132,6 +146,35 @@ impl Default for BaseBranch {
     fn default() -> Self {
         BaseBranch::Mode(BaseBranchMode::Auto)
     }
+}
+
+/// Theme configuration. Can be a single theme name or an object with light/dark themes.
+/// Examples:
+/// - Single theme: `"Catppuccin Mocha"` (ignores system preference)
+/// - Light/dark: `{ "light": "Catppuccin Latte", "dark": "Catppuccin Mocha" }`
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum ThemeConfig {
+    /// Single theme name (ignores system preference)
+    Single(String),
+    /// Different themes for light and dark mode
+    LightDark { light: String, dark: String },
+}
+
+/// How to handle borders when adapting themes.
+/// - "theme": Use exactly what the theme specifies (including transparent)
+/// - "subtle": Add subtle borders only where none exist
+/// - "visible": Always ensure visible borders
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ThemeBorderStyle {
+    /// Use exactly what the theme specifies
+    Theme,
+    /// Add subtle borders only where none exist (default)
+    #[default]
+    Subtle,
+    /// Always ensure visible borders
+    Visible,
 }
 
 /// A named URL with label and template.

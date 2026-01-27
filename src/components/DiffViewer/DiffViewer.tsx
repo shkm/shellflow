@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react';
-import { DiffEditor } from '@monaco-editor/react';
+import { useState, useEffect, useRef } from 'react';
+import { DiffEditor, loader } from '@monaco-editor/react';
 import { getFileDiffContent } from '../../lib/tauri';
 import type { DiffContent, ChangedFilesViewMode } from '../../types';
+import { TerminalConfig } from '../../hooks/useConfig';
+import { useTheme } from '../../theme';
+
+const SHELLFLOW_THEME_NAME = 'shellflow-theme';
 
 interface DiffViewerProps {
   worktreePath: string;
@@ -9,6 +13,7 @@ interface DiffViewerProps {
   mode: ChangedFilesViewMode;
   projectPath?: string;
   onClose: () => void;
+  terminalConfig?: TerminalConfig;
 }
 
 export function DiffViewer({
@@ -16,11 +21,35 @@ export function DiffViewer({
   filePath,
   mode,
   projectPath,
+  terminalConfig,
 }: DiffViewerProps) {
   const [diffContent, setDiffContent] = useState<DiffContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'split' | 'unified'>('split');
+  const [themeRegistered, setThemeRegistered] = useState(false);
+  const { theme } = useTheme();
+  const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
+
+  // Register theme with Monaco when available
+  useEffect(() => {
+    if (!theme?.monaco) return;
+
+    loader.init().then((monaco) => {
+      monacoRef.current = monaco;
+      monaco.editor.defineTheme(SHELLFLOW_THEME_NAME, theme.monaco);
+      setThemeRegistered(true);
+    });
+  }, []);
+
+  // Update theme when it changes
+  useEffect(() => {
+    if (!theme?.monaco || !monacoRef.current) return;
+
+    monacoRef.current.editor.defineTheme(SHELLFLOW_THEME_NAME, theme.monaco);
+    // Force editors to pick up the new theme
+    monacoRef.current.editor.setTheme(SHELLFLOW_THEME_NAME);
+  }, [theme?.monaco]);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +84,7 @@ export function DiffViewer({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-zinc-900 text-zinc-400">
+      <div className="h-full flex items-center justify-center bg-theme-1 text-theme-2">
         Loading diff...
       </div>
     );
@@ -63,7 +92,7 @@ export function DiffViewer({
 
   if (error) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 gap-4">
+      <div className="h-full flex flex-col items-center justify-center bg-theme-1 text-theme-2 gap-4">
         <span className="text-red-400">Failed to load diff: {error}</span>
       </div>
     );
@@ -74,12 +103,12 @@ export function DiffViewer({
   }
 
   return (
-    <div className="h-full flex flex-col bg-zinc-900">
+    <div className="h-full flex flex-col bg-theme-1">
       {/* Header with labels and view mode toggle */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-700 bg-zinc-800">
-        <div className="flex items-center gap-4 text-xs text-zinc-500">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-theme-0 bg-theme-2">
+        <div className="flex items-center gap-4 text-xs text-theme-3">
           <span>{diffContent.originalLabel}</span>
-          <span className="text-zinc-600">→</span>
+          <span className="text-theme-4">→</span>
           <span>{diffContent.modifiedLabel}</span>
         </div>
         <div className="flex items-center gap-1">
@@ -87,8 +116,8 @@ export function DiffViewer({
             onClick={() => setViewMode('split')}
             className={`px-2 py-0.5 text-xs rounded ${
               viewMode === 'split'
-                ? 'bg-zinc-600 text-zinc-200'
-                : 'text-zinc-400 hover:bg-zinc-700'
+                ? 'bg-theme-4 text-theme-1'
+                : 'text-theme-2 hover:bg-theme-3'
             }`}
           >
             Split
@@ -97,8 +126,8 @@ export function DiffViewer({
             onClick={() => setViewMode('unified')}
             className={`px-2 py-0.5 text-xs rounded ${
               viewMode === 'unified'
-                ? 'bg-zinc-600 text-zinc-200'
-                : 'text-zinc-400 hover:bg-zinc-700'
+                ? 'bg-theme-4 text-theme-1'
+                : 'text-theme-2 hover:bg-theme-3'
             }`}
           >
             Unified
@@ -112,18 +141,28 @@ export function DiffViewer({
           original={diffContent.original}
           modified={diffContent.modified}
           language={diffContent.language}
-          theme="vs-dark"
+          theme={themeRegistered ? SHELLFLOW_THEME_NAME : (theme?.type === 'light' ? 'vs' : 'vs-dark')}
           options={{
             readOnly: true,
             renderSideBySide: viewMode === 'split',
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
-            fontSize: 13,
-            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            fontSize: terminalConfig?.fontSize ?? 13,
+            fontFamily: terminalConfig?.fontFamily ?? 'Menlo, Monaco, "Courier New", monospace',
             lineNumbers: 'on',
-            renderWhitespace: 'boundary',
+            renderWhitespace: 'trailing',
             wordWrap: 'on',
             diffWordWrap: 'on',
+            // Hide indicators (the +/- symbols in the gutter)
+            renderIndicators: false,
+            // Keep overview ruler for diff markers but hide its border
+            overviewRulerBorder: false,
+            scrollbar: {
+              vertical: 'hidden',
+              horizontal: 'auto',
+              horizontalScrollbarSize: 8,
+              useShadows: false,
+            },
           }}
         />
       </div>

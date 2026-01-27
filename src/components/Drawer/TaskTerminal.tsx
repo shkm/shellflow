@@ -6,6 +6,7 @@ import { listen } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { useDrawerXtermTheme } from '../../theme';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
 import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
 import { spawnTask, ptyWrite, ptyResize, ptyKill } from '../../lib/tauri';
@@ -58,6 +59,9 @@ export function TaskTerminal({
   const fitAddonRef = useRef<FitAddon | null>(null);
   const initializedRef = useRef(false);
   const ptyIdRef = useRef<string | null>(null);
+
+  // Get theme from context
+  const xtermTheme = useDrawerXtermTheme();
   const [isPtyReady, setIsPtyReady] = useState(false);
 
   useTerminalFontSync(terminalRef, fitAddonRef, terminalConfig);
@@ -101,29 +105,7 @@ export function TaskTerminal({
           }
         },
       },
-      theme: {
-        background: '#18181b',
-        foreground: '#fafafa',
-        cursor: '#fafafa',
-        cursorAccent: '#18181b',
-        selectionBackground: '#3f3f46',
-        black: '#18181b',
-        red: '#ef4444',
-        green: '#22c55e',
-        yellow: '#eab308',
-        blue: '#3b82f6',
-        magenta: '#a855f7',
-        cyan: '#06b6d4',
-        white: '#f4f4f5',
-        brightBlack: '#52525b',
-        brightRed: '#f87171',
-        brightGreen: '#4ade80',
-        brightYellow: '#facc15',
-        brightBlue: '#60a5fa',
-        brightMagenta: '#c084fc',
-        brightCyan: '#22d3ee',
-        brightWhite: '#ffffff',
-      },
+      theme: xtermTheme,
     });
 
     const fitAddon = new FitAddon();
@@ -337,8 +319,15 @@ export function TaskTerminal({
     }
   }, [shouldAutoFocus]);
 
+  // Update terminal theme when it changes
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.options.theme = xtermTheme;
+    }
+  }, [xtermTheme]);
+
   return (
-    <div className="w-full h-full" style={{ backgroundColor: '#18181b', padding: terminalConfig.padding }}>
+    <div className="w-full h-full" style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding }}>
       <div ref={containerRef} className="w-full h-full" />
     </div>
   );

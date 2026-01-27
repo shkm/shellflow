@@ -143,17 +143,17 @@ export function DeleteWorktreeModal({
     if (currentPhase === phase) {
       return <Loader2 size={14} className="animate-spin text-blue-400" />;
     }
-    return <Circle size={14} className="text-zinc-600" />;
+    return <Circle size={14} className="text-theme-4" />;
   };
 
   const getStepTextClass = (phase: string) => {
     if (completedPhases.has(phase)) {
-      return 'text-zinc-400';
+      return 'text-theme-2';
     }
     if (currentPhase === phase) {
-      return 'text-zinc-100';
+      return 'text-theme-0';
     }
-    return 'text-zinc-600';
+    return 'text-theme-4';
   };
 
   const renderStatus = () => {
@@ -221,7 +221,7 @@ export function DeleteWorktreeModal({
               type="checkbox"
               checked={deleteBranch}
               onChange={(e) => setDeleteBranch(e.target.checked)}
-              className="rounded border-zinc-600 bg-zinc-700/50 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-800"
+              className="rounded border-theme-1 bg-theme-3/50 text-blue-500 focus:ring-blue-500 focus:ring-offset-theme-2"
             />
             Delete local branch
           </label>

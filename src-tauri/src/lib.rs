@@ -6,6 +6,7 @@ mod menu;
 mod pty;
 mod state;
 mod template;
+mod theme;
 mod watcher;
 mod worktree;
 
@@ -1971,6 +1972,8 @@ pub fn run() {
             cleanup_worktree,
             shutdown,
             update_action_availability,
+            theme::list_themes,
+            theme::read_theme,
         ])
         .on_window_event(|window, event| {
             match event {

@@ -34,7 +34,7 @@ export const ModalSearchInput = forwardRef<ModalSearchInputRef, ModalSearchInput
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
-          className="w-full text-sm px-2.5 py-1.5 rounded focus:outline-none placeholder-zinc-500 transition-colors"
+          className="w-full text-sm px-2.5 py-1.5 rounded focus:outline-none placeholder-theme-3 transition-colors"
           style={{
             background: 'var(--modal-input-bg)',
             border: '1px solid var(--modal-input-border)',

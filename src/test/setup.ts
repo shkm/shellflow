@@ -121,6 +121,10 @@ vi.mock('@tauri-apps/api/core', () => ({
       case 'spawn_project_shell':
       case 'spawn_shell':
         return Promise.resolve(`pty-${Date.now()}`);
+      case 'list_themes':
+        return Promise.resolve([]);
+      case 'read_theme':
+        return Promise.resolve('{}');
       default:
         return Promise.resolve(null);
     }

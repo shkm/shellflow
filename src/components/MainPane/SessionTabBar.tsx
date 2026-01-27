@@ -104,7 +104,7 @@ export function SessionTabBar({
   }
 
   return (
-    <div className="flex items-stretch h-8 bg-zinc-900 border-b border-zinc-800 select-none flex-shrink-0">
+    <div className="flex items-stretch h-8 bg-theme-1 border-b border-theme-0 select-none flex-shrink-0">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -139,7 +139,7 @@ export function SessionTabBar({
         </SortableContext>
         <DragOverlay dropAnimation={null}>
           {activeDragTab && (
-            <div className="flex items-center gap-2 px-3 h-8 bg-zinc-700 text-zinc-100 border border-zinc-600 rounded shadow-lg">
+            <div className="flex items-center gap-2 px-3 h-8 bg-theme-3 text-theme-0 border border-theme-1 rounded shadow-lg">
               {activeDragTab.diff ? (
                 <FileDiff size={14} className="flex-shrink-0" />
               ) : activeDragTab.command ? (
@@ -152,10 +152,10 @@ export function SessionTabBar({
           )}
         </DragOverlay>
       </DndContext>
-      <div className="flex items-stretch border-l border-zinc-800 flex-shrink-0">
+      <div className="flex items-stretch border-l border-theme-0 flex-shrink-0">
         <button
           onClick={onAddTab}
-          className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+          className="p-2 text-theme-3 hover:text-theme-1 hover:bg-theme-2"
           title="New tab (Cmd+T)"
         >
           <Plus size={16} />

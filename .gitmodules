@@ -1,0 +1,6 @@
+[submodule "themes/one-dark-pro"]
+	path = themes/one-dark-pro
+	url = https://github.com/Binaryify/OneDark-Pro.git
+[submodule "themes/nord"]
+	path = themes/nord
+	url = https://github.com/nordtheme/visual-studio-code.git

@@ -357,16 +357,14 @@ export function Sidebar({
     }
   };
 
-  const isDev = import.meta.env.DEV;
-
   return (
-    <div className={`flex flex-col h-full select-none ${isDev ? 'bg-[#1f1418]' : 'bg-zinc-900'}`}>
+    <div className="flex flex-col h-full select-none bg-sidebar">
       {/* Drag region for macOS traffic lights */}
       <DragRegion className="h-8 flex-shrink-0 flex items-center justify-end px-1">
-        <span className="text-[10px] text-zinc-600 font-mono mr-1">{__GIT_HASH__.slice(0, 7)}</span>
+        <span className="text-[10px] text-theme-4 font-mono mr-1">{__GIT_HASH__.slice(0, 7)}</span>
         <button
           onClick={handleOptionsClick}
-          className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300"
+          className="p-1 rounded hover:bg-theme-2 text-theme-3 hover:text-theme-1"
           title="Options"
         >
           <Settings size={14} />
@@ -374,18 +372,18 @@ export function Sidebar({
       </DragRegion>
       <div className="flex-1 overflow-y-auto px-1.5 py-2">
         {/* Scratch Terminals Section - always shown */}
-        <div className="mb-4 pb-3 border-b border-zinc-800">
+        <div className="mb-4 pb-3 border-b border-sidebar">
           {/* Scratch section header */}
-          <div className="group relative flex items-center py-1 pr-2 text-zinc-500">
+          <div className="group relative flex items-center py-1 pr-2 text-theme-3">
             <div className="w-7 flex-shrink-0 flex items-center justify-center">
-              <Hash size={12} className="text-zinc-600" />
+              <Hash size={12} className="text-theme-4" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Scratch</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-4">Scratch</span>
             {/* Add button - show on hover */}
-            <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5 bg-zinc-900 rounded">
+            <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5 bg-theme-1 rounded">
               <button
                 onClick={onAddScratchTerminal}
-                className="p-0.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200"
+                className="p-0.5 rounded hover:bg-theme-3 text-theme-2 hover:text-theme-1"
                 title="Add scratch terminal"
               >
                 <Plus size={14} />
@@ -418,14 +416,14 @@ export function Sidebar({
                           onClick={() => onSelectScratch(scratch.id)}
                           className={`group/scratch relative flex items-center py-1 pr-2 text-sm active:cursor-grabbing ${
                             isSelected
-                              ? 'bg-zinc-700 text-zinc-100'
-                              : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
+                              ? 'bg-theme-3 text-theme-0'
+                              : 'text-theme-1 hover:bg-theme-2 hover:text-theme-0'
                           }`}
                         >
                           {/* Left indicator column */}
                           <div className="w-7 flex-shrink-0 flex items-center justify-center">
                             {isModifierKeyHeld && shortcutNumber !== null ? (
-                              <span className="text-xs font-medium text-zinc-400">{shortcutNumber}</span>
+                              <span className="text-xs font-medium text-theme-2">{shortcutNumber}</span>
                             ) : null}
                           </div>
                           <EditableWorktreeName
@@ -440,13 +438,13 @@ export function Sidebar({
                             onFocusMain={onFocusMain}
                           />
                           {/* Action buttons - show on hover */}
-                          <div className={`absolute right-1 hidden group-hover/scratch:flex items-center gap-0.5 rounded ${isSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
+                          <div className={`absolute right-1 hidden group-hover/scratch:flex items-center gap-0.5 rounded ${isSelected ? 'bg-theme-3' : 'bg-theme-2'}`}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onCloseScratch(scratch.id);
                               }}
-                              className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-zinc-300"
+                              className="p-0.5 rounded hover:bg-theme-4 text-theme-3 hover:text-theme-1"
                               title="Close terminal"
                             >
                               <X size={12} />
@@ -472,16 +470,16 @@ export function Sidebar({
         </div>
 
         {/* Projects section header */}
-        <div className="group relative flex items-center py-1 pr-2 mb-1 text-zinc-500">
+        <div className="group relative flex items-center py-1 pr-2 mb-1 text-theme-3">
           <div className="w-7 flex-shrink-0 flex items-center justify-center">
-            <FolderGit2 size={12} className="text-zinc-600" />
+            <FolderGit2 size={12} className="text-theme-4" />
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Projects</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-4">Projects</span>
           {/* Add button - show on hover */}
-          <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5 bg-zinc-900 rounded">
+          <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5 bg-theme-1 rounded">
             <button
               onClick={onAddProject}
-              className="p-0.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200"
+              className="p-0.5 rounded hover:bg-theme-3 text-theme-2 hover:text-theme-1"
               title="Add project"
             >
               <Plus size={14} />
@@ -490,7 +488,7 @@ export function Sidebar({
         </div>
 
         {projects.length === 0 ? (
-          <div className="text-center py-6 text-zinc-500 text-xs">
+          <div className="text-center py-6 text-theme-3 text-xs">
             <p>No projects yet</p>
             <button
               onClick={onAddProject}
@@ -500,7 +498,7 @@ export function Sidebar({
             </button>
           </div>
         ) : projects.length === 0 ? (
-          <div className="text-center py-6 text-zinc-500 text-xs">
+          <div className="text-center py-6 text-theme-3 text-xs">
             <p>No active projects</p>
           </div>
         ) : (
@@ -527,10 +525,10 @@ export function Sidebar({
                       <div
                         className={`group relative flex items-center py-1 pr-2 rounded active:cursor-grabbing ${
                           isProjectSelected
-                            ? 'bg-zinc-700 text-zinc-100'
+                            ? 'bg-theme-3 text-theme-0'
                             : hasOpenWorktrees || isProjectOpen
-                              ? 'text-zinc-200 hover:bg-zinc-800'
-                              : 'text-zinc-400 hover:bg-zinc-800'
+                              ? 'text-theme-1 hover:bg-theme-2'
+                              : 'text-theme-2 hover:bg-theme-2'
                         }`}
                         onClick={() => onSelectProject(project)}
                         onContextMenu={(e) => handleProjectContextMenu(e, project)}
@@ -538,7 +536,7 @@ export function Sidebar({
                         {/* Chevron/shortcut - shows shortcut number when cmd held and project is open, otherwise chevron */}
                         <div className="w-7 flex-shrink-0 flex items-center justify-center">
                           {isModifierKeyHeld && projectShortcutNumber !== null ? (
-                            <span className={`text-xs font-medium ${runningTaskCounts.has(project.id) ? 'text-emerald-400' : 'text-zinc-400'}`}>{projectShortcutNumber}</span>
+                            <span className={`text-xs font-medium ${runningTaskCounts.has(project.id) ? 'text-emerald-400' : 'text-theme-2'}`}>{projectShortcutNumber}</span>
                           ) : (
                             <button
                               onClick={(e) => {
@@ -546,12 +544,12 @@ export function Sidebar({
                                 onToggleProject(project.id);
                               }}
                               onPointerDown={(e) => e.stopPropagation()}
-                              className="p-0.5 -m-0.5 rounded hover:bg-zinc-600"
+                              className="p-0.5 -m-0.5 rounded hover:bg-theme-4"
                             >
                               {expandedProjects.has(project.id) ? (
-                                <ChevronDown size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-zinc-400' : 'text-zinc-500'} />
+                                <ChevronDown size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-theme-2' : 'text-theme-3'} />
                               ) : (
-                                <ChevronRight size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-zinc-400' : 'text-zinc-500'} />
+                                <ChevronRight size={14} className={hasOpenWorktrees || isProjectOpen ? 'text-theme-2' : 'text-theme-3'} />
                               )}
                             </button>
                           )}
@@ -561,7 +559,7 @@ export function Sidebar({
                           <span title={`${runningTaskCounts.get(project.id)} task${runningTaskCounts.get(project.id)! > 1 ? 's' : ''} running`} className="relative mr-1.5">
                             <Circle size={6} className="fill-emerald-400 text-emerald-400" />
                             {runningTaskCounts.get(project.id)! > 1 && (
-                              <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-zinc-400">
+                              <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-theme-2">
                                 {runningTaskCounts.get(project.id)}
                               </span>
                             )}
@@ -569,14 +567,14 @@ export function Sidebar({
                         )}
                         <span className="text-sm font-medium truncate">{project.name}</span>
                         {/* Action buttons - show on hover */}
-                        <div className={`absolute right-1 hidden group-hover:flex items-center gap-0.5 rounded ${isProjectSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
+                        <div className={`absolute right-1 hidden group-hover:flex items-center gap-0.5 rounded ${isProjectSelected ? 'bg-theme-3' : 'bg-theme-2'}`}>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onAddWorktree(project.id);
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="p-0.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200"
+                            className="p-0.5 rounded hover:bg-theme-3 text-theme-2 hover:text-theme-1"
                             title="Add Worktree"
                           >
                             <Plus size={14} />
@@ -584,7 +582,7 @@ export function Sidebar({
                           <button
                             onClick={(e) => handleKebabClick(e, project)}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="p-0.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200"
+                            className="p-0.5 rounded hover:bg-theme-3 text-theme-2 hover:text-theme-1"
                             title="More options"
                           >
                             <MoreHorizontal size={14} />
@@ -602,11 +600,11 @@ export function Sidebar({
                       </div>
 
                       {expandedProjects.has(project.id) && (
-                        <div className="mt-0.5 space-y-0.5 ml-3 border-l border-zinc-700/50 py-0.5">
+                        <div className="mt-0.5 space-y-0.5 ml-3 border-l border-sidebar/50 py-0.5">
                           {project.worktrees.length === 0 ? (
                             <button
                               onClick={() => onAddWorktree(project.id)}
-                              className="flex items-center gap-1.5 pl-4 pr-2 py-1 text-xs text-zinc-500 hover:text-zinc-300"
+                              className="flex items-center gap-1.5 pl-4 pr-2 py-1 text-xs text-theme-3 hover:text-theme-1"
                             >
                               <Plus size={12} />
                               Add worktree
@@ -632,21 +630,21 @@ export function Sidebar({
                                       onClick={() => onSelectWorktree(worktree)}
                                       className={`group/worktree relative flex items-center py-1 pr-2 text-sm active:cursor-grabbing ${
                                         isSelected
-                                          ? 'bg-zinc-700 text-zinc-100'
+                                          ? 'bg-theme-3 text-theme-0'
                                           : isOpen
-                                            ? 'text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100'
-                                            : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300'
+                                            ? 'text-theme-1 hover:bg-theme-2/50 hover:text-theme-0'
+                                            : 'text-theme-3 hover:bg-theme-2/50 hover:text-theme-1'
                                       }`}
                                     >
                                       {/* Left indicator column */}
                                       <div className="w-5 flex-shrink-0 flex items-center justify-center">
                                         {isModifierKeyHeld && shortcutNumber !== null ? (
-                                          <span className={`text-xs font-medium ${runningTaskCounts.has(worktree.id) ? 'text-emerald-400' : 'text-zinc-400'}`}>{shortcutNumber}</span>
+                                          <span className={`text-xs font-medium ${runningTaskCounts.has(worktree.id) ? 'text-emerald-400' : 'text-theme-2'}`}>{shortcutNumber}</span>
                                         ) : runningTaskCounts.has(worktree.id) ? (
                                           <span title={`${runningTaskCounts.get(worktree.id)} task${runningTaskCounts.get(worktree.id)! > 1 ? 's' : ''} running`} className="relative">
                                             <Circle size={6} className="fill-emerald-400 text-emerald-400" />
                                             {runningTaskCounts.get(worktree.id)! > 1 && (
-                                              <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-zinc-400">
+                                              <span className="absolute -top-1.5 left-1 text-[8px] font-medium text-theme-2">
                                                 {runningTaskCounts.get(worktree.id)}
                                               </span>
                                             )}
@@ -668,14 +666,14 @@ export function Sidebar({
                                       ) : (
                                         <>
                                           {/* Action buttons - show on hover */}
-                                          <div className={`absolute right-1 hidden group-hover/worktree:flex items-center gap-0.5 rounded ${isSelected ? 'bg-zinc-700' : 'bg-zinc-800'}`}>
+                                          <div className={`absolute right-1 hidden group-hover/worktree:flex items-center gap-0.5 rounded ${isSelected ? 'bg-theme-3' : 'bg-theme-2'}`}>
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 onDeleteWorktree(worktree.id);
                                               }}
                                               onPointerDown={(e) => e.stopPropagation()}
-                                              className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-red-400"
+                                              className="p-0.5 rounded hover:bg-theme-4 text-theme-3 hover:text-red-400"
                                               title="Delete Worktree"
                                             >
                                               <Trash2 size={12} />
@@ -687,7 +685,7 @@ export function Sidebar({
                                                   onCloseWorktree(worktree.id);
                                                 }}
                                                 onPointerDown={(e) => e.stopPropagation()}
-                                                className="p-0.5 rounded hover:bg-zinc-600 text-zinc-500 hover:text-zinc-300"
+                                                className="p-0.5 rounded hover:bg-theme-4 text-theme-3 hover:text-theme-1"
                                                 title="Close Worktree"
                                               >
                                                 <X size={12} />
@@ -720,7 +718,7 @@ export function Sidebar({
             </SortableContext>
             <DragOverlay dropAnimation={null}>
               {activeDragItem && (
-                <div className="bg-zinc-700 text-zinc-100 px-2 py-1 rounded shadow-lg border border-zinc-600 text-sm">
+                <div className="bg-theme-3 text-theme-0 px-2 py-1 rounded shadow-lg border border-theme-1 text-sm">
                   {activeDragItem.type === 'project'
                     ? projects.find((p) => p.id === activeDragItem.id)?.name
                     : (() => {
@@ -826,7 +824,7 @@ export function Sidebar({
               const rect = e.currentTarget.getBoundingClientRect();
               setFolderMenu({ x: rect.left, y: rect.top - 76 });
             }}
-            className="h-8 px-2 border-t border-zinc-800 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 flex items-center w-full transition-colors overflow-hidden"
+            className="h-8 px-2 border-t border-sidebar text-xs text-theme-3 hover:text-theme-1 hover:bg-theme-2/50 flex items-center w-full transition-colors overflow-hidden"
             title={activePath}
           >
             <span
@@ -910,13 +908,13 @@ export function Sidebar({
 
       {/* Task URLs - show when a task with URLs is running */}
       {taskUrls.length > 0 && (
-        <div className="px-2 py-1 border-t border-zinc-800 flex items-center gap-3 overflow-x-auto">
+        <div className="px-2 py-1 border-t border-sidebar flex items-center gap-3 overflow-x-auto">
           {taskUrls.map(({ name, url }) => (
             <button
               key={name}
               onClick={() => openUrl(url).catch(console.error)}
               title={url}
-              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-blue-400 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 text-xs text-theme-2 hover:text-blue-400 transition-colors whitespace-nowrap"
             >
               <ExternalLink size={12} />
               <span>{name}</span>
@@ -941,14 +939,14 @@ export function Sidebar({
 
       {/* Status bar - shows different actions for project vs worktree vs scratch */}
       {(activeWorktreeId || activeProjectId || activeScratchId) && (
-        <div className="flex items-center h-8 px-1 border-t border-zinc-800 flex-shrink-0">
+        <div className="flex items-center h-8 px-1 border-t border-sidebar flex-shrink-0">
           {activeWorktreeId ? (
             <>
               {/* Worktree-specific actions */}
               <button
                 onClick={onToggleDrawer}
-                className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${
-                  isDrawerOpen ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                className={`p-1.5 rounded hover:bg-theme-2 flex-shrink-0 ${
+                  isDrawerOpen ? 'text-blue-400' : 'text-theme-3 hover:text-theme-1'
                 }`}
                 title="Toggle terminal (Ctrl+`)"
               >
@@ -956,8 +954,8 @@ export function Sidebar({
               </button>
               <button
                 onClick={onToggleRightPanel}
-                className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${
-                  isRightPanelOpen ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                className={`p-1.5 rounded hover:bg-theme-2 flex-shrink-0 ${
+                  isRightPanelOpen ? 'text-blue-400' : 'text-theme-3 hover:text-theme-1'
                 }`}
                 title="Toggle right panel (Cmd+R)"
               >
@@ -966,14 +964,14 @@ export function Sidebar({
               <div className="flex-1" />
               <button
                 onClick={() => onMergeWorktree(activeWorktreeId)}
-                className="p-1.5 rounded text-zinc-500 hover:text-blue-400 hover:bg-zinc-800 flex-shrink-0"
+                className="p-1.5 rounded text-theme-3 hover:text-blue-400 hover:bg-theme-2 flex-shrink-0"
                 title="Merge branch"
               >
                 <GitMerge size={16} />
               </button>
               <button
                 onClick={() => onDeleteWorktree(activeWorktreeId)}
-                className="p-1.5 rounded text-zinc-500 hover:text-red-400 hover:bg-zinc-800 flex-shrink-0"
+                className="p-1.5 rounded text-theme-3 hover:text-red-400 hover:bg-theme-2 flex-shrink-0"
                 title="Delete worktree"
               >
                 <Trash2 size={16} />
@@ -984,8 +982,8 @@ export function Sidebar({
               {/* Scratch-specific actions - just drawer toggle */}
               <button
                 onClick={onToggleDrawer}
-                className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${
-                  isDrawerOpen ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                className={`p-1.5 rounded hover:bg-theme-2 flex-shrink-0 ${
+                  isDrawerOpen ? 'text-blue-400' : 'text-theme-3 hover:text-theme-1'
                 }`}
                 title="Toggle terminal (Ctrl+`)"
               >
@@ -998,8 +996,8 @@ export function Sidebar({
               {/* Project-specific actions - drawer toggle and right panel toggle */}
               <button
                 onClick={onToggleDrawer}
-                className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${
-                  isDrawerOpen ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                className={`p-1.5 rounded hover:bg-theme-2 flex-shrink-0 ${
+                  isDrawerOpen ? 'text-blue-400' : 'text-theme-3 hover:text-theme-1'
                 }`}
                 title="Toggle terminal (Ctrl+`)"
               >
@@ -1007,8 +1005,8 @@ export function Sidebar({
               </button>
               <button
                 onClick={onToggleRightPanel}
-                className={`p-1.5 rounded hover:bg-zinc-800 flex-shrink-0 ${
-                  isRightPanelOpen ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                className={`p-1.5 rounded hover:bg-theme-2 flex-shrink-0 ${
+                  isRightPanelOpen ? 'text-blue-400' : 'text-theme-3 hover:text-theme-1'
                 }`}
                 title="Toggle right panel (Cmd+R)"
               >

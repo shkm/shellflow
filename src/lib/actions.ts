@@ -32,6 +32,8 @@ export type ActionId =
   | 'toggleDrawer'
   | 'expandDrawer'
   | 'toggleRightPanel'
+  | 'switchTheme'
+  | 'cycleBorderStyle'
   | 'zoomIn'
   | 'zoomOut'
   | 'zoomReset'
@@ -107,6 +109,8 @@ const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
   toggleDrawer: (ctx) => !!ctx.activeEntityId,
   expandDrawer: (ctx) => !!ctx.activeEntityId && ctx.isDrawerOpen,
   toggleRightPanel: (ctx) => !!ctx.activeEntityId,
+  switchTheme: () => true,
+  cycleBorderStyle: () => true,
   zoomIn: () => true,
   zoomOut: () => true,
   zoomReset: () => true,
@@ -162,6 +166,8 @@ const ACTION_TO_MENU_ID: Record<ActionId, string> = {
   toggleDrawer: 'toggle_drawer',
   expandDrawer: 'expand_drawer',
   toggleRightPanel: 'toggle_right_panel',
+  switchTheme: 'switch_theme',
+  cycleBorderStyle: 'cycle_border_style',
   zoomIn: 'zoom_in',
   zoomOut: 'zoom_out',
   zoomReset: 'zoom_reset',
@@ -268,6 +274,8 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   toggleDrawer: { label: 'Toggle Drawer', category: 'View', showInPalette: true },
   expandDrawer: { label: 'Expand Drawer', category: 'View', showInPalette: true },
   toggleRightPanel: { label: 'Toggle Changed Files', category: 'View', showInPalette: true },
+  switchTheme: { label: 'Switch Theme', category: 'View', showInPalette: true },
+  cycleBorderStyle: { label: 'Cycle Border Style', category: 'View', showInPalette: true },
   zoomIn: { label: 'Zoom In', category: 'View', showInPalette: true },
   zoomOut: { label: 'Zoom Out', category: 'View', showInPalette: true },
   zoomReset: { label: 'Reset Zoom', category: 'View', showInPalette: true },

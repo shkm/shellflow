@@ -20,7 +20,7 @@ function ToggleSwitch({ checked }: { checked: boolean }) {
   return (
     <div
       className={`relative w-7 h-4 rounded-full transition-colors ${
-        checked ? 'bg-blue-500' : 'bg-zinc-600'
+        checked ? 'bg-blue-500' : 'bg-theme-4'
       }`}
     >
       <div
@@ -60,7 +60,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed bg-zinc-800/95 backdrop-blur-md border border-zinc-600/50 rounded px-1 py-1 min-w-[140px] z-50"
+      className="fixed bg-theme-2/95 backdrop-blur-md border border-theme-1/50 rounded px-1 py-1 min-w-[140px] z-50"
       style={{ left: x, top: y, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
     >
       {items.map((item, index) => (
@@ -72,7 +72,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
               onClose();
             }
           }}
-          className="w-full text-left px-2 py-0.5 text-[13px] rounded-sm flex items-center justify-between gap-3 text-zinc-200 hover:bg-blue-500 hover:text-white"
+          className="w-full text-left px-2 py-0.5 text-[13px] rounded-sm flex items-center justify-between gap-3 text-theme-1 hover:bg-blue-500 hover:text-white"
         >
           <span className="flex items-center gap-2">
             {item.icon && <span className="opacity-80">{item.icon}</span>}

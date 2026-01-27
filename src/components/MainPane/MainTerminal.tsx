@@ -9,6 +9,7 @@ import { Loader2, RotateCcw, Terminal as TerminalIcon } from 'lucide-react';
 import { usePty } from '../../hooks/usePty';
 import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
+import { useXtermTheme } from '../../theme';
 import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
 import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
@@ -61,6 +62,9 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
   const initializedRef = useRef(false);
   const spawnedAtRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
+
+  // Get theme from context
+  const xtermTheme = useXtermTheme();
 
   useTerminalFontSync(terminalRef, fitAddonRef, terminalConfig);
   const [hasExited, setHasExited] = useState(false);
@@ -280,29 +284,7 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
           }
         },
       },
-      theme: {
-        background: '#09090b',
-        foreground: '#fafafa',
-        cursor: '#fafafa',
-        cursorAccent: '#09090b',
-        selectionBackground: '#3f3f46',
-        black: '#18181b',
-        red: '#ef4444',
-        green: '#22c55e',
-        yellow: '#eab308',
-        blue: '#3b82f6',
-        magenta: '#a855f7',
-        cyan: '#06b6d4',
-        white: '#f4f4f5',
-        brightBlack: '#52525b',
-        brightRed: '#f87171',
-        brightGreen: '#4ade80',
-        brightYellow: '#facc15',
-        brightBlue: '#60a5fa',
-        brightMagenta: '#c084fc',
-        brightCyan: '#22d3ee',
-        brightWhite: '#ffffff',
-      },
+      theme: xtermTheme,
     });
 
     const fitAddon = new FitAddon();
@@ -530,6 +512,13 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
     };
   }, [entityId, type, initialCwd]);
 
+  // Update terminal theme when it changes
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.options.theme = xtermTheme;
+    }
+  }, [xtermTheme]);
+
   // Restart handler for when the process exits - restarts whatever was last running
   const handleRestart = useCallback(async () => {
     const terminal = terminalRef.current;
@@ -652,20 +641,20 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
   }, [shouldAutoFocus, focusTrigger]);
 
   return (
-    <div className="relative w-full h-full" style={{ backgroundColor: '#09090b', padding: terminalConfig.padding }}>
+    <div className="relative w-full h-full" style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding }}>
       {!isReady && !hasExited && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-950">
-          <div className="flex flex-col items-center gap-3 text-zinc-400">
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-theme-0">
+          <div className="flex flex-col items-center gap-3 text-theme-2">
             <Loader2 size={32} className="animate-spin" />
             <span className="text-sm">Starting...</span>
           </div>
         </div>
       )}
       {hasExited && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-950/90">
-          <div className="flex flex-col items-center gap-4 text-zinc-400">
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-theme-0/90">
+          <div className="flex flex-col items-center gap-4 text-theme-2">
             <div className="flex flex-col items-center gap-1">
-              <span className="text-zinc-200 font-medium">
+              <span className="text-theme-1 font-medium">
                 {exitInfo?.command ?? (type === 'project' ? 'Shell' : 'Process')} exited
               </span>
               {exitInfo?.exitCode !== null && exitInfo?.exitCode !== undefined && (
@@ -677,7 +666,7 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
             <div className="flex items-center gap-2">
               <button
                 onClick={handleRestart}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md text-zinc-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-theme-2 hover:bg-theme-3 rounded-md text-theme-1 transition-colors"
               >
                 <RotateCcw size={16} />
                 <span>Restart</span>
@@ -685,7 +674,7 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
               {currentMode === 'main' && (
                 <button
                   onClick={handleLaunchShell}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md text-zinc-200 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-theme-2 hover:bg-theme-3 rounded-md text-theme-1 transition-colors"
                 >
                   <TerminalIcon size={16} />
                   <span>Shell</span>
@@ -700,8 +689,8 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
         className={`w-full h-full transition-opacity duration-200 ${isReady && !hasExited ? 'opacity-100' : 'opacity-0'}`}
       />
       {isDragOver && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-zinc-950/60 pointer-events-none border-2 border-dashed border-zinc-500 rounded">
-          <span className="text-zinc-300 text-sm">Drop files to insert path</span>
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-theme-0/60 pointer-events-none border-2 border-dashed border-theme-2 rounded">
+          <span className="text-theme-1 text-sm">Drop files to insert path</span>
         </div>
       )}
     </div>
