@@ -35,6 +35,10 @@ npm run tauri dev
 
 **Important**: Do not run the app. The user will always run and test the app themselves.
 
+## Actions
+
+When adding new functionality, implement it as an **action** so it appears in the command palette. This ensures all features are discoverable and accessible via keyboard. Only skip this if there's a good reason (e.g., the feature is purely internal or doesn't make sense as a user-invokable action).
+
 ## Testing
 
 **Always write tests for new functionality and bug fixes.** After making changes, explicitly state whether tests were added and run them to verify they pass.
