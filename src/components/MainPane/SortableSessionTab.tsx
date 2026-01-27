@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { X, Terminal, Loader2, BellDot, Check } from 'lucide-react';
+import { X, Terminal, Loader2, BellDot, Check, Code } from 'lucide-react';
 import { SessionTab } from '../../types';
 
 interface SortableSessionTabProps {
@@ -67,6 +67,8 @@ export function SortableSessionTab({
         <Loader2 size={14} className="flex-shrink-0 animate-spin text-violet-400" />
       ) : isIdle && !isActive ? (
         <Check size={14} className="flex-shrink-0 text-emerald-400" />
+      ) : tab.command ? (
+        <Code size={14} className="flex-shrink-0" />
       ) : (
         <Terminal size={14} className="flex-shrink-0" />
       )}

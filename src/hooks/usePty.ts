@@ -211,10 +211,50 @@ export function usePty(onOutput?: (data: string) => void, onReady?: () => void) 
     }
   }, []);
 
+  // Spawn a PTY running a specific command (for editors in drawer/tab)
+  const spawnCommand = useCallback(async (entityId: string, directory: string, command: string, cols?: number, rows?: number) => {
+    try {
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+      }
+
+      let pendingId: string | null = null;
+      const earlyEvents: PtyOutput[] = [];
+
+      const unlisten = await listen<PtyOutput>('pty-output', (event) => {
+        if (pendingId === null) {
+          earlyEvents.push(event.payload);
+        } else if (event.payload.pty_id === pendingId) {
+          onOutputRef.current?.(event.payload.data);
+        }
+      });
+
+      const id = await invoke<string>('spawn_command', { entityId, directory, command, cols, rows });
+
+      ptyIdRef.current = id;
+      setPtyId(id);
+      pendingId = id;
+      unlistenRef.current = unlisten;
+
+      for (const event of earlyEvents) {
+        if (event.pty_id === id) {
+          onOutputRef.current?.(event.data);
+        }
+      }
+
+      return id;
+    } catch (error) {
+      console.error('Failed to spawn command:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     ptyId,
     spawn,
     spawnShell,
+    spawnCommand,
     write,
     resize,
     interrupt,

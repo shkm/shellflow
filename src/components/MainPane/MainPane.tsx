@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GitBranch, FolderPlus, Terminal, Keyboard } from 'lucide-react';
 import { MainTerminal } from './MainTerminal';
+import { DrawerTerminal } from '../Drawer/DrawerTerminal';
 import { SessionTabBar } from './SessionTabBar';
 import { TerminalConfig, ConfigError } from '../../hooks/useConfig';
 import { ConfigErrorBanner } from '../ConfigErrorBanner';
@@ -328,6 +329,38 @@ export function MainPane({
               onTabTitleChange?.(session.id, tab.id, title);
             };
 
+            // Use DrawerTerminal for command tabs, MainTerminal for regular tabs
+            const terminalElement = tab.command ? (
+              <DrawerTerminal
+                id={tab.id}
+                entityId={session.id}
+                directory={tab.directory}
+                command={tab.command}
+                isActive={isActiveTab}
+                shouldAutoFocus={isActiveTab && shouldAutoFocus}
+                terminalConfig={terminalConfig}
+                onFocus={() => onFocus(session.id, tab.id)}
+                onTitleChange={handleTitleChange}
+                onClose={() => onCloseSessionTab(tab.id)}
+              />
+            ) : (
+              <MainTerminal
+                entityId={tab.id}
+                sessionId={session.id}
+                type={tab.isPrimary ? terminalType : 'scratch'}
+                isActive={isActiveTab}
+                shouldAutoFocus={isActiveTab && shouldAutoFocus}
+                focusTrigger={isActiveTab ? focusTrigger : undefined}
+                terminalConfig={terminalConfig}
+                activityTimeout={activityTimeout}
+                onFocus={() => onFocus(session.id, tab.id)}
+                onNotification={handleNotification}
+                onThinkingChange={handleThinkingChange}
+                onCwdChange={handleCwdChange}
+                onTitleChange={handleTitleChange}
+              />
+            );
+
             return (
               <div
                 key={tab.id}
@@ -337,21 +370,7 @@ export function MainPane({
                     : 'invisible z-0 pointer-events-none'
                 }`}
               >
-                <MainTerminal
-                  entityId={tab.id}
-                  sessionId={session.id}
-                  type={tab.isPrimary ? terminalType : 'scratch'}
-                  isActive={isActiveTab}
-                  shouldAutoFocus={isActiveTab && shouldAutoFocus}
-                  focusTrigger={isActiveTab ? focusTrigger : undefined}
-                  terminalConfig={terminalConfig}
-                  activityTimeout={activityTimeout}
-                  onFocus={() => onFocus(session.id, tab.id)}
-                  onNotification={handleNotification}
-                  onThinkingChange={handleThinkingChange}
-                  onCwdChange={handleCwdChange}
-                  onTitleChange={handleTitleChange}
-                />
+                {terminalElement}
               </div>
             );
           });

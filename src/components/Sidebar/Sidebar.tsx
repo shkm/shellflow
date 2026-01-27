@@ -1,7 +1,7 @@
 import { FolderGit2, Plus, ChevronRight, ChevronDown, MoreHorizontal, Trash2, Loader2, Terminal, GitMerge, X, PanelRight, Settings, Circle, Folder, ExternalLink, Hash, SquareTerminal, Code } from 'lucide-react';
 import { Project, Worktree, RunningTask, ScratchTerminal } from '../../types';
 import { StatusIndicators } from '../StatusIndicators';
-import { TaskConfig } from '../../hooks/useConfig';
+import { TaskConfig, AppsConfig, getAppCommand, getAppTarget } from '../../hooks/useConfig';
 import { useState, useEffect } from 'react';
 import { getTaskUrls, NamedUrl } from '../../lib/tauri';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -29,6 +29,14 @@ import {
 import { SortableProject } from './SortableProject';
 import { SortableWorktree } from './SortableWorktree';
 import { SortableScratch } from './SortableScratch';
+
+/** Substitute `{{ path }}` in a command template, or append path if no template. */
+function substitutePathTemplate(command: string, path: string): string {
+  if (command.includes('{{ path }}')) {
+    return command.replace(/\{\{ path \}\}/g, `"${path}"`);
+  }
+  return `${command} "${path}"`;
+}
 
 interface SidebarProps {
   projects: Project[];
@@ -60,8 +68,7 @@ interface SidebarProps {
   runningTask: RunningTask | null;
   allRunningTasks: Array<{ taskName: string; status: string }>;
   terminalFontFamily: string;
-  terminalApp: string;
-  editorApp: string;
+  appsConfig: AppsConfig;
   showIdleCheck: boolean;
   activeScratchCwd: string | null;
   homeDir: string | null;
@@ -73,6 +80,10 @@ interface SidebarProps {
   focusToRestoreRef: React.RefObject<HTMLElement | null>;
   /** Called to focus the main terminal area */
   onFocusMain: () => void;
+  /** Called to open a command in the drawer (for TUI editors) */
+  onOpenInDrawer: (directory: string, command: string) => void;
+  /** Called to open a command in a new session tab (for TUI editors) */
+  onOpenInTab: (directory: string, command: string) => void;
   onToggleProject: (projectId: string) => void;
   onSelectProject: (project: Project) => void;
   onSelectWorktree: (worktree: Worktree) => void;
@@ -131,8 +142,7 @@ export function Sidebar({
   runningTask,
   allRunningTasks,
   terminalFontFamily,
-  terminalApp,
-  editorApp,
+  appsConfig,
   showIdleCheck,
   activeScratchCwd,
   homeDir,
@@ -166,6 +176,8 @@ export function Sidebar({
   onReorderScratchTerminals,
   onAutoEditConsumed,
   onEditingScratchConsumed,
+  onOpenInDrawer,
+  onOpenInTab,
 }: SidebarProps) {
   const [contextMenu, setContextMenu] = useState<{
     project: Project;
@@ -783,30 +795,73 @@ export function Sidebar({
       })()}
 
       {/* Folder context menu */}
-      {folderMenu && activePath && (
-        <ContextMenu
-          x={folderMenu.x}
-          y={folderMenu.y}
-          items={[
-            {
-              label: 'Open in Finder',
-              icon: <Folder size={14} />,
-              onClick: () => invoke('open_folder', { path: activePath }),
-            },
-            {
-              label: `Open in ${terminalApp}`,
-              icon: <SquareTerminal size={14} />,
-              onClick: () => invoke('open_with_app', { path: activePath, app: terminalApp }),
-            },
-            {
-              label: `Open in ${editorApp}`,
-              icon: <Code size={14} />,
-              onClick: () => invoke('open_with_app', { path: activePath, app: editorApp }),
-            },
-          ]}
-          onClose={() => setFolderMenu(null)}
-        />
-      )}
+      {folderMenu && activePath && (() => {
+        const fileManagerCommand = getAppCommand(appsConfig.fileManager);
+        const terminalCommand = getAppCommand(appsConfig.terminal);
+        const editorCommand = getAppCommand(appsConfig.editor);
+        const editorTarget = getAppTarget(appsConfig.editor, 'terminal'); // Editor defaults to terminal target
+
+        // Build labels
+        const fileManagerLabel = fileManagerCommand
+          ? `Open in ${fileManagerCommand}`
+          : 'Open in File Manager';
+
+        const terminalLabel = terminalCommand
+          ? `Open in ${terminalCommand}`
+          : 'Open in Terminal';
+
+        const editorLabel = editorCommand
+          ? `Open in ${editorCommand}`
+          : 'Open in Editor';
+
+        const handleOpenEditor = () => {
+          if (!editorCommand) {
+            console.error('No editor configured');
+            return;
+          }
+
+          if (editorTarget === 'drawer') {
+            // Open in shellflow's drawer with template substitution
+            onOpenInDrawer(activePath, substitutePathTemplate(editorCommand, activePath));
+          } else if (editorTarget === 'tab') {
+            // Open in a new session tab with template substitution
+            onOpenInTab(activePath, substitutePathTemplate(editorCommand, activePath));
+          } else {
+            // External or terminal target - handled by backend (which also does template substitution)
+            invoke('open_in_editor', {
+              path: activePath,
+              app: editorCommand,
+              target: editorTarget,
+              terminalApp: terminalCommand ?? null,
+            });
+          }
+        };
+
+        return (
+          <ContextMenu
+            x={folderMenu.x}
+            y={folderMenu.y}
+            items={[
+              {
+                label: fileManagerLabel,
+                icon: <Folder size={14} />,
+                onClick: () => invoke('open_in_file_manager', { path: activePath, app: fileManagerCommand ?? null }),
+              },
+              {
+                label: terminalLabel,
+                icon: <SquareTerminal size={14} />,
+                onClick: () => invoke('open_in_terminal', { path: activePath, app: terminalCommand ?? null }),
+              },
+              {
+                label: editorLabel,
+                icon: <Code size={14} />,
+                onClick: handleOpenEditor,
+              },
+            ]}
+            onClose={() => setFolderMenu(null)}
+          />
+        );
+      })()}
 
       {/* Task URLs - show when a task with URLs is running */}
       {taskUrls.length > 0 && (

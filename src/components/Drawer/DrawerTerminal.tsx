@@ -33,6 +33,8 @@ interface DrawerTerminalProps {
   id: string;
   entityId: string;
   directory?: string;  // undefined = use home directory
+  /** Command to run instead of shell (for editors, etc.) */
+  command?: string;
   isActive: boolean;
   shouldAutoFocus: boolean;
   terminalConfig: TerminalConfig;
@@ -43,7 +45,7 @@ interface DrawerTerminalProps {
   onTitleChange?: (title: string) => void;
 }
 
-export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFocus, terminalConfig, onClose, onFocus, onPtyIdReady, onTitleChange }: DrawerTerminalProps) {
+export function DrawerTerminal({ id, entityId, directory, command, isActive, shouldAutoFocus, terminalConfig, onClose, onFocus, onPtyIdReady, onTitleChange }: DrawerTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -58,15 +60,17 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
     }
   }, []);
 
-  const { ptyId, spawnShell, write, resize, kill } = usePty(handleOutput);
+  const { ptyId, spawnShell, spawnCommand, write, resize, kill } = usePty(handleOutput);
 
-  // Store spawnShell/kill in refs so they're stable for the effect
+  // Store spawnShell/spawnCommand/kill in refs so they're stable for the effect
   const spawnShellRef = useRef(spawnShell);
+  const spawnCommandRef = useRef(spawnCommand);
   const killRef = useRef(kill);
   useEffect(() => {
     spawnShellRef.current = spawnShell;
+    spawnCommandRef.current = spawnCommand;
     killRef.current = kill;
-  }, [spawnShell, kill]);
+  }, [spawnShell, spawnCommand, kill]);
 
   // Store write function in ref so handlers can use it immediately
   const writeRef = useRef(write);
@@ -203,7 +207,7 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
     };
     containerRef.current.addEventListener('focusin', handleFocus);
 
-    // Fit terminal and spawn shell
+    // Fit terminal and spawn shell or command
     const initPty = async () => {
       // Wait for next frame to ensure container is laid out
       await new Promise(resolve => requestAnimationFrame(resolve));
@@ -212,7 +216,12 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
       fitAddon.fit();
       const cols = terminal.cols;
       const rows = terminal.rows;
-      const newPtyId = await spawnShellRef.current(entityId, directory, cols, rows);
+
+      // If a command is specified, spawn it; otherwise spawn a shell
+      const newPtyId = command
+        ? await spawnCommandRef.current(entityId, directory ?? '', command, cols, rows)
+        : await spawnShellRef.current(entityId, directory, cols, rows);
+
       if (newPtyId && isMounted) {
         onPtyIdReadyRef.current?.(newPtyId);
       }
@@ -239,7 +248,7 @@ export function DrawerTerminal({ id, entityId, directory, isActive, shouldAutoFo
       // 1. The pty-exit event handler (when shell exits naturally)
       // 2. App.tsx cleanup when tab is explicitly closed
     };
-  }, [id, entityId, directory]);
+  }, [id, entityId, directory, command]);
 
   // Listen for pty-exit event to auto-close the tab
   useEffect(() => {

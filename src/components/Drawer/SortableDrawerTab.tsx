@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { X, Terminal, Play, Square, Check, Sparkles } from 'lucide-react';
+import { X, Terminal, Play, Square, Check, Sparkles, Code } from 'lucide-react';
 import { DrawerTab } from './Drawer';
 
 interface TaskStatusInfo {
@@ -86,6 +86,8 @@ export function SortableDrawerTab({
           // Running or stopping: show play icon
           return <Play size={14} className="flex-shrink-0 text-green-500" />;
         })()
+      ) : tab.command ? (
+        <Code size={14} className="flex-shrink-0" />
       ) : (
         <Terminal size={14} className="flex-shrink-0" />
       )}

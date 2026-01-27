@@ -56,9 +56,38 @@ export interface ActionsConfig {
   mergeWorktreeWithConflicts: string;
 }
 
+/** Target for opening apps - where the app should open */
+export type AppTarget = 'external' | 'drawer' | 'tab' | 'terminal';
+
+/**
+ * Configuration for a single app (terminal, editor, fileManager).
+ * Can be a simple string (command only) or full object form.
+ */
+export type AppConfig = string | {
+  /** Command/app name to use. If omitted, uses platform defaults. */
+  command?: string;
+  /** Where to open the app. */
+  target?: AppTarget;
+};
+
 export interface AppsConfig {
-  terminal: string;
-  editor: string;
+  terminal?: AppConfig;
+  editor?: AppConfig;
+  fileManager?: AppConfig;
+}
+
+/** Helper to get the command from an AppConfig */
+export function getAppCommand(config: AppConfig | undefined): string | undefined {
+  if (!config) return undefined;
+  if (typeof config === 'string') return config;
+  return config.command;
+}
+
+/** Helper to get the target from an AppConfig (default varies by app type) */
+export function getAppTarget(config: AppConfig | undefined, defaultTarget: AppTarget = 'external'): AppTarget {
+  if (!config) return defaultTarget;
+  if (typeof config === 'string') return 'external';
+  return config.target ?? defaultTarget;
 }
 
 export interface ScratchConfig {
@@ -113,8 +142,7 @@ const defaultConfig: Config = {
     padding: 8,
   },
   apps: {
-    terminal: 'Ghostty',
-    editor: 'Zed',
+    // No defaults - will use platform defaults
   },
   navigation: {},
   indicators: {

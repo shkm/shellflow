@@ -19,14 +19,14 @@ import { CommandPalette } from './components/CommandPalette';
 import { ProjectSwitcher } from './components/ProjectSwitcher';
 import { useWorktrees } from './hooks/useWorktrees';
 import { useGitStatus } from './hooks/useGitStatus';
-import { useConfig } from './hooks/useConfig';
+import { useConfig, getAppCommand, getAppTarget } from './hooks/useConfig';
 import { useScratchTerminals } from './hooks/useScratchTerminals';
 import { useIndicators } from './hooks/useIndicators';
 import { useDrawerTabs } from './hooks/useDrawerTabs';
 import { useSessionTabs, SessionTab } from './hooks/useSessionTabs';
 import { selectFolder, shutdown, ptyKill, ptyForceKill, stashChanges, stashPop, reorderProjects, reorderWorktrees, expandActionPrompt, ActionPromptContext, updateActionAvailability, touchProject } from './lib/tauri';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { ActionContext, getMenuAvailability } from './lib/actions';
+import { ActionContext, ActionId, getMenuAvailability } from './lib/actions';
 import { useActions, ActionHandlers } from './hooks/useActions';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useMappings } from './hooks/useMappings';
@@ -47,6 +47,14 @@ const MAX_ZOOM = 10; // maximum zoom level
 
 // Which pane has focus per worktree
 type FocusedPane = 'main' | 'drawer';
+
+/** Substitute `{{ path }}` in a command template, or append path if no template. */
+function substitutePathTemplate(command: string, path: string): string {
+  if (command.includes('{{ path }}')) {
+    return command.replace(/\{\{ path \}\}/g, `"${path}"`);
+  }
+  return `${command} "${path}"`;
+}
 
 function App() {
   const { projects, addProject, hideProject, activateProject, createWorktree, renameWorktree, reorderProjectsOptimistic, reorderWorktreesOptimistic, refresh: refreshProjects } = useWorktrees();
@@ -795,6 +803,84 @@ function App() {
       return next;
     });
   }, [activeEntityId, drawerTabCounters]);
+
+  // Open a command (like an editor) in the drawer
+  const handleOpenInDrawer = useCallback((directory: string, command: string) => {
+    if (!activeEntityId) return;
+
+    const currentCounter = drawerTabCounters.get(activeEntityId) ?? 0;
+    const newCounter = currentCounter + 1;
+
+    // Extract the command name for the label (e.g., "nvim" from "nvim /path/to/file")
+    const cmdName = command.split(' ')[0].split('/').pop() ?? 'Terminal';
+
+    const newTab: DrawerTab = {
+      id: `${activeEntityId}-drawer-${newCounter}`,
+      label: cmdName,
+      type: 'terminal',
+      command,
+      directory,
+    };
+
+    setDrawerTabs((prev) => {
+      const currentTabs = prev.get(activeEntityId) ?? [];
+      const next = new Map(prev);
+      next.set(activeEntityId, [...currentTabs, newTab]);
+      return next;
+    });
+    setDrawerActiveTabIds((prev) => {
+      const next = new Map(prev);
+      next.set(activeEntityId, newTab.id);
+      return next;
+    });
+    setDrawerTabCounters((prev) => {
+      const next = new Map(prev);
+      next.set(activeEntityId, newCounter);
+      return next;
+    });
+
+    // Open the drawer directly (don't use handleToggleDrawer which would create a default tab)
+    if (!isDrawerOpen) {
+      const panel = drawerPanelRef.current;
+      if (panel) {
+        panel.resize(lastDrawerSize.current);
+      }
+      setIsDrawerOpen(true);
+      dispatchPanelResizeComplete();
+    }
+    setFocusStates((prev) => {
+      const next = new Map(prev);
+      next.set(activeEntityId, 'drawer');
+      return next;
+    });
+  }, [activeEntityId, drawerTabCounters, isDrawerOpen, dispatchPanelResizeComplete]);
+
+  // Open a command (like an editor) in a new session tab
+  const handleOpenInTab = useCallback((directory: string, command: string) => {
+    if (!activeSessionId) return;
+
+    const counter = incrementSessionCounter(activeSessionId);
+
+    // Extract the command name for the label (e.g., "nvim" from "nvim /path/to/file")
+    const cmdName = command.split(' ')[0].split('/').pop() ?? 'Terminal';
+
+    const newTab: SessionTab = {
+      id: `${activeSessionId}-session-${counter}`,
+      label: cmdName,
+      isPrimary: false,
+      command,
+      directory,
+    };
+
+    addSessionTab(activeSessionId, newTab);
+
+    // Focus the main pane
+    setFocusStates((prev) => {
+      const next = new Map(prev);
+      next.set(activeEntityId ?? activeSessionId, 'main');
+      return next;
+    });
+  }, [activeSessionId, activeEntityId, incrementSessionCounter, addSessionTab]);
 
   // Session tab handlers (main pane tabs)
   const handleAddSessionTab = useCallback(() => {
@@ -2226,6 +2312,27 @@ function App() {
     taskCount: config.tasks.length,
   }), [activeProjectId, activeWorktreeId, activeScratchId, activeEntityId, isDrawerOpen, activeFocusState, activeDrawerTabId, openWorktreesInOrder.length, previousView, activeSelectedTask, config.tasks.length]);
 
+  // Dynamic labels for command palette based on configured apps
+  const commandPaletteLabelOverrides = useMemo(() => {
+    const overrides: Partial<Record<ActionId, string>> = {};
+
+    const fileManagerCommand = getAppCommand(config.apps.fileManager);
+    const terminalCommand = getAppCommand(config.apps.terminal);
+    const editorCommand = getAppCommand(config.apps.editor);
+
+    if (fileManagerCommand) {
+      overrides.openInFinder = `Open in ${fileManagerCommand}`;
+    }
+    if (terminalCommand) {
+      overrides.openInTerminal = `Open in ${terminalCommand}`;
+    }
+    if (editorCommand) {
+      overrides.openInEditor = `Open in ${editorCommand}`;
+    }
+
+    return overrides;
+  }, [config.apps.fileManager, config.apps.terminal, config.apps.editor]);
+
   // Helper to get current entity index in openEntitiesInOrder
   const getCurrentEntityIndex = useCallback(() => {
     const currentEntityId = activeWorktreeId ?? activeScratchId ?? (activeProjectId && !activeWorktreeId ? activeProjectId : null);
@@ -2278,30 +2385,81 @@ function App() {
       }
     },
     openInFinder: () => {
+      let path: string | undefined;
       if (activeWorktreeId) {
-        const worktree = projects.flatMap(p => p.worktrees).find(w => w.id === activeWorktreeId);
-        if (worktree) invoke('open_folder', { path: worktree.path });
+        path = projects.flatMap(p => p.worktrees).find(w => w.id === activeWorktreeId)?.path;
+      } else if (activeScratchId) {
+        path = scratchCwds.get(activeScratchId);
       } else if (activeProjectId) {
-        const project = projects.find(p => p.id === activeProjectId);
-        if (project) invoke('open_folder', { path: project.path });
+        path = projects.find(p => p.id === activeProjectId)?.path;
       }
+      if (path) invoke('open_folder', { path });
     },
     openInTerminal: () => {
+      const target = getAppTarget(config.apps.terminal);
+      const command = getAppCommand(config.apps.terminal);
+
+      // Get the path
+      let path: string | undefined;
       if (activeWorktreeId) {
-        const worktree = projects.flatMap(p => p.worktrees).find(w => w.id === activeWorktreeId);
-        if (worktree) invoke('open_with_app', { path: worktree.path, app: config.apps.terminal });
+        path = projects.flatMap(p => p.worktrees).find(w => w.id === activeWorktreeId)?.path;
+      } else if (activeScratchId) {
+        path = scratchCwds.get(activeScratchId);
       } else if (activeProjectId) {
-        const project = projects.find(p => p.id === activeProjectId);
-        if (project) invoke('open_with_app', { path: project.path, app: config.apps.terminal });
+        path = projects.find(p => p.id === activeProjectId)?.path;
+      }
+      if (!path) return;
+
+      if (target === 'drawer') {
+        // Open a new shell tab in the drawer (no command = shell)
+        if (activeEntityId) {
+          handleAddDrawerTab();
+          if (!isDrawerOpen) setIsDrawerOpen(true);
+        }
+      } else if (target === 'tab') {
+        // Open a new main area tab with shell
+        handleAddSessionTab();
+      } else {
+        // external target - use open_in_terminal with optional command
+        invoke('open_in_terminal', { path, app: command ?? null });
       }
     },
     openInEditor: () => {
+      const command = getAppCommand(config.apps.editor);
+      // Editor defaults to 'terminal' when not configured (same as Sidebar default)
+      const target = config.apps.editor ? getAppTarget(config.apps.editor) : getAppTarget(null, 'terminal');
+      const terminalCommand = getAppCommand(config.apps.terminal);
+
+      // Get the path
+      let path: string | undefined;
       if (activeWorktreeId) {
-        const worktree = projects.flatMap(p => p.worktrees).find(w => w.id === activeWorktreeId);
-        if (worktree) invoke('open_with_app', { path: worktree.path, app: config.apps.editor });
+        path = projects.flatMap(p => p.worktrees).find(w => w.id === activeWorktreeId)?.path;
+      } else if (activeScratchId) {
+        path = scratchCwds.get(activeScratchId);
       } else if (activeProjectId) {
-        const project = projects.find(p => p.id === activeProjectId);
-        if (project) invoke('open_with_app', { path: project.path, app: config.apps.editor });
+        path = projects.find(p => p.id === activeProjectId)?.path;
+      }
+      if (!path) return;
+
+      if (!command) {
+        console.error('No editor configured');
+        return;
+      }
+
+      if (target === 'drawer') {
+        // Open in shellflow's drawer with template substitution
+        handleOpenInDrawer(path, substitutePathTemplate(command, path));
+      } else if (target === 'tab') {
+        // Open in a new session tab with template substitution
+        handleOpenInTab(path, substitutePathTemplate(command, path));
+      } else {
+        // External or terminal target - handled by backend (which also does template substitution)
+        invoke('open_in_editor', {
+          path,
+          app: command,
+          target,
+          terminalApp: terminalCommand ?? null,
+        });
       }
     },
     closeProject: () => {
@@ -2354,8 +2512,9 @@ function App() {
     helpReleaseNotes: () => openUrl('https://github.com/shkm/shellflow/releases'),
   }), [
     activeProjectId, activeWorktreeId, activeScratchId, activeDrawerTabId, isDrawerOpen, activeFocusState,
-    openWorktreesInOrder, projects, config.apps.terminal, config.apps.editor,
+    openWorktreesInOrder, projects, config.apps, activeEntityId, scratchCwds,
     handleAddProject, handleAddWorktree, handleAddScratchTerminal, handleCloseDrawerTab, handleCloseProject,
+    handleAddDrawerTab, handleOpenInDrawer, handleOpenInTab, handleAddSessionTab,
     handleCloseWorktree, handleCloseScratch,
     handleToggleDrawer, handleToggleDrawerExpand, handleToggleRightPanel, handleToggleProjectSwitcher,
     handleZoomIn, handleZoomOut, handleZoomReset, handleSwitchToPreviousView, handleSwitchFocus,
@@ -2717,6 +2876,7 @@ function App() {
         <CommandPalette
           actionContext={actionContext}
           getShortcut={getShortcut}
+          labelOverrides={commandPaletteLabelOverrides}
           tasks={config.tasks}
           projects={projects}
           scratchTerminals={scratchTerminals}
@@ -2799,8 +2959,7 @@ function App() {
               runningTask={activeRunningTask && activeEntityId ? { ...activeRunningTask, worktreeId: activeEntityId, kind: config.tasks.find(t => t.name === activeRunningTask.taskName)?.kind ?? 'command' } : null}
               allRunningTasks={activeEntityId ? runningTasks.get(activeEntityId) ?? [] : []}
               terminalFontFamily={config.main.fontFamily}
-              terminalApp={config.apps.terminal}
-              editorApp={config.apps.editor}
+              appsConfig={config.apps}
               showIdleCheck={config.indicators.showIdleCheck}
               activeScratchCwd={activeScratchId ? scratchCwds.get(activeScratchId) ?? null : null}
               homeDir={homeDir}
@@ -2834,6 +2993,8 @@ function App() {
               onReorderScratchTerminals={handleReorderScratchTerminals}
               onAutoEditConsumed={() => setAutoEditWorktreeId(null)}
               onEditingScratchConsumed={() => setEditingScratchId(null)}
+              onOpenInDrawer={handleOpenInDrawer}
+              onOpenInTab={handleOpenInTab}
             />
           </div>
         </Panel>
@@ -2977,7 +3138,8 @@ function App() {
                           <DrawerTerminal
                             id={tab.id}
                             entityId={entityId}
-                            directory={getEntityDirectory(entityId)}
+                            directory={tab.directory ?? getEntityDirectory(entityId)}
+                            command={tab.command}
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&

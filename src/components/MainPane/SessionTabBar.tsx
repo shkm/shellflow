@@ -1,4 +1,4 @@
-import { Plus, Terminal } from 'lucide-react';
+import { Plus, Terminal, Code } from 'lucide-react';
 import { useState, useRef } from 'react';
 import {
   DndContext,
@@ -140,7 +140,11 @@ export function SessionTabBar({
         <DragOverlay dropAnimation={null}>
           {activeDragTab && (
             <div className="flex items-center gap-2 px-3 h-8 bg-zinc-700 text-zinc-100 border border-zinc-600 rounded shadow-lg">
-              <Terminal size={14} className="flex-shrink-0" />
+              {activeDragTab.command ? (
+                <Code size={14} className="flex-shrink-0" />
+              ) : (
+                <Terminal size={14} className="flex-shrink-0" />
+              )}
               <span className="text-sm truncate max-w-[120px]">{activeDragTab.label}</span>
             </div>
           )}

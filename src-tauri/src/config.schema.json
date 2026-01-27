@@ -74,17 +74,19 @@
     },
     "apps": {
       "type": "object",
-      "description": "External applications to open directories with",
+      "description": "External applications to open directories with. If omitted, uses platform defaults.",
       "properties": {
         "terminal": {
-          "type": "string",
-          "description": "Terminal application name (as recognized by the system)",
-          "default": "Ghostty"
+          "$ref": "#/$defs/appConfig",
+          "description": "Terminal app. Default: Terminal.app (macOS), xdg-terminal-exec (Linux), Windows Terminal (Windows)."
         },
         "editor": {
-          "type": "string",
-          "description": "Code editor application name (as recognized by the system)",
-          "default": "Zed"
+          "$ref": "#/$defs/appConfig",
+          "description": "Editor app. Default: $VISUAL or $EDITOR, opened in a terminal window."
+        },
+        "fileManager": {
+          "$ref": "#/$defs/appConfig",
+          "description": "File manager app. Default: Finder (macOS), xdg-open (Linux), explorer (Windows)."
         }
       },
       "additionalProperties": false
@@ -420,6 +422,39 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "appTarget": {
+      "type": "string",
+      "enum": ["external", "drawer", "tab", "terminal"],
+      "description": "Where to open the app: 'external' (run command directly), 'drawer' (shellflow drawer), 'tab' (new main area tab), 'terminal' (inside a new terminal window)"
+    },
+    "appConfigFull": {
+      "type": "object",
+      "description": "Full app configuration with optional command and target",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to use. Supports {{ path }} template for path placement. If template is omitted, path is appended. Examples: 'nvim', 'code -g {{ path }}', 'nvim +100 {{ path }}'."
+        },
+        "target": {
+          "$ref": "#/$defs/appTarget",
+          "description": "Where to open the app",
+          "default": "external"
+        }
+      },
+      "additionalProperties": false
+    },
+    "appConfig": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Simple string format: command with optional {{ path }} template. If template is omitted, path is appended."
+        },
+        {
+          "$ref": "#/$defs/appConfigFull"
+        }
+      ],
+      "description": "App configuration: either a simple command string or full object with command and target. Supports {{ path }} template."
+    },
     "shortcutString": {
       "type": "string",
       "description": "A keyboard shortcut string. Format: 'mod+key' where mod is ctrl, cmd, alt, shift. 'cmd' = Cmd on macOS, Ctrl on other platforms.",
