@@ -2551,7 +2551,7 @@ function App() {
       subtle: 'visible',
       visible: 'theme',
     };
-    overrides.cycleBorderStyle = `Border Style: ${effectiveBorderStyle} → ${nextStyle[effectiveBorderStyle]}`;
+    overrides['view::cycleBorderStyle'] = `Border Style: ${effectiveBorderStyle} → ${nextStyle[effectiveBorderStyle]}`;
 
     return overrides;
   }, [config.apps.fileManager, config.apps.terminal, config.apps.editor, effectiveBorderStyle]);
