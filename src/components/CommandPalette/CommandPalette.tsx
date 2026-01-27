@@ -68,6 +68,8 @@ interface CommandPaletteProps {
   actionContext: ActionContext;
   /** Get formatted shortcut for a namespaced action ID */
   getShortcut: (actionId: MappingsActionId) => string | null;
+  /** Override labels for specific actions (e.g., "Open in nvim" instead of "Open in Editor") */
+  labelOverrides?: Partial<Record<ActionId, string>>;
   tasks: TaskConfig[];
   projects: Project[];
   scratchTerminals: ScratchTerminal[];
@@ -83,6 +85,7 @@ interface CommandPaletteProps {
 export function CommandPalette({
   actionContext,
   getShortcut,
+  labelOverrides,
   tasks,
   projects,
   scratchTerminals,
@@ -104,6 +107,7 @@ export function CommandPalette({
     const availableActions = getAvailablePaletteActions(actionContext);
     for (const actionId of availableActions) {
       const meta = ACTION_METADATA[actionId];
+      const label = labelOverrides?.[actionId] ?? meta.label;
       let shortcut: string | undefined;
 
       // Look up shortcut using the new namespaced action ID
@@ -115,7 +119,7 @@ export function CommandPalette({
         }
       }
 
-      items.push({ type: 'action', id: actionId, label: meta.label, shortcut });
+      items.push({ type: 'action', id: actionId, label, shortcut });
     }
 
     // Add tasks (only if there's an active entity)
@@ -155,7 +159,7 @@ export function CommandPalette({
     }
 
     return items;
-  }, [actionContext, getShortcut, tasks, projects, scratchTerminals, openEntitiesInOrder]);
+  }, [actionContext, getShortcut, labelOverrides, tasks, projects, scratchTerminals, openEntitiesInOrder]);
 
   // Filter items by query (searches the full display label)
   const filteredItems = useMemo(() => {

@@ -448,23 +448,118 @@ impl Default for DrawerConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct AppsConfig {
-    /// Terminal application name (as recognized by the system)
-    pub terminal: String,
-    /// Code editor application name (as recognized by the system)
-    pub editor: String,
+/// Target for opening apps - where the app should open.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum AppTarget {
+    /// Open in external application (default) - runs the command directly
+    #[default]
+    External,
+    /// Open as a new tab in shellflow's drawer
+    Drawer,
+    /// Open as a new tab in the main area
+    Tab,
+    /// Open inside a new terminal window (for TUI apps like nvim, helix)
+    Terminal,
 }
 
-impl Default for AppsConfig {
-    fn default() -> Self {
-        Self {
-            terminal: "Ghostty".to_string(),
-            editor: "Zed".to_string(),
+/// Configuration for a single app (terminal or editor).
+/// Supports both string shorthand and full object form:
+/// - String: `"ghostty"` → command only, target defaults to External
+/// - Object: `{ "command": "nvim", "target": "drawer" }`
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum AppConfig {
+    /// Simple string form - just the command, target defaults to External
+    Simple(String),
+    /// Full object form with optional command and target
+    Full {
+        /// Command/app name to use. If omitted, uses platform defaults.
+        command: Option<String>,
+        /// Where to open the app
+        #[serde(default)]
+        target: AppTarget,
+    },
+}
+
+#[allow(dead_code)] // Used only in tests
+impl AppConfig {
+    /// Get the command, if specified
+    pub fn command(&self) -> Option<&str> {
+        match self {
+            AppConfig::Simple(cmd) => Some(cmd),
+            AppConfig::Full { command, .. } => command.as_deref(),
+        }
+    }
+
+    /// Get the target (defaults to External for Simple variant)
+    pub fn target(&self) -> AppTarget {
+        match self {
+            AppConfig::Simple(_) => AppTarget::External,
+            AppConfig::Full { target, .. } => *target,
         }
     }
 }
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig::Full {
+            command: None,
+            target: AppTarget::External,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct AppsConfig {
+    /// Terminal app configuration. If omitted, uses platform defaults.
+    pub terminal: Option<AppConfig>,
+    /// Code editor app configuration. If omitted, uses $VISUAL/$EDITOR in a terminal.
+    pub editor: Option<AppConfig>,
+    /// File manager app configuration. If omitted, uses platform defaults.
+    #[serde(rename = "fileManager")]
+    pub file_manager: Option<AppConfig>,
+}
+
+#[allow(dead_code)] // Used only in tests
+impl AppsConfig {
+    /// Get the terminal command, if specified
+    pub fn terminal_command(&self) -> Option<&str> {
+        self.terminal.as_ref().and_then(|c| c.command())
+    }
+
+    /// Get the terminal target (defaults to External)
+    pub fn terminal_target(&self) -> AppTarget {
+        self.terminal.as_ref().map(|c| c.target()).unwrap_or_default()
+    }
+
+    /// Get the editor command, if specified
+    pub fn editor_command(&self) -> Option<&str> {
+        self.editor.as_ref().and_then(|c| c.command())
+    }
+
+    /// Get the editor target (defaults to Terminal for TUI editors)
+    pub fn editor_target(&self) -> AppTarget {
+        self.editor.as_ref().map(|c| c.target()).unwrap_or(AppTarget::Terminal)
+    }
+
+    /// Get the file manager command, if specified
+    pub fn file_manager_command(&self) -> Option<&str> {
+        self.file_manager.as_ref().and_then(|c| c.command())
+    }
+
+    /// Get the file manager target (defaults to External)
+    pub fn file_manager_target(&self) -> AppTarget {
+        self.file_manager.as_ref().map(|c| c.target()).unwrap_or_default()
+    }
+}
+
+// Platform defaults are handled in lib.rs commands.
+// These are only used if the user hasn't configured anything:
+// - Terminal: Terminal.app (macOS), xdg-terminal-exec (Linux), Windows Terminal (Windows)
+// - Editor: $VISUAL or $EDITOR, run in terminal
+// - File Manager: Finder (macOS), xdg-open (Linux), explorer (Windows)
 
 /// A keyboard shortcut that can be platform-specific or universal.
 /// Examples:
@@ -1104,6 +1199,136 @@ mod tests {
             // Should have default values
             assert!(!mappings.quit.for_current_platform().is_empty());
             assert!(!mappings.command_palette.for_current_platform().is_empty());
+        }
+    }
+
+    mod app_config {
+        use super::*;
+
+        #[test]
+        fn deserializes_simple_string() {
+            let json = r#""ghostty""#;
+            let config: AppConfig = serde_json::from_str(json).unwrap();
+            assert!(matches!(config, AppConfig::Simple(_)));
+            assert_eq!(config.command(), Some("ghostty"));
+            assert_eq!(config.target(), AppTarget::External);
+        }
+
+        #[test]
+        fn deserializes_full_object_with_command_and_target() {
+            let json = r#"{"command": "nvim", "target": "drawer"}"#;
+            let config: AppConfig = serde_json::from_str(json).unwrap();
+            assert!(matches!(config, AppConfig::Full { .. }));
+            assert_eq!(config.command(), Some("nvim"));
+            assert_eq!(config.target(), AppTarget::Drawer);
+        }
+
+        #[test]
+        fn deserializes_full_object_with_only_target() {
+            let json = r#"{"target": "drawer"}"#;
+            let config: AppConfig = serde_json::from_str(json).unwrap();
+            assert_eq!(config.command(), None);
+            assert_eq!(config.target(), AppTarget::Drawer);
+        }
+
+        #[test]
+        fn deserializes_full_object_with_only_command() {
+            let json = r#"{"command": "zed"}"#;
+            let config: AppConfig = serde_json::from_str(json).unwrap();
+            assert_eq!(config.command(), Some("zed"));
+            assert_eq!(config.target(), AppTarget::External);
+        }
+
+        #[test]
+        fn deserializes_target_tab() {
+            let json = r#"{"target": "tab"}"#;
+            let config: AppConfig = serde_json::from_str(json).unwrap();
+            assert_eq!(config.command(), None);
+            assert_eq!(config.target(), AppTarget::Tab);
+        }
+
+        #[test]
+        fn serializes_simple_as_string() {
+            let config = AppConfig::Simple("ghostty".to_string());
+            let json = serde_json::to_string(&config).unwrap();
+            assert_eq!(json, r#""ghostty""#);
+        }
+
+        #[test]
+        fn serializes_full_as_object() {
+            let config = AppConfig::Full {
+                command: Some("nvim".to_string()),
+                target: AppTarget::Drawer,
+            };
+            let json = serde_json::to_string(&config).unwrap();
+            assert!(json.contains("nvim"));
+            assert!(json.contains("drawer"));
+        }
+    }
+
+    mod apps_config {
+        use super::*;
+
+        #[test]
+        fn default_has_no_apps_configured() {
+            let apps = AppsConfig::default();
+            assert!(apps.terminal.is_none());
+            assert!(apps.editor.is_none());
+            assert!(apps.file_manager.is_none());
+            assert_eq!(apps.terminal_command(), None);
+            assert_eq!(apps.editor_command(), None);
+            assert_eq!(apps.file_manager_command(), None);
+            // Terminal and file manager default to External, editor defaults to Terminal
+            assert_eq!(apps.terminal_target(), AppTarget::External);
+            assert_eq!(apps.editor_target(), AppTarget::Terminal);
+            assert_eq!(apps.file_manager_target(), AppTarget::External);
+        }
+
+        #[test]
+        fn deserializes_string_shorthand() {
+            let json = r#"{
+                "terminal": "ghostty",
+                "editor": "zed"
+            }"#;
+            let apps: AppsConfig = serde_json::from_str(json).unwrap();
+            assert_eq!(apps.terminal_command(), Some("ghostty"));
+            assert_eq!(apps.editor_command(), Some("zed"));
+            assert_eq!(apps.terminal_target(), AppTarget::External);
+            assert_eq!(apps.editor_target(), AppTarget::External);
+        }
+
+        #[test]
+        fn deserializes_mixed_formats() {
+            let json = r#"{
+                "terminal": "ghostty",
+                "editor": {"command": "nvim", "target": "drawer"}
+            }"#;
+            let apps: AppsConfig = serde_json::from_str(json).unwrap();
+            assert_eq!(apps.terminal_command(), Some("ghostty"));
+            assert_eq!(apps.terminal_target(), AppTarget::External);
+            assert_eq!(apps.editor_command(), Some("nvim"));
+            assert_eq!(apps.editor_target(), AppTarget::Drawer);
+        }
+
+        #[test]
+        fn deserializes_empty_object() {
+            let json = r#"{}"#;
+            let apps: AppsConfig = serde_json::from_str(json).unwrap();
+            assert!(apps.terminal.is_none());
+            assert!(apps.editor.is_none());
+        }
+
+        #[test]
+        fn deserializes_target_only() {
+            let json = r#"{
+                "terminal": {"target": "drawer"},
+                "editor": {"target": "tab"}
+            }"#;
+            let apps: AppsConfig = serde_json::from_str(json).unwrap();
+            assert_eq!(apps.terminal_command(), None);
+            assert_eq!(apps.terminal_target(), AppTarget::Drawer);
+            assert_eq!(apps.editor_command(), None);
+            assert_eq!(apps.editor_target(), AppTarget::Tab);
         }
     }
 }

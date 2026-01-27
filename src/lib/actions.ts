@@ -237,7 +237,7 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   newScratchTerminal: { label: 'New Scratch Terminal', category: 'File', showInPalette: true },
   newTab: { label: 'New Tab', category: 'File', showInPalette: true },
   closeTab: { label: 'Close', category: 'File', showInPalette: true },
-  openInFinder: { label: 'Open in Finder', category: 'File', showInPalette: true },
+  openInFinder: { label: 'Open in File Manager', category: 'File', showInPalette: true },
   openInTerminal: { label: 'Open in Terminal', category: 'File', showInPalette: true },
   openInEditor: { label: 'Open in Editor', category: 'File', showInPalette: true },
   closeProject: { label: 'Close Project', category: 'File', showInPalette: true },

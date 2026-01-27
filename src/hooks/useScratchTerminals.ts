@@ -25,6 +25,22 @@ export function useScratchTerminals(): UseScratchTerminalsReturn {
     invoke<string>('get_home_dir').then(setHomeDir).catch(() => {});
   }, []);
 
+  // Set initial cwd for any terminals created before homeDir was available
+  useEffect(() => {
+    if (!homeDir) return;
+    setScratchCwds((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const scratch of scratchTerminals) {
+        if (!next.has(scratch.id)) {
+          next.set(scratch.id, homeDir);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [homeDir, scratchTerminals]);
+
   const addScratchTerminal = useCallback(() => {
     const newCounter = scratchTerminalCounter + 1;
     const newScratch: ScratchTerminal = {

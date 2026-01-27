@@ -97,8 +97,10 @@ lazy_static::lazy_static! {
     pub(crate) static ref SHUTDOWN_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 }
 
-/// Get the user's PATH, using cached value if available
-fn get_cached_user_path() -> String {
+/// Get the user's PATH, using cached value if available.
+/// This runs the user's login shell to get their actual PATH,
+/// which may differ from the process environment.
+pub fn get_cached_user_path() -> String {
     let mut cache = CACHED_USER_PATH.lock();
     if let Some(path) = cache.as_ref() {
         return path.clone();

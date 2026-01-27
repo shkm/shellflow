@@ -17,12 +17,29 @@
   // fontFamily, fontSize, fontLigatures, padding
   "drawer": {},
 
-  // External applications to open directories with
+  // External applications to open directories/files with.
+  // Supports string shorthand ("zed") or object form ({ "command": "nvim", "target": "drawer" })
+  //
+  // Commands support {{ path }} template for path placement:
+  //   - "nvim" → nvim "/path/to/file" (path appended)
+  //   - "nvim {{ path }}" → nvim "/path/to/file" (explicit)
+  //   - "code -g {{ path }}" → code -g "/path/to/file" (with flags)
+  //
+  // Target options:
+  //   - "external": Run command directly (for GUI apps)
+  //   - "terminal": Run inside a new terminal window (for TUI apps)
+  //   - "drawer": Open in shellflow's drawer
+  //   - "tab": Open in a new main area tab
+  //
+  // Platform defaults (when not configured):
+  //   - terminal: Terminal.app (macOS), xdg-terminal-exec (Linux), Windows Terminal
+  //   - editor: $VISUAL or $EDITOR, in a new terminal window
+  //   - fileManager: Finder (macOS), xdg-open (Linux), explorer (Windows)
   "apps": {
-    // Terminal application name (as recognized by the system)
-    "terminal": "Ghostty",
-    // Code editor application name (as recognized by the system)
-    "editor": "Zed"
+    // "terminal": "ghostty",
+    // "editor": { "command": "zed", "target": "external" },
+    // "editor": { "command": "nvim", "target": "drawer" },
+    // "fileManager": "Finder"
   },
 
   "worktree": {

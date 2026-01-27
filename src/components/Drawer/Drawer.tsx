@@ -1,4 +1,4 @@
-import { Plus, Maximize2, Minimize2, Terminal, Play, Square, Check, X } from 'lucide-react';
+import { Plus, Maximize2, Minimize2, Terminal, Play, Square, Check, X, Code } from 'lucide-react';
 import { ReactNode, useState, useRef } from 'react';
 import {
   DndContext,
@@ -23,6 +23,10 @@ export interface DrawerTab {
   label: string;
   type: 'terminal' | 'task' | 'action';
   taskName?: string;
+  /** For terminal tabs: optional command to run instead of shell */
+  command?: string;
+  /** For terminal tabs: directory to run the command in */
+  directory?: string;
   /** For action tabs: the action type (e.g., 'merge_worktree_with_conflicts') */
   actionType?: string;
   /** For action tabs: the expanded prompt to send when ready */
@@ -182,6 +186,8 @@ export function Drawer({
                 <div className="flex items-center gap-2 px-3 h-8 bg-zinc-700 text-zinc-100 border border-zinc-600 rounded shadow-lg">
                   {activeDragTab.type === 'task' ? (
                     renderTaskIcon(taskStatuses.get(activeDragTab.taskName ?? ''))
+                  ) : activeDragTab.command ? (
+                    <Code size={14} className="flex-shrink-0" />
                   ) : (
                     <Terminal size={14} className="flex-shrink-0" />
                   )}

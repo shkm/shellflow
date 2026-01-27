@@ -805,6 +805,22 @@ fn spawn_shell(
     pty::spawn_pty(&app, &state, entity_id, &path, "shell", cols, rows, None, None).map_err(map_err)
 }
 
+/// Spawn a PTY running a specific command (for opening editors in drawer/tab)
+#[tauri::command]
+fn spawn_command(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    entity_id: &str,
+    directory: &str,
+    command: &str,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<String> {
+    // Run through user's shell so quoted paths and shell features work correctly
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+    pty::spawn_pty(&app, &state, entity_id, directory, command, cols, rows, Some(&shell), None).map_err(map_err)
+}
+
 #[tauri::command]
 fn pty_write(state: State<'_, Arc<AppState>>, pty_id: &str, data: &str) -> Result<()> {
     pty::write_to_pty(&state, pty_id, data).map_err(map_err)
@@ -1344,47 +1360,203 @@ fn get_home_dir() -> Result<String> {
         .map(|p| p.to_string_lossy().to_string())
 }
 
-/// Open a folder in the system file manager
+/// Open a folder in the system file manager.
+/// If `app` is provided, uses that app. Otherwise uses platform default.
 #[tauri::command]
-fn open_folder(path: &str) -> Result<()> {
+fn open_in_file_manager(path: &str, app: Option<&str>) -> Result<()> {
     use std::process::Command;
 
-    #[cfg(target_os = "macos")]
-    {
-        Command::new("open")
-            .arg(path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
+    if let Some(app) = app {
+        return open_with_app(path, app);
     }
 
+    // Platform defaults
+    #[cfg(target_os = "macos")]
+    Command::new("open").arg(path).spawn().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "linux")]
+    Command::new("xdg-open").arg(path).spawn().map_err(|e| e.to_string())?;
+
     #[cfg(target_os = "windows")]
-    {
-        Command::new("explorer")
-            .arg(path)
+    Command::new("explorer").arg(path).spawn().map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Backwards compatibility alias
+#[tauri::command]
+fn open_folder(path: &str) -> Result<()> {
+    open_in_file_manager(path, None)
+}
+
+/// Substitute `{{ path }}` in a command template, or append path if no template.
+fn substitute_path_template(command: &str, path: &str) -> String {
+    if command.contains("{{ path }}") {
+        command.replace("{{ path }}", path)
+    } else {
+        format!("{} {}", command, shell_escape(path))
+    }
+}
+
+/// Escape a path for shell use (wrap in single quotes, escape existing quotes).
+fn shell_escape(s: &str) -> String {
+    format!("'{}'", s.replace("'", "'\\''"))
+}
+
+/// Open a path with a specific application by running the command directly.
+/// Supports `{{ path }}` template substitution. If not present, path is appended.
+/// This is for GUI apps that can be launched via command line (code, zed, etc).
+/// For TUI apps, use target: "drawer" or target: "tab" instead.
+#[tauri::command]
+fn open_with_app(path: &str, app: &str) -> Result<()> {
+    use std::process::Command;
+
+    let user_path = pty::get_cached_user_path();
+    let full_command = substitute_path_template(app, path);
+
+    // Use shell to handle complex commands with arguments
+    #[cfg(unix)]
+    Command::new("sh")
+        .args(["-c", &full_command])
+        .env("PATH", &user_path)
+        .spawn()
+        .map_err(|e| format!("Failed to launch '{}': {}", full_command, e))?;
+
+    #[cfg(windows)]
+    Command::new("cmd")
+        .args(["/C", &full_command])
+        .env("PATH", &user_path)
+        .spawn()
+        .map_err(|e| format!("Failed to launch '{}': {}", full_command, e))?;
+
+    Ok(())
+}
+
+/// Open a path in a terminal application.
+/// If `app` is provided, uses that app. Otherwise uses platform default.
+#[tauri::command]
+fn open_in_terminal(path: &str, app: Option<&str>) -> Result<()> {
+    use std::process::Command;
+
+    if let Some(app) = app {
+        return open_with_app(path, app);
+    }
+
+    // Platform defaults
+    #[cfg(target_os = "macos")]
+    Command::new("open")
+        .args(["-a", "Terminal", path])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "linux")]
+    Command::new("xdg-terminal-exec")
+        .current_dir(path)
+        .env("PATH", pty::get_cached_user_path())
+        .spawn()
+        .map_err(|e| format!("Failed to launch xdg-terminal-exec: {}. Install it or configure apps.terminal.", e))?;
+
+    #[cfg(target_os = "windows")]
+    Command::new("wt")
+        .args(["-d", path])
+        .spawn()
+        .map_err(|e| format!("Failed to launch Windows Terminal: {}", e))?;
+
+    Ok(())
+}
+
+/// Open a path in an editor application.
+/// - `app`: Editor command. If None, uses $VISUAL or $EDITOR.
+/// - `target`: "external" (GUI app) or "terminal" (TUI in new terminal window).
+/// - `terminal_app`: Terminal to use when target is "terminal".
+#[tauri::command]
+fn open_in_editor(
+    path: &str,
+    app: Option<&str>,
+    target: Option<&str>,
+    terminal_app: Option<&str>,
+) -> Result<()> {
+    let editor = app
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("VISUAL").ok())
+        .or_else(|| std::env::var("EDITOR").ok())
+        .ok_or_else(|| "No editor configured. Set $VISUAL or $EDITOR, or configure apps.editor.".to_string())?;
+
+    // Target "terminal": run editor inside a new terminal window
+    if target == Some("terminal") {
+        return open_terminal_with_command(&editor, path, terminal_app);
+    }
+
+    // Target "external": run editor directly (for GUI editors)
+    open_with_app(path, &editor)
+}
+
+/// Launch a terminal running a specific command.
+/// Used for TUI apps (editors, etc.) that need to run inside a terminal.
+/// Supports `{{ path }}` template substitution. If not present, path is appended.
+fn open_terminal_with_command(command: &str, path: &str, terminal_app: Option<&str>) -> Result<()> {
+    use std::process::Command;
+
+    let user_path = pty::get_cached_user_path();
+    let full_command = substitute_path_template(command, path);
+
+    // If user specified a terminal, use it to run the command
+    if let Some(terminal) = terminal_app {
+        // The terminal app should support running a command (e.g., ghostty -e, kitty, etc.)
+        Command::new(terminal)
+            .args(["-e", "sh", "-c", &full_command])
+            .env("PATH", &user_path)
             .spawn()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| format!("Failed to launch {}: {}", terminal, e))?;
+        return Ok(());
+    }
+
+    // Platform defaults for running a command in a new terminal
+    #[cfg(target_os = "macos")]
+    {
+        // Use Terminal.app via AppleScript
+        let script = format!(
+            r#"tell application "Terminal"
+                activate
+                do script "{}"
+            end tell"#,
+            full_command.replace("\"", "\\\"").replace("\\", "\\\\")
+        );
+        Command::new("osascript")
+            .args(["-e", &script])
+            .spawn()
+            .map_err(|e| format!("Failed to open Terminal.app: {}", e))?;
     }
 
     #[cfg(target_os = "linux")]
     {
-        Command::new("xdg-open")
-            .arg(path)
+        Command::new("xdg-terminal-exec")
+            .args(["sh", "-c", &full_command])
+            .env("PATH", &user_path)
             .spawn()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| format!("Failed to launch xdg-terminal-exec: {}. Install it or configure apps.terminal.", e))?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("wt")
+            .args(["cmd", "/C", &full_command])
+            .spawn()
+            .map_err(|e| format!("Failed to launch Windows Terminal: {}", e))?;
     }
 
     Ok(())
 }
 
-/// Open a path with a specific application
+/// Open a path with the OS default handler (like double-clicking in file manager)
 #[tauri::command]
-fn open_with_app(path: &str, app: &str) -> Result<()> {
+fn open_default(path: &str) -> Result<()> {
     use std::process::Command;
 
     #[cfg(target_os = "macos")]
     {
         Command::new("open")
-            .args(["-a", app, path])
+            .arg(path)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -1392,14 +1564,14 @@ fn open_with_app(path: &str, app: &str) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
         Command::new("cmd")
-            .args(["/c", "start", "", app, path])
+            .args(["/c", "start", "", path])
             .spawn()
             .map_err(|e| e.to_string())?;
     }
 
     #[cfg(target_os = "linux")]
     {
-        Command::new(app)
+        Command::new("xdg-open")
             .arg(path)
             .spawn()
             .map_err(|e| e.to_string())?;
@@ -1636,10 +1808,15 @@ pub fn run() {
             get_home_dir,
             open_folder,
             open_with_app,
+            open_in_terminal,
+            open_in_editor,
+            open_in_file_manager,
+            open_default,
             spawn_main,
             spawn_terminal,
             spawn_scratch_terminal,
             spawn_shell,
+            spawn_command,
             spawn_action,
             watch_merge_state,
             stop_merge_watcher,

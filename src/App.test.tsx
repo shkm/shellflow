@@ -10,6 +10,7 @@ import {
   emitEvent,
   createTestProject,
   createTestWorktree,
+  createTestConfig,
   defaultTestConfig,
 } from './test/setup';
 
@@ -898,6 +899,172 @@ describe('App', () => {
         expect(lastSpawn.args.worktreeId).toBe('wt-1');
         expect(lastSpawn.args.worktreeId).not.toContain('-session-');
       }, { timeout: 3000 });
+    });
+  });
+
+  describe('Open In Actions', () => {
+    it('openInFinder works with scratch terminal using cwd', async () => {
+      // Setup: scratch.startOnLaunch is true by default, home dir is /Users/test
+      render(<App />);
+
+      // Wait for scratch terminal to be created and spawned
+      await waitFor(() => {
+        expect(screen.getByText('Terminal 1')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Wait for terminal to be spawned (which means it's fully active)
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_scratch_terminal')).toBe(true);
+      });
+
+      // Click on the scratch terminal to ensure it's selected
+      const user = userEvent.setup();
+      await user.click(screen.getByText('Terminal 1'));
+
+      // Clear invoke history to isolate our test
+      invokeHistory.length = 0;
+
+      // Trigger openInFinder via menu action
+      await act(async () => {
+        emitEvent('menu-action', 'open_in_finder');
+      });
+
+      // Verify open_folder was called with the scratch terminal's cwd (home dir)
+      await waitFor(() => {
+        const openFolderCalls = invokeHistory.filter((h) => h.command === 'open_folder');
+        expect(openFolderCalls.length).toBe(1);
+        expect(openFolderCalls[0].args).toEqual({ path: '/Users/test' });
+      });
+    });
+
+    it('openInFinder works with worktree using worktree path', async () => {
+      const worktree = createTestWorktree({
+        id: 'wt-1',
+        name: 'feature-branch',
+        path: '/Users/test/projects/my-project/.worktrees/feature-branch',
+      });
+      const project = createTestProject({
+        id: 'proj-1',
+        name: 'my-project',
+        path: '/Users/test/projects/my-project',
+        worktrees: [worktree],
+      });
+      mockInvokeResponses.set('list_projects', [project]);
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for project to load and expand it
+      await waitFor(() => {
+        expect(screen.getByText('my-project')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click project to expand
+      await user.click(screen.getByText('my-project'));
+
+      // Click worktree to select it
+      await waitFor(() => {
+        expect(screen.getByText('feature-branch')).toBeInTheDocument();
+      });
+      await user.click(screen.getByText('feature-branch'));
+
+      // Wait for worktree to be selected (terminal spawns)
+      await waitFor(() => {
+        const spawnCalls = invokeHistory.filter((h) => h.command === 'spawn_main');
+        expect(spawnCalls.length).toBeGreaterThan(0);
+      });
+
+      // Clear invoke history
+      invokeHistory.length = 0;
+
+      // Trigger openInFinder
+      await act(async () => {
+        emitEvent('menu-action', 'open_in_finder');
+      });
+
+      // Verify open_folder was called with worktree path
+      await waitFor(() => {
+        const openFolderCalls = invokeHistory.filter((h) => h.command === 'open_folder');
+        expect(openFolderCalls.length).toBe(1);
+        expect(openFolderCalls[0].args).toEqual({
+          path: '/Users/test/projects/my-project/.worktrees/feature-branch',
+        });
+      });
+    });
+
+    it('openInTerminal with external target invokes open_in_terminal for scratch terminal', async () => {
+      // Config with external terminal target
+      mockInvokeResponses.set('get_config', createTestConfig({
+        apps: { terminal: 'ghostty', editor: 'nvim' },
+      }));
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for scratch terminal to be spawned
+      await waitFor(() => {
+        expect(screen.getByText('Terminal 1')).toBeInTheDocument();
+      }, { timeout: 3000 });
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_scratch_terminal')).toBe(true);
+      });
+
+      await user.click(screen.getByText('Terminal 1'));
+      invokeHistory.length = 0;
+
+      await act(async () => {
+        emitEvent('menu-action', 'open_in_terminal');
+      });
+
+      // Verify open_in_terminal was called with scratch cwd
+      await waitFor(() => {
+        const openTerminalCalls = invokeHistory.filter((h) => h.command === 'open_in_terminal');
+        expect(openTerminalCalls.length).toBe(1);
+        expect(openTerminalCalls[0].args).toEqual({
+          path: '/Users/test',
+          app: 'ghostty',
+        });
+      });
+    });
+
+    it('openInEditor with external target invokes open_in_editor for scratch terminal', async () => {
+      // Config with external editor target
+      mockInvokeResponses.set('get_config', createTestConfig({
+        apps: {
+          terminal: 'ghostty',
+          editor: { command: 'zed', target: 'external' },
+        },
+      }));
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Wait for scratch terminal to be spawned
+      await waitFor(() => {
+        expect(screen.getByText('Terminal 1')).toBeInTheDocument();
+      }, { timeout: 3000 });
+      await waitFor(() => {
+        expect(invokeHistory.some((h) => h.command === 'spawn_scratch_terminal')).toBe(true);
+      });
+
+      await user.click(screen.getByText('Terminal 1'));
+      invokeHistory.length = 0;
+
+      await act(async () => {
+        emitEvent('menu-action', 'open_in_editor');
+      });
+
+      // Verify open_in_editor was called with scratch cwd
+      await waitFor(() => {
+        const openEditorCalls = invokeHistory.filter((h) => h.command === 'open_in_editor');
+        expect(openEditorCalls.length).toBe(1);
+        expect(openEditorCalls[0].args).toEqual({
+          path: '/Users/test',
+          app: 'zed',
+          target: 'external',
+          terminalApp: 'ghostty',
+        });
+      });
     });
   });
 });
