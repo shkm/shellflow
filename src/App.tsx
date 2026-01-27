@@ -85,6 +85,7 @@ function App() {
     renameScratchTerminal,
     reorderScratchTerminals,
     updateScratchCwd,
+    removeScratchCwd,
   } = useScratchTerminals();
 
   // Open project terminals (main repo shells are kept alive for these)
@@ -1700,7 +1701,12 @@ function App() {
   }, [activeWorktreeId, activeProjectId, activeScratchId]);
 
   const handleCloseScratch = useCallback((scratchId: string) => {
-    // Close the scratch terminal (removes from list and cleans up cwd)
+    // Clean up cwds for all tabs in this scratch session (cwds are keyed by tab ID)
+    const tabs = getTabsForSession(scratchId);
+    for (const tab of tabs) {
+      removeScratchCwd(tab.id);
+    }
+    // Close the scratch terminal (removes from list)
     closeScratchTerminal(scratchId);
     // Clean up drawer tabs and focus state for this scratch terminal
     setDrawerTabs((prev) => {
@@ -1747,14 +1753,15 @@ function App() {
         setActiveScratchId(null);
       }
     }
-  }, [closeScratchTerminal, activeScratchId, scratchTerminals, openWorktreeIds, openProjectIds, projects]);
+  }, [closeScratchTerminal, activeScratchId, scratchTerminals, openWorktreeIds, openProjectIds, projects, getTabsForSession, removeScratchCwd]);
 
   const handleRenameScratch = useCallback((scratchId: string, newName: string) => {
     renameScratchTerminal(scratchId, newName);
   }, [renameScratchTerminal]);
 
-  const handleScratchCwdChange = useCallback((scratchId: string, cwd: string) => {
-    updateScratchCwd(scratchId, cwd);
+  // Handle cwd change for scratch terminal tabs (keyed by tab ID, not session ID)
+  const handleScratchCwdChange = useCallback((tabId: string, cwd: string) => {
+    updateScratchCwd(tabId, cwd);
   }, [updateScratchCwd]);
 
   const handleReorderScratchTerminals = useCallback((scratchIds: string[]) => {
@@ -2195,6 +2202,11 @@ function App() {
       removeSessionPtyId(tabId);
     }
 
+    // Clean up cwd for scratch terminal tabs (cwds are keyed by tab ID)
+    if (activeScratchId) {
+      removeScratchCwd(tabId);
+    }
+
     // If closing the last tab, close the entire session instead
     if (remaining.length === 0) {
       handleCloseCurrentSession();
@@ -2202,7 +2214,7 @@ function App() {
     }
 
     removeSessionTab(activeSessionId, tabId);
-  }, [activeSessionId, getTabsForSession, sessionTabPtyIds, removeSessionTab, removeSessionPtyId, handleCloseCurrentSession]);
+  }, [activeSessionId, activeScratchId, getTabsForSession, sessionTabPtyIds, removeSessionTab, removeSessionPtyId, removeScratchCwd, handleCloseCurrentSession]);
 
   // Update refs so callbacks in earlier code can use these
   useEffect(() => {
@@ -2802,7 +2814,7 @@ function App() {
               terminalApp={config.apps.terminal}
               editorApp={config.apps.editor}
               showIdleCheck={config.indicators.showIdleCheck}
-              activeScratchCwd={activeScratchId ? scratchCwds.get(activeScratchId) ?? null : null}
+              activeScratchCwd={activeScratchId && activeSessionTabId ? scratchCwds.get(activeSessionTabId) ?? null : null}
               homeDir={homeDir}
               autoEditWorktreeId={autoEditWorktreeId}
               editingScratchId={editingScratchId}

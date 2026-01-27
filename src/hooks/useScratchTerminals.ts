@@ -4,6 +4,7 @@ import { ScratchTerminal } from '../types';
 
 export interface UseScratchTerminalsReturn {
   scratchTerminals: ScratchTerminal[];
+  /** Map of tab ID -> cwd (keyed by tab ID, not session ID) */
   scratchCwds: Map<string, string>;
   homeDir: string | null;
 
@@ -11,7 +12,10 @@ export interface UseScratchTerminalsReturn {
   closeScratchTerminal: (id: string) => void;
   renameScratchTerminal: (id: string, name: string) => void;
   reorderScratchTerminals: (ids: string[]) => void;
-  updateScratchCwd: (id: string, cwd: string) => void;
+  /** Update cwd for a tab (keyed by tab ID) */
+  updateScratchCwd: (tabId: string, cwd: string) => void;
+  /** Remove cwd entry for a tab (called when tab is closed) */
+  removeScratchCwd: (tabId: string) => void;
 }
 
 export function useScratchTerminals(): UseScratchTerminalsReturn {
@@ -34,26 +38,14 @@ export function useScratchTerminals(): UseScratchTerminalsReturn {
     };
     setScratchTerminals((prev) => [...prev, newScratch]);
     setScratchTerminalCounter(newCounter);
-
-    // Initialize cwd if we have home directory
-    if (homeDir) {
-      setScratchCwds((prev) => {
-        const next = new Map(prev);
-        next.set(newScratch.id, homeDir);
-        return next;
-      });
-    }
-
+    // Note: cwd is now tracked per tab ID (set when terminal emits OSC 7),
+    // not per session ID, so we don't initialize it here
     return newScratch;
-  }, [scratchTerminalCounter, scratchTerminals.length, homeDir]);
+  }, [scratchTerminalCounter, scratchTerminals.length]);
 
   const closeScratchTerminal = useCallback((scratchId: string) => {
     setScratchTerminals((prev) => prev.filter((s) => s.id !== scratchId));
-    setScratchCwds((prev) => {
-      const next = new Map(prev);
-      next.delete(scratchId);
-      return next;
-    });
+    // Note: tab cwds are cleaned up by the caller (App.tsx) since they're keyed by tab ID
   }, []);
 
   const renameScratchTerminal = useCallback((scratchId: string, newName: string) => {
@@ -62,10 +54,19 @@ export function useScratchTerminals(): UseScratchTerminalsReturn {
     );
   }, []);
 
-  const updateScratchCwd = useCallback((scratchId: string, cwd: string) => {
+  const updateScratchCwd = useCallback((tabId: string, cwd: string) => {
     setScratchCwds((prev) => {
       const next = new Map(prev);
-      next.set(scratchId, cwd);
+      next.set(tabId, cwd);
+      return next;
+    });
+  }, []);
+
+  const removeScratchCwd = useCallback((tabId: string) => {
+    setScratchCwds((prev) => {
+      if (!prev.has(tabId)) return prev;
+      const next = new Map(prev);
+      next.delete(tabId);
       return next;
     });
   }, []);
@@ -89,5 +90,6 @@ export function useScratchTerminals(): UseScratchTerminalsReturn {
     renameScratchTerminal,
     reorderScratchTerminals,
     updateScratchCwd,
+    removeScratchCwd,
   };
 }

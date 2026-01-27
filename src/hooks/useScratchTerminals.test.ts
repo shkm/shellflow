@@ -117,7 +117,7 @@ describe('useScratchTerminals', () => {
       expect(result.current.scratchTerminals[1].order).toBe(1);
     });
 
-    it('initializes cwd with home directory when available', async () => {
+    it('does not initialize cwd at creation time (cwd is set per-tab via OSC 7)', async () => {
       const { result } = renderHook(() =>
         useScratchTerminals()
       );
@@ -131,7 +131,8 @@ describe('useScratchTerminals', () => {
         newTerminal = result.current.addScratchTerminal();
       });
 
-      expect(result.current.scratchCwds.get(newTerminal!.id)).toBe('/Users/test');
+      // CWD is now tracked per tab ID, not per session ID, so it's not initialized here
+      expect(result.current.scratchCwds.has(newTerminal!.id)).toBe(false);
     });
   });
 
@@ -159,7 +160,7 @@ describe('useScratchTerminals', () => {
       expect(result.current.scratchTerminals).toHaveLength(0);
     });
 
-    it('cleans up cwd for closed terminal', async () => {
+    it('does not clean up cwds (cleanup is done in App.tsx per tab ID)', async () => {
       const { result } = renderHook(() =>
         useScratchTerminals()
       );
@@ -173,13 +174,20 @@ describe('useScratchTerminals', () => {
         terminal = result.current.addScratchTerminal();
       });
 
-      expect(result.current.scratchCwds.has(terminal!.id)).toBe(true);
+      // Manually set a cwd (simulating what OSC 7 would do for a tab)
+      const tabId = `${terminal!.id}-session-1`;
+      act(() => {
+        result.current.updateScratchCwd(tabId, '/some/path');
+      });
+
+      expect(result.current.scratchCwds.has(tabId)).toBe(true);
 
       act(() => {
         result.current.closeScratchTerminal(terminal!.id);
       });
 
-      expect(result.current.scratchCwds.has(terminal!.id)).toBe(false);
+      // CWDs are now keyed by tab ID and cleaned up in App.tsx, not here
+      expect(result.current.scratchCwds.has(tabId)).toBe(true);
     });
 
     it('only removes the specified terminal, keeping others', async () => {
@@ -315,6 +323,55 @@ describe('useScratchTerminals', () => {
       expect(result.current.scratchTerminals[0].order).toBe(0);
       expect(result.current.scratchTerminals[1].order).toBe(1);
       expect(result.current.scratchTerminals[2].order).toBe(2);
+    });
+  });
+
+  describe('removeScratchCwd', () => {
+    it('removes cwd entry for specified tab ID', async () => {
+      const { result } = renderHook(() => useScratchTerminals());
+
+      await waitFor(() => {
+        expect(result.current.homeDir).toBe('/Users/test');
+      });
+
+      // Set a cwd for a tab
+      const tabId = 'scratch-1-session-1';
+      act(() => {
+        result.current.updateScratchCwd(tabId, '/some/path');
+      });
+
+      expect(result.current.scratchCwds.has(tabId)).toBe(true);
+
+      act(() => {
+        result.current.removeScratchCwd(tabId);
+      });
+
+      expect(result.current.scratchCwds.has(tabId)).toBe(false);
+    });
+
+    it('does nothing if tab ID does not exist', async () => {
+      const { result } = renderHook(() => useScratchTerminals());
+
+      await waitFor(() => {
+        expect(result.current.homeDir).toBe('/Users/test');
+      });
+
+      // Set a cwd for one tab
+      const tabId1 = 'scratch-1-session-1';
+      act(() => {
+        result.current.updateScratchCwd(tabId1, '/path1');
+      });
+
+      const cwdsBefore = result.current.scratchCwds;
+
+      // Try to remove a non-existent tab
+      act(() => {
+        result.current.removeScratchCwd('non-existent-tab');
+      });
+
+      // Should return same reference (no change)
+      expect(result.current.scratchCwds).toBe(cwdsBefore);
+      expect(result.current.scratchCwds.has(tabId1)).toBe(true);
     });
   });
 

@@ -313,12 +313,13 @@ export function MainPane({
             };
 
             // Handle cwd changes - only for scratch terminals
+            // Store by tab ID so switching tabs updates the displayed cwd
             const handleCwdChange = session.kind === 'scratch'
               ? (cwd: string) => {
                   if (onCwdChange) {
-                    onCwdChange(session.id, cwd);
+                    onCwdChange(tab.id, cwd);
                   } else {
-                    onScratchCwdChange?.(session.id, cwd);
+                    onScratchCwdChange?.(tab.id, cwd);
                   }
                 }
               : undefined;
