@@ -2826,6 +2826,9 @@ function App() {
 
   // The action system hook
   const actions = useActions(actionContext, actionHandlers);
+  // Ref for menu listener to avoid re-subscribing on every actions change
+  const executeByMenuIdRef = useRef(actions.executeByMenuId);
+  executeByMenuIdRef.current = actions.executeByMenuId;
 
   // Context-aware action handlers (new system)
   const contextActionHandlers = useMemo(() => createActionHandlers({
@@ -3059,6 +3062,7 @@ function App() {
   }, []);
 
   // Listen for menu bar actions from the backend
+  // Uses a ref to avoid re-subscribing on every actions change (which caused multiple listeners)
   useEffect(() => {
     const unlistenMenu = listen<string>('menu-action', (event) => {
       // When a picker is open, ignore menu actions (except picker toggles handled via keyboard)
@@ -3067,13 +3071,13 @@ function App() {
       }
       // Use the action system to execute menu actions
       // The action system handles availability checking internally
-      actions.executeByMenuId(event.payload);
+      executeByMenuIdRef.current(event.payload);
     });
 
     return () => {
       unlistenMenu.then((fn) => fn());
     };
-  }, [actions]);
+  }, []);
 
   // Sync action availability to menu bar
   useEffect(() => {
