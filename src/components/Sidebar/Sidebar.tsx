@@ -357,8 +357,10 @@ export function Sidebar({
     }
   };
 
+  const isDev = import.meta.env.DEV;
+
   return (
-    <div className="flex flex-col h-full bg-zinc-900 select-none">
+    <div className={`flex flex-col h-full select-none ${isDev ? 'bg-[#1f1418]' : 'bg-zinc-900'}`}>
       {/* Drag region for macOS traffic lights */}
       <DragRegion className="h-8 flex-shrink-0 flex items-center justify-end px-1">
         <span className="text-[10px] text-zinc-600 font-mono mr-1">{__GIT_HASH__.slice(0, 7)}</span>
