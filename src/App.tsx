@@ -761,6 +761,12 @@ function App() {
     handleFileClick(changedFiles[prevIndex].path);
   }, [activeDiffState, changedFiles, handleFileClick]);
 
+  // Open diff view with the first changed file (or switch to existing diff tab)
+  const handleOpenDiff = useCallback(() => {
+    if (changedFiles.length === 0) return;
+    handleFileClick(changedFiles[0].path);
+  }, [changedFiles, handleFileClick]);
+
   // Dispatch event to trigger immediate terminal resize after panel toggle
   const dispatchPanelResizeComplete = useCallback(() => {
     // Use requestAnimationFrame to let the DOM update first
@@ -2803,6 +2809,7 @@ function App() {
     'task::run': handleToggleTask,
     'task::switcher': handleToggleTaskSwitcher,
     // Diff navigation
+    'diff::open': handleOpenDiff,
     'diff::nextFile': handleNextChangedFile,
     'diff::prevFile': handlePrevChangedFile,
     // Help menu
@@ -2818,7 +2825,7 @@ function App() {
     handleToggleDrawer, handleToggleDrawerExpand, handleToggleRightPanel, handleToggleProjectSwitcher,
     handleZoomIn, handleZoomOut, handleZoomReset, handleCycleBorderStyle, handleNavigateBack, handleNavigateForward, handleSwitchFocus,
     handleRenameBranch, handleMergeWorktree, handleDeleteWorktree, handleToggleTask, handleToggleTaskSwitcher,
-    handleNextChangedFile, handlePrevChangedFile,
+    handleOpenDiff, handleNextChangedFile, handlePrevChangedFile,
     getCurrentEntityIndex, selectEntityAtIndex,
   ]);
 
@@ -2946,6 +2953,7 @@ function App() {
     },
 
     // Diff navigation actions
+    onOpenDiff: handleOpenDiff,
     onNextChangedFile: handleNextChangedFile,
     onPrevChangedFile: handlePrevChangedFile,
   }), [
@@ -2959,7 +2967,7 @@ function App() {
     handleToggleTask, selectEntityAtIndex, actionHandlers,
     isCommandPaletteOpen, isTaskSwitcherOpen, isProjectSwitcherOpen,
     pendingCloseProject, pendingDeleteId, pendingMergeId,
-    handleNextChangedFile, handlePrevChangedFile,
+    handleOpenDiff, handleNextChangedFile, handlePrevChangedFile,
   ]);
 
   // Context-aware keyboard shortcuts (new system)
@@ -3517,6 +3525,7 @@ function App() {
               showModeToggle={showChangedFilesModeToggle ?? false}
               onFileClick={handleFileClick}
               selectedFile={activeDiffState.currentFilePath}
+              onOpenDiff={handleOpenDiff}
             />
           </div>
         </Panel>

@@ -1,3 +1,4 @@
+import { FileDiff } from 'lucide-react';
 import { FileChange, ChangedFilesViewMode } from '../../types';
 
 interface ChangedFilesProps {
@@ -10,6 +11,8 @@ interface ChangedFilesProps {
   onFileClick?: (path: string) => void;
   /** Currently selected file path (for highlighting) */
   selectedFile?: string | null;
+  /** Callback to open the diff view */
+  onOpenDiff?: () => void;
 }
 
 const statusConfig: Record<FileChange['status'], { color: string; label: string }> = {
@@ -29,6 +32,7 @@ export function ChangedFiles({
   showModeToggle = false,
   onFileClick,
   selectedFile,
+  onOpenDiff,
 }: ChangedFilesProps) {
   // Calculate total insertions and deletions
   const totals = files.reduce(
@@ -54,27 +58,39 @@ export function ChangedFiles({
   return (
     <div className="flex flex-col h-full select-none">
       {showModeToggle && (
-        <div className="px-3 py-2 border-b border-theme-0 flex gap-1">
-          <button
-            onClick={() => onModeChange?.('uncommitted')}
-            className={`px-2 py-1 text-xs rounded ${
-              mode === 'uncommitted'
-                ? 'bg-theme-3 text-theme-1'
-                : 'text-theme-2 hover:bg-theme-2'
-            }`}
-          >
-            Uncommitted
-          </button>
-          <button
-            onClick={() => onModeChange?.('branch')}
-            className={`px-2 py-1 text-xs rounded ${
-              mode === 'branch'
-                ? 'bg-theme-3 text-theme-1'
-                : 'text-theme-2 hover:bg-theme-2'
-            }`}
-          >
-            Branch
-          </button>
+        <div className="px-3 py-2 border-b border-theme-0 flex items-center justify-between">
+          <div className="flex gap-1">
+            <button
+              onClick={() => onModeChange?.('uncommitted')}
+              className={`px-2 py-1 text-xs rounded ${
+                mode === 'uncommitted'
+                  ? 'bg-theme-3 text-theme-1'
+                  : 'text-theme-2 hover:bg-theme-2'
+              }`}
+            >
+              Uncommitted
+            </button>
+            <button
+              onClick={() => onModeChange?.('branch')}
+              className={`px-2 py-1 text-xs rounded ${
+                mode === 'branch'
+                  ? 'bg-theme-3 text-theme-1'
+                  : 'text-theme-2 hover:bg-theme-2'
+              }`}
+            >
+              Branch
+            </button>
+          </div>
+          {files.length > 0 && onOpenDiff && (
+            <button
+              onClick={onOpenDiff}
+              className="p-1 rounded text-theme-2 hover:bg-theme-2 hover:text-theme-1"
+              title="Open Diff View (Cmd+Shift+D)"
+              data-testid="open-diff-button"
+            >
+              <FileDiff className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )}
       <div className="px-3 py-2 border-b border-theme-0 flex items-center justify-between">

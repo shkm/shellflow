@@ -357,4 +357,52 @@ describe('ChangedFiles', () => {
       expect(screen.getByText('src/app.ts').closest('li')?.className).not.toContain('bg-theme-3');
     });
   });
+
+  describe('open diff button', () => {
+    it('shows diff button when files exist and onOpenDiff is provided', () => {
+      const files: FileChange[] = [{ path: 'src/app.ts', status: 'modified' }];
+      render(<ChangedFiles files={files} showModeToggle={true} onOpenDiff={vi.fn()} />);
+
+      expect(screen.getByTestId('open-diff-button')).toBeInTheDocument();
+    });
+
+    it('does not show diff button when no files exist', () => {
+      render(<ChangedFiles files={[]} showModeToggle={true} onOpenDiff={vi.fn()} />);
+
+      expect(screen.queryByTestId('open-diff-button')).not.toBeInTheDocument();
+    });
+
+    it('does not show diff button when onOpenDiff is not provided', () => {
+      const files: FileChange[] = [{ path: 'src/app.ts', status: 'modified' }];
+      render(<ChangedFiles files={files} showModeToggle={true} />);
+
+      expect(screen.queryByTestId('open-diff-button')).not.toBeInTheDocument();
+    });
+
+    it('does not show diff button when showModeToggle is false', () => {
+      const files: FileChange[] = [{ path: 'src/app.ts', status: 'modified' }];
+      render(<ChangedFiles files={files} showModeToggle={false} onOpenDiff={vi.fn()} />);
+
+      expect(screen.queryByTestId('open-diff-button')).not.toBeInTheDocument();
+    });
+
+    it('calls onOpenDiff when diff button is clicked', async () => {
+      const user = userEvent.setup();
+      const onOpenDiff = vi.fn();
+      const files: FileChange[] = [{ path: 'src/app.ts', status: 'modified' }];
+
+      render(<ChangedFiles files={files} showModeToggle={true} onOpenDiff={onOpenDiff} />);
+
+      await user.click(screen.getByTestId('open-diff-button'));
+      expect(onOpenDiff).toHaveBeenCalledTimes(1);
+    });
+
+    it('has keyboard shortcut hint in title', () => {
+      const files: FileChange[] = [{ path: 'src/app.ts', status: 'modified' }];
+      render(<ChangedFiles files={files} showModeToggle={true} onOpenDiff={vi.fn()} />);
+
+      const button = screen.getByTestId('open-diff-button');
+      expect(button.title).toContain('Cmd+Shift+D');
+    });
+  });
 });

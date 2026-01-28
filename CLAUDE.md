@@ -39,6 +39,45 @@ npm run tauri dev
 
 When adding new functionality, implement it as an **action** so it appears in the command palette. This ensures all features are discoverable and accessible via keyboard. Only skip this if there's a good reason (e.g., the feature is purely internal or doesn't make sense as a user-invokable action).
 
+### Adding a New Action
+
+Actions use namespaced format (e.g., `diff::open`, `worktree::new`). To add a new action, update these files:
+
+1. **`src/lib/actions.ts`** - Action registry (3 places):
+   - Add to `ActionId` type union
+   - Add availability predicate in `AVAILABILITY` record
+   - Add metadata in `ACTION_METADATA` (label, category, showInPalette)
+
+2. **`src/lib/actionHandlers.ts`** - Handler wiring (2 places):
+   - Add callback to `ActionHandlerCallbacks` interface
+   - Add mapping in `createActionHandlers()` function
+
+3. **`src/lib/defaultMappings.jsonc`** - Keyboard shortcut:
+   - Add binding in appropriate context section
+
+4. **`src/App.tsx`** - Implementation (3 places):
+   - Create handler function (e.g., `handleOpenDiff`)
+   - Add to `actionHandlers` useMemo
+   - Add to `contextActionHandlers` useMemo (with `createActionHandlers()` call)
+
+### Context Flags
+
+Available context flags for keybindings (`src/lib/contexts.ts`):
+- `scratchFocused`, `worktreeFocused`, `projectFocused`
+- `drawerFocused`, `mainFocused`
+- `drawerOpen`, `rightPanelOpen`
+- `pickerOpen`, `commandPaletteOpen`, `modalOpen`
+- `diffViewOpen`, `canGoBack`, `canGoForward`
+
+### ActionContext
+
+Available context for availability predicates:
+- `activeProjectId`, `activeWorktreeId`, `activeScratchId`, `activeEntityId`
+- `isDrawerOpen`, `isDrawerFocused`, `activeDrawerTabId`
+- `openEntityCount`, `canGoBack`, `canGoForward`
+- `isViewingDiff`, `changedFilesCount`
+- `activeSelectedTask`, `taskCount`
+
 ## Testing
 
 **Always write tests for new functionality and bug fixes.** After making changes, explicitly state whether tests were added and run them to verify they pass.

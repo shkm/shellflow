@@ -11,6 +11,8 @@ interface RightPanelProps {
   onFileClick?: (path: string) => void;
   /** Currently selected file path (for highlighting) */
   selectedFile?: string | null;
+  /** Callback to open the diff view */
+  onOpenDiff?: () => void;
 }
 
 export function RightPanel({
@@ -22,6 +24,7 @@ export function RightPanel({
   showModeToggle,
   onFileClick,
   selectedFile,
+  onOpenDiff,
 }: RightPanelProps) {
   return (
     <div className="h-full bg-theme-1 flex flex-col">
@@ -34,6 +37,7 @@ export function RightPanel({
         showModeToggle={showModeToggle}
         onFileClick={onFileClick}
         selectedFile={selectedFile}
+        onOpenDiff={onOpenDiff}
       />
     </div>
   );

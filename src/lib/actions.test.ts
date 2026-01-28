@@ -119,6 +119,17 @@ describe('isActionAvailable', () => {
   });
 
   describe('diff navigation', () => {
+    it('diff::open requires activeEntityId and changed files', () => {
+      expect(isActionAvailable('diff::open', emptyContext)).toBe(false);
+      expect(isActionAvailable('diff::open', { ...emptyContext, activeEntityId: 'e1' })).toBe(false);
+      expect(isActionAvailable('diff::open', { ...emptyContext, changedFilesCount: 1 })).toBe(false);
+      expect(isActionAvailable('diff::open', {
+        ...emptyContext,
+        activeEntityId: 'e1',
+        changedFilesCount: 1
+      })).toBe(true);
+    });
+
     it('diff::nextFile requires diff view with multiple files', () => {
       expect(isActionAvailable('diff::nextFile', emptyContext)).toBe(false);
       expect(isActionAvailable('diff::nextFile', { ...emptyContext, isViewingDiff: true })).toBe(false);

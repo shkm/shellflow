@@ -69,6 +69,7 @@ export type ActionId =
   // Focus actions
   | 'focus::switch'
   // Diff navigation
+  | 'diff::open'
   | 'diff::nextFile'
   | 'diff::prevFile'
   // Task actions
@@ -167,7 +168,8 @@ const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
   // Focus actions
   'focus::switch': (ctx) => !!ctx.activeEntityId,
 
-  // Diff navigation (available when viewing diff with multiple files)
+  // Diff navigation
+  'diff::open': (ctx) => !!ctx.activeEntityId && ctx.changedFilesCount > 0,
   'diff::nextFile': (ctx) => ctx.isViewingDiff && ctx.changedFilesCount > 1,
   'diff::prevFile': (ctx) => ctx.isViewingDiff && ctx.changedFilesCount > 1,
 
@@ -287,6 +289,7 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   'focus::switch': { label: 'Switch Focus', category: 'Navigate', showInPalette: true },
 
   // Diff navigation
+  'diff::open': { label: 'Open Diff View', category: 'Diff', showInPalette: true },
   'diff::nextFile': { label: 'Next Changed File', category: 'Diff', showInPalette: true },
   'diff::prevFile': { label: 'Previous Changed File', category: 'Diff', showInPalette: true },
 

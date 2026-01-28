@@ -54,6 +54,7 @@
         // View controls
         "ctrl-`": "drawer::toggle",
         "cmd-b": "rightPanel::toggle",
+        "cmd-shift-d": "diff::open",
         "shift-Escape": "drawer::expand",
 
         // Zoom
