@@ -156,6 +156,64 @@ Version is defined in three places that release-please keeps in sync:
 - `src-tauri/Cargo.toml` - `version` field
 - `src-tauri/tauri.conf.json` - `version` field
 
+## Logging
+
+All logs (Rust backend + browser frontend) are unified into a single file for easy debugging.
+
+### Log Location
+
+```bash
+# Live tail during development
+tail -f ~/Library/Logs/com.shellflow.app/shellflow.log
+
+# Read full log
+cat ~/Library/Logs/com.shellflow.app/shellflow.log
+```
+
+### Adding Logs
+
+**Rust** - Use the `log` crate macros:
+```rust
+use log::{info, warn, error, debug, trace};
+
+info!("[function_name] Starting operation...");
+info!("[function_name] Completed in {:?}", start.elapsed());
+error!("[function_name] Failed: {}", e);
+```
+
+**TypeScript** - Use standard console methods (bridged via `attachConsole`):
+```typescript
+console.log('[ComponentName] Mounting with props:', props);
+console.warn('[ComponentName] Unexpected state:', state);
+console.error('[ComponentName] Failed to fetch:', error);
+```
+
+### Logging Guidelines
+
+1. **Always prefix with context** - Use `[function_name]` or `[ComponentName]` prefix
+2. **Log timing for operations** - Wrap slow operations with `Instant::now()` / `performance.now()`
+3. **Log state transitions** - When important state changes, log before/after
+4. **Log errors with context** - Include relevant IDs, paths, or parameters
+5. **Use appropriate levels**:
+   - `error!` / `console.error` - Failures that need attention
+   - `warn!` / `console.warn` - Unexpected but recoverable situations
+   - `info!` / `console.log` - Key operations and timing
+   - `debug!` - Detailed debugging (not shown by default)
+
+### Performance Logging Pattern
+
+```rust
+let start = std::time::Instant::now();
+// ... operation ...
+info!("[operation_name] took {:?}", start.elapsed());
+```
+
+```typescript
+const start = performance.now();
+// ... operation ...
+console.log(`[operationName] took ${performance.now() - start}ms`);
+```
+
 ## Configuration
 
 User config is stored at `~/.config/shellflow/config.jsonc`:

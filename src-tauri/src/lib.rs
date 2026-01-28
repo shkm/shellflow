@@ -1858,10 +1858,10 @@ fn shutdown(app: AppHandle, state: State<'_, Arc<AppState>>) -> bool {
     has_sessions
 }
 
+use tauri_plugin_log::{Target, TargetKind};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-
     // Clean up any orphaned processes from a previous crash
     cleanup::cleanup_orphans();
 
@@ -1881,6 +1881,15 @@ pub fn run() {
     cleanup::spawn_watchdog();
 
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                    Target::new(TargetKind::Webview),
+                ])
+                .build(),
+        )
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
