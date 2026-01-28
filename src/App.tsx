@@ -26,7 +26,7 @@ import { useScratchTerminals } from './hooks/useScratchTerminals';
 import { useIndicators } from './hooks/useIndicators';
 import { useDrawerTabs } from './hooks/useDrawerTabs';
 import { useSessionTabs, SessionTab } from './hooks/useSessionTabs';
-import { useSplit } from './contexts/SplitContext';
+import { useSplitActions } from './contexts/SplitContext';
 import { selectFolder, shutdown, ptyKill, ptyForceKill, stashChanges, stashPop, reorderProjects, reorderWorktrees, expandActionPrompt, ActionPromptContext, updateActionAvailability, touchProject } from './lib/tauri';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { ActionContext, ActionId, getMenuAvailability } from './lib/actions';
@@ -185,14 +185,14 @@ function App() {
     clearSessionTabs,
   } = useSessionTabs();
 
-  // Split layout state for vim-style pane splits within tabs
-  // State is managed by SplitContext - App only needs action-related functions
+  // Split layout actions for vim-style pane splits within tabs
+  // Using useSplitActions() instead of useSplit() prevents App from re-rendering on split state changes
   const {
     initTab: initSplitTab,
     split: splitPane,
     focusDirection: focusSplitDirection,
     hasSplits: tabHasSplits,
-  } = useSplit();
+  } = useSplitActions();
 
   // Per-worktree focus state (which pane has focus)
   const [focusStates, setFocusStates] = useState<Map<string, FocusedPane>>(new Map());

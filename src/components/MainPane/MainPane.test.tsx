@@ -21,27 +21,41 @@ vi.mock('./SessionTabBar', () => ({
 // Shared split state that persists across tests within a test case
 let mockSplitStates: Map<string, TabSplitState>;
 
-// Mock useSplit to return predictable IDs based on tab IDs
+// Mock split context hooks to return predictable IDs based on tab IDs
 // This ensures test assertions can find terminals by their tab ID
+const mockSplitActions = {
+  initTab: (tabId: string, config: Omit<SplitPaneConfig, 'id'>) => {
+    // Use tabId as the pane ID for predictable testing
+    const paneId = tabId;
+    if (!mockSplitStates.has(tabId)) {
+      mockSplitStates.set(tabId, {
+        panes: new Map([[paneId, { id: paneId, ...config }]]),
+        activePaneId: paneId,
+      });
+    }
+    return paneId;
+  },
+  focusPane: vi.fn(),
+  setPaneReady: vi.fn(),
+  getActivePaneId: (tabId: string) => mockSplitStates.get(tabId)?.activePaneId ?? null,
+  clearPendingSplit: vi.fn(),
+  split: vi.fn(),
+  closePane: vi.fn(),
+  focusDirection: vi.fn(),
+  getTabPtyIds: vi.fn(() => []),
+  clearTab: vi.fn(),
+  hasSplits: vi.fn(() => false),
+  getPaneConfig: vi.fn(),
+  getPaneIds: vi.fn(() => []),
+};
+
 vi.mock('../../contexts/SplitContext', () => ({
   useSplit: () => ({
     splitStates: mockSplitStates,
-    initTab: (tabId: string, config: Omit<SplitPaneConfig, 'id'>) => {
-      // Use tabId as the pane ID for predictable testing
-      const paneId = tabId;
-      if (!mockSplitStates.has(tabId)) {
-        mockSplitStates.set(tabId, {
-          panes: new Map([[paneId, { id: paneId, ...config }]]),
-          activePaneId: paneId,
-        });
-      }
-      return paneId;
-    },
-    focusPane: vi.fn(),
-    setPaneReady: vi.fn(),
-    getActivePaneId: (tabId: string) => mockSplitStates.get(tabId)?.activePaneId ?? null,
-    clearPendingSplit: vi.fn(),
+    ...mockSplitActions,
   }),
+  useSplitActions: () => mockSplitActions,
+  useSplitForTab: (tabId: string) => mockSplitStates.get(tabId),
 }));
 
 describe('MainPane', () => {
