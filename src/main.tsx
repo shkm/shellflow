@@ -1,12 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { attachConsole } from "@tauri-apps/plugin-log";
+import { log } from "./lib/log";
 import App from "./App";
 import "./index.css";
 
-// Bridge browser console to Tauri's unified logging system
-// This sends console.log/warn/error to the same log file as Rust logs
+// attachConsole() makes Rust logs appear in browser DevTools console
+// (via the Webview target in tauri-plugin-log)
 attachConsole();
+
+// Use log.info() etc. to send frontend logs to stdout/file
+log.info("[main] App starting");
 
 const app = <App />;
 

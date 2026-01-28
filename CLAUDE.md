@@ -158,34 +158,46 @@ Version is defined in three places that release-please keeps in sync:
 
 ## Logging
 
-All logs (Rust backend + browser frontend) are unified into a single file for easy debugging.
+All logs (Rust backend + TypeScript frontend) are unified for easy debugging.
+
+### Log Outputs
+
+| Source | Terminal (stdout) | Log File | Browser DevTools |
+|--------|-------------------|----------|------------------|
+| Rust `log::info!()` | ❌ | ✅ | ✅ |
+| Rust `eprintln!()` | ✅ (stderr) | ❌ | ❌ |
+| TS `log.info()` | ✅ | ✅ | ✅ |
+| TS `console.log()` | ❌ | ❌ | ✅ |
+
+**Use `log.info()` for TypeScript logs** - they appear everywhere.
 
 ### Log Location
 
 ```bash
 # Live tail during development
-tail -f ~/Library/Logs/com.shellflow.app/shellflow.log
+tail -f ~/Library/Logs/com.shellflow.desktop/shellflow.log
 
 # Read full log
-cat ~/Library/Logs/com.shellflow.app/shellflow.log
+cat ~/Library/Logs/com.shellflow.desktop/shellflow.log
 ```
 
 ### Adding Logs
 
-**Rust** - Use the `log` crate macros:
+**Rust** - Use the `log` crate macros (goes to file + browser):
 ```rust
 use log::{info, warn, error, debug, trace};
 
 info!("[function_name] Starting operation...");
-info!("[function_name] Completed in {:?}", start.elapsed());
 error!("[function_name] Failed: {}", e);
 ```
 
-**TypeScript** - Use standard console methods (bridged via `attachConsole`):
+**TypeScript** - Use the `log` utility (goes to terminal + file + browser):
 ```typescript
-console.log('[ComponentName] Mounting with props:', props);
-console.warn('[ComponentName] Unexpected state:', state);
-console.error('[ComponentName] Failed to fetch:', error);
+import { log } from '../lib/log';
+
+log.info('[ComponentName] Mounting with props:', props);
+log.warn('[ComponentName] Unexpected state:', state);
+log.error('[ComponentName] Failed to fetch:', error);
 ```
 
 ### Logging Guidelines
@@ -195,10 +207,10 @@ console.error('[ComponentName] Failed to fetch:', error);
 3. **Log state transitions** - When important state changes, log before/after
 4. **Log errors with context** - Include relevant IDs, paths, or parameters
 5. **Use appropriate levels**:
-   - `error!` / `console.error` - Failures that need attention
-   - `warn!` / `console.warn` - Unexpected but recoverable situations
-   - `info!` / `console.log` - Key operations and timing
-   - `debug!` - Detailed debugging (not shown by default)
+   - `log.error` / `error!` - Failures that need attention
+   - `log.warn` / `warn!` - Unexpected but recoverable situations
+   - `log.info` / `info!` - Key operations and timing
+   - `log.debug` / `debug!` - Detailed debugging (not shown by default)
 
 ### Performance Logging Pattern
 
@@ -211,7 +223,7 @@ info!("[operation_name] took {:?}", start.elapsed());
 ```typescript
 const start = performance.now();
 // ... operation ...
-console.log(`[operationName] took ${performance.now() - start}ms`);
+log.info(`[operationName] took ${performance.now() - start}ms`);
 ```
 
 ## Configuration

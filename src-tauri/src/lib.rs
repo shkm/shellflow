@@ -27,6 +27,12 @@ fn map_err<E: std::fmt::Display>(e: E) -> String {
     e.to_string()
 }
 
+// Logging command - prints to stdout so it appears in the terminal during dev
+#[tauri::command]
+fn log_to_terminal(level: &str, message: &str) {
+    println!("[{}] {}", level, message);
+}
+
 // Project commands
 #[tauri::command]
 fn add_project(state: State<'_, Arc<AppState>>, path: &str) -> Result<Project> {
@@ -1888,6 +1894,7 @@ pub fn run() {
                     Target::new(TargetKind::LogDir { file_name: None }),
                     Target::new(TargetKind::Webview),
                 ])
+                .level(log::LevelFilter::Info)  // Capture info level and above (includes console.log)
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
@@ -1896,6 +1903,8 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(app_state)
         .setup(|app| {
+            eprintln!("[setup] Shellflow starting...");
+
             // Load config for menu shortcuts
             let config = config::load_config();
 
@@ -1919,6 +1928,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            log_to_terminal,
             add_project,
             list_projects,
             hide_project,
