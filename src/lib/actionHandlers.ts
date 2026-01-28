@@ -94,6 +94,7 @@ export interface ActionHandlerCallbacks {
   onOpenDiff: () => void;
   onNextChangedFile: () => void;
   onPrevChangedFile: () => void;
+  onToggleDiffMode: () => void;
 }
 
 /**
@@ -194,6 +195,7 @@ export function createActionHandlers(callbacks: ActionHandlerCallbacks): ActionH
     'diff::open': callbacks.onOpenDiff,
     'diff::nextFile': callbacks.onNextChangedFile,
     'diff::prevFile': callbacks.onPrevChangedFile,
+    'diff::toggleMode': callbacks.onToggleDiffMode,
   };
 }
 

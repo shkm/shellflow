@@ -63,7 +63,7 @@
         "cmd-shift-0": "view::zoomReset",
 
         // Focus
-        "ctrl-\\": "focus::switch",
+        "ctrl-;": "focus::switch",
 
         // Navigation history (go back/forward like browser)
         "cmd-[": "navigate::back",
@@ -85,7 +85,10 @@
 
         // Tasks
         "cmd-;": "task::switcher",
-        "cmd-r": "task::run"
+        "cmd-r": "task::run",
+
+        // Diff mode
+        "cmd-shift-u": "diff::toggleMode"
       }
     },
 

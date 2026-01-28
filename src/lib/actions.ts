@@ -72,6 +72,7 @@ export type ActionId =
   | 'diff::open'
   | 'diff::nextFile'
   | 'diff::prevFile'
+  | 'diff::toggleMode'
   // Task actions
   | 'task::run'
   | 'task::switcher';
@@ -172,6 +173,7 @@ const AVAILABILITY: Record<ActionId, (ctx: ActionContext) => boolean> = {
   'diff::open': (ctx) => !!ctx.activeEntityId && ctx.changedFilesCount > 0,
   'diff::nextFile': (ctx) => ctx.isViewingDiff && ctx.changedFilesCount > 1,
   'diff::prevFile': (ctx) => ctx.isViewingDiff && ctx.changedFilesCount > 1,
+  'diff::toggleMode': (ctx) => !!ctx.activeWorktreeId,
 
   // Task actions
   'task::run': (ctx) => !!ctx.activeEntityId && !!ctx.activeSelectedTask,
@@ -292,6 +294,7 @@ export const ACTION_METADATA: Record<ActionId, ActionMetadata> = {
   'diff::open': { label: 'Open Diff View', category: 'Diff', showInPalette: true },
   'diff::nextFile': { label: 'Next Changed File', category: 'Diff', showInPalette: true },
   'diff::prevFile': { label: 'Previous Changed File', category: 'Diff', showInPalette: true },
+  'diff::toggleMode': { label: 'Toggle Uncommitted/Branch Diff', category: 'Diff', showInPalette: true },
 
   // Task actions
   'task::run': { label: 'Run Task', category: 'Tasks', showInPalette: true },
