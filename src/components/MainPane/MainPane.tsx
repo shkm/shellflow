@@ -187,7 +187,7 @@ const TerminalTabContent = memo(function TerminalTabContent({
     [focusPane, tabId]
   );
 
-  log.info('[SPLIT:TerminalTabContent] render', {
+  log.debug('[SPLIT:TerminalTabContent] render', {
     tabId,
     hasSplitState: !!splitState,
     paneCount: splitState?.panes.size ?? 0,
@@ -300,7 +300,7 @@ export const MainPane = memo(function MainPane({
     setPaneReady: setSplitPaneReady,
   } = useSplitActions();
 
-  log.info('[SPLIT:MainPane] render', {
+  log.debug('[SPLIT:MainPane] render', {
     activeSessionId,
     activeSessionTabId,
     allSessionTabsSize: allSessionTabs.size,
@@ -436,13 +436,13 @@ export const MainPane = memo(function MainPane({
 
         const type = tab.isPrimary ? terminalType : 'scratch';
         const directory = tab.directory ?? (session.kind === 'scratch' && tab.isPrimary ? session.initialCwd : undefined);
-        log.info('[SPLIT:MainPane] initializing split state for tab', { tabId: tab.id, type, directory });
+        log.debug('[SPLIT:MainPane] initializing split state for tab', { tabId: tab.id, type, directory });
         initSplitTab(tab.id, { type, directory });
         initializedCount++;
       }
     }
 
-    log.info('[SPLIT:MainPane] init effect complete', { initializedCount, skippedCount, refSize: initializedSplitTabsRef.current.size });
+    log.debug('[SPLIT:MainPane] init effect complete', { initializedCount, skippedCount, refSize: initializedSplitTabsRef.current.size });
   }, [allSessionTabs, sessions, initSplitTab]);  // ← Removed splitStates
 
   // Clean up tracking ref when tabs are closed

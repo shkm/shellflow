@@ -1864,7 +1864,7 @@ fn shutdown(app: AppHandle, state: State<'_, Arc<AppState>>) -> bool {
     has_sessions
 }
 
-use tauri_plugin_log::{Target, TargetKind};
+use tauri_plugin_log::{Target, TargetKind, TimezoneStrategy};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -1894,7 +1894,12 @@ pub fn run() {
                     Target::new(TargetKind::LogDir { file_name: None }),
                     Target::new(TargetKind::Webview),
                 ])
-                .level(log::LevelFilter::Info)  // Capture info level and above (includes console.log)
+                .level(if cfg!(debug_assertions) {
+                    log::LevelFilter::Debug
+                } else {
+                    log::LevelFilter::Info
+                })
+                .timezone_strategy(TimezoneStrategy::UseLocal)
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
