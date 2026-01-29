@@ -3599,7 +3599,8 @@ function App() {
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&
-                              tab.id === activeDrawerTabId
+                              tab.id === activeDrawerTabId &&
+                              activeFocusState === 'drawer'
                             }
                             shouldAutoFocus={
                               entityId === activeEntityId &&
@@ -3623,7 +3624,8 @@ function App() {
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&
-                              tab.id === activeDrawerTabId
+                              tab.id === activeDrawerTabId &&
+                              activeFocusState === 'drawer'
                             }
                             shouldAutoFocus={
                               entityId === activeEntityId &&
@@ -3643,7 +3645,8 @@ function App() {
                             isActive={
                               entityId === activeEntityId &&
                               isDrawerOpen &&
-                              tab.id === activeDrawerTabId
+                              tab.id === activeDrawerTabId &&
+                              activeFocusState === 'drawer'
                             }
                             shouldAutoFocus={
                               entityId === activeEntityId &&
