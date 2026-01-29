@@ -12,7 +12,7 @@ import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { useXtermTheme } from '../../theme';
 import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
-import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
+import { registerActiveTerminal, unregisterActiveTerminal, registerTerminalInstance, unregisterTerminalInstance } from '../../lib/terminalRegistry';
 import { log } from '../../lib/log';
 import '@xterm/xterm/css/xterm.css';
 
@@ -291,6 +291,7 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
     const terminal = new Terminal({
       cursorBlink: true,
       cursorStyle: 'block',
+      cursorInactiveStyle: 'outline',
       fontSize: terminalConfig.fontSize,
       fontFamily: terminalConfig.fontFamily,
       allowProposedApi: true,
@@ -339,6 +340,9 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
 
     // Create copy/paste functions for the terminal registry
     const copyPasteFns = createTerminalCopyPaste(terminal, (data) => writeRef.current(data));
+
+    // Register terminal instance for blur management
+    registerTerminalInstance(entityId, terminal);
 
     // Register with terminal registry on focus, unregister on blur
     const handleTerminalFocus = () => {
@@ -514,6 +518,7 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
       terminal.textarea?.removeEventListener('focus', handleTerminalFocus);
       terminal.textarea?.removeEventListener('blur', handleTerminalBlur);
       unregisterActiveTerminal(copyPasteFns);
+      unregisterTerminalInstance(entityId);
       osc7Disposable?.dispose();
       osc777Disposable?.dispose();
       osc9Disposable?.dispose();
@@ -540,6 +545,21 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
       terminalRef.current.options.theme = xtermTheme;
     }
   }, [xtermTheme]);
+
+  // Control cursor blink and style based on active state
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    terminal.options.cursorBlink = isActive;
+
+    // Access xterm internals to force the inactive cursor style (outline)
+    // when our React state says the terminal is inactive
+    const core = (terminal as any)._core;
+    if (core?._coreBrowserService) {
+      core._coreBrowserService._isFocused = isActive;
+    }
+  }, [isActive]);
 
   // Store resize function in ref to avoid dependency issues
   const resizeRef = useRef(resize);

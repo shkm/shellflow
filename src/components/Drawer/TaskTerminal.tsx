@@ -8,7 +8,7 @@ import { TerminalConfig } from '../../hooks/useConfig';
 import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { useDrawerXtermTheme } from '../../theme';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
-import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
+import { registerActiveTerminal, unregisterActiveTerminal, registerTerminalInstance, unregisterTerminalInstance } from '../../lib/terminalRegistry';
 import { spawnTask, ptyWrite, ptyResize, ptyKill } from '../../lib/tauri';
 import '@xterm/xterm/css/xterm.css';
 
@@ -109,6 +109,7 @@ export function TaskTerminal({
     const terminal = new Terminal({
       cursorBlink: true,
       cursorStyle: 'block',
+      cursorInactiveStyle: 'outline',
       fontSize: terminalConfig.fontSize,
       fontFamily: terminalConfig.fontFamily,
       linkHandler: {
@@ -150,6 +151,9 @@ export function TaskTerminal({
 
     // Create copy/paste functions for the terminal registry
     const copyPasteFns = createTerminalCopyPaste(terminal, writeToPty);
+
+    // Register terminal instance for blur management
+    registerTerminalInstance(id, terminal);
 
     // Register with terminal registry on focus, unregister on blur
     const handleTerminalFocus = () => {
@@ -249,6 +253,7 @@ export function TaskTerminal({
       terminal.textarea?.removeEventListener('focus', handleTerminalFocus);
       terminal.textarea?.removeEventListener('blur', handleTerminalBlur);
       unregisterActiveTerminal(copyPasteFns);
+      unregisterTerminalInstance(id);
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
@@ -363,6 +368,20 @@ export function TaskTerminal({
       terminalRef.current.options.theme = xtermTheme;
     }
   }, [xtermTheme]);
+
+  // Control cursor blink and style based on active state
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    terminal.options.cursorBlink = isActive;
+
+    // Access xterm internals to force the inactive cursor style (outline)
+    const core = (terminal as any)._core;
+    if (core?._coreBrowserService) {
+      core._coreBrowserService._isFocused = isActive;
+    }
+  }, [isActive]);
 
   return (
     <div className="relative w-full h-full" data-terminal-id={id} style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding, contain: 'strict' }}>

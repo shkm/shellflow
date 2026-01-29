@@ -11,7 +11,7 @@ import { useTerminalFontSync } from '../../hooks/useTerminalFontSync';
 import { useDrawerXtermTheme } from '../../theme';
 import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
-import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
+import { registerActiveTerminal, unregisterActiveTerminal, registerTerminalInstance, unregisterTerminalInstance } from '../../lib/terminalRegistry';
 import { log } from '../../lib/log';
 import '@xterm/xterm/css/xterm.css';
 
@@ -128,6 +128,7 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
       allowProposedApi: true,
       cursorBlink: true,
       cursorStyle: 'block',
+      cursorInactiveStyle: 'outline',
       fontSize: terminalConfig.fontSize,
       fontFamily: terminalConfig.fontFamily,
       linkHandler: {
@@ -186,6 +187,9 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
       onTitleChangeRef.current?.(title);
     });
 
+    // Register terminal instance for blur management
+    registerTerminalInstance(id, terminal);
+
     // Register with terminal registry on focus, unregister on blur
     const handleTerminalFocus = () => {
       registerActiveTerminal(copyPasteFns);
@@ -234,6 +238,7 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
       terminal.textarea?.removeEventListener('focus', handleTerminalFocus);
       terminal.textarea?.removeEventListener('blur', handleTerminalBlur);
       unregisterActiveTerminal(copyPasteFns);
+      unregisterTerminalInstance(id);
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
@@ -251,6 +256,20 @@ export function DrawerTerminal({ id, entityId, directory, command, isActive, sho
       terminalRef.current.options.theme = xtermTheme;
     }
   }, [xtermTheme]);
+
+  // Control cursor blink and style based on active state
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    terminal.options.cursorBlink = isActive;
+
+    // Access xterm internals to force the inactive cursor style (outline)
+    const core = (terminal as any)._core;
+    if (core?._coreBrowserService) {
+      core._coreBrowserService._isFocused = isActive;
+    }
+  }, [isActive]);
 
   // Listen for pty-exit event to auto-close the tab
   useEffect(() => {
