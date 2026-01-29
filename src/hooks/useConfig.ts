@@ -11,12 +11,17 @@ export interface TerminalConfig {
   padding: number;
 }
 
-/** Drawer-specific configuration (same as TerminalConfig) */
-export type DrawerConfig = TerminalConfig;
+/** Drawer-specific configuration */
+export interface DrawerConfig extends TerminalConfig {
+  /** Opacity (0.0 to 1.0) applied to the drawer when open but not focused */
+  unfocusedOpacity: number;
+}
 
 export interface MainConfig extends TerminalConfig {
   /** Command to run in the main terminal pane. If null, spawns user's shell. */
   command: string | null;
+  /** Opacity (0.0 to 1.0) applied to the main area when drawer is focused. If null, uses panes.unfocusedOpacity. */
+  unfocusedOpacity: number | null;
 }
 
 export interface MergeConfig {
@@ -149,12 +154,14 @@ const defaultConfig: Config = {
     fontSize: 13,
     fontLigatures: false,
     padding: 8,
+    unfocusedOpacity: null,
   },
   drawer: {
     fontFamily: "Menlo, Monaco, 'Courier New', monospace",
     fontSize: 13,
     fontLigatures: false,
     padding: 8,
+    unfocusedOpacity: 0.7,
   },
   apps: {
     // No defaults - will use platform defaults

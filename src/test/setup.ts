@@ -29,8 +29,8 @@ export function emitEvent(eventName: string, payload: unknown) {
 // Default config - minimal structure that the app requires
 // Tests can override specific values as needed
 export const defaultTestConfig = {
-  main: { command: null, fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
-  drawer: { fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8 },
+  main: { command: null, fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8, unfocusedOpacity: null },
+  drawer: { fontFamily: 'Menlo', fontSize: 13, fontLigatures: false, padding: 8, unfocusedOpacity: 0.7 },
   navigation: {},
   indicators: { activityTimeout: 5000, showIdleCheck: true },
   apps: { terminal: 'Terminal', editor: 'VS Code' },

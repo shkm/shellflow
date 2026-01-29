@@ -41,6 +41,12 @@
           "minimum": 0,
           "maximum": 64,
           "default": 8
+        },
+        "unfocusedOpacity": {
+          "type": "number",
+          "description": "Opacity (0.0 to 1.0) applied to the main area when drawer is focused. Defaults to panes.unfocusedOpacity if not specified.",
+          "minimum": 0,
+          "maximum": 1
         }
       },
       "additionalProperties": false
@@ -68,6 +74,12 @@
           "description": "Padding around the terminal content in pixels. Inherits from main if not specified.",
           "minimum": 0,
           "maximum": 64
+        },
+        "unfocusedOpacity": {
+          "type": "number",
+          "description": "Opacity (0.0 to 1.0) applied to the drawer when open but not focused. Defaults to panes.unfocusedOpacity if not specified.",
+          "minimum": 0,
+          "maximum": 1
         }
       },
       "additionalProperties": false

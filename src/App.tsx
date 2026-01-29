@@ -27,6 +27,7 @@ import { useIndicators } from './hooks/useIndicators';
 import { useDrawerTabs } from './hooks/useDrawerTabs';
 import { useSessionTabs, SessionTab } from './hooks/useSessionTabs';
 import { useSplitActions } from './contexts/SplitContext';
+import { log } from './lib/log';
 import { selectFolder, shutdown, ptyKill, ptyForceKill, stashChanges, stashPop, reorderProjects, reorderWorktrees, expandActionPrompt, ActionPromptContext, updateActionAvailability, touchProject } from './lib/tauri';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { ActionContext, ActionId, getMenuAvailability } from './lib/actions';
@@ -1380,10 +1381,14 @@ function App() {
 
   // Switch focus between main and drawer panes
   const handleSwitchFocus = useCallback(() => {
-    if (!activeEntityId) return;
+    if (!activeEntityId) {
+      log.info('[handleSwitchFocus] No active entity, aborting');
+      return;
+    }
 
     const currentFocus = focusStates.get(activeEntityId) ?? 'main';
     const newFocus = currentFocus === 'main' ? 'drawer' : 'main';
+    log.info('[handleSwitchFocus] Switching focus', { activeEntityId, currentFocus, newFocus, isDrawerOpen });
 
     // If switching to drawer and it's not open, open it
     if (newFocus === 'drawer' && !isDrawerOpen) {
@@ -1428,7 +1433,31 @@ function App() {
       next.set(activeEntityId, newFocus);
       return next;
     });
-  }, [activeEntityId, focusStates, isDrawerOpen, drawerTabs, drawerTabCounters, dispatchPanelResizeComplete]);
+
+    // Focus the terminal textarea directly (must be synchronous to preserve user gesture context)
+    if (newFocus === 'drawer') {
+      log.info('[handleSwitchFocus] Focusing drawer');
+      const activeTabId = drawerActiveTabIds.get(activeEntityId) ?? drawerTabs.get(activeEntityId)?.[0]?.id;
+      if (activeTabId) {
+        const textarea = document.querySelector(
+          `[data-terminal-id="${activeTabId}"] textarea.xterm-helper-textarea`
+        ) as HTMLTextAreaElement | null;
+        log.info('[handleSwitchFocus] Drawer textarea', { activeTabId, found: !!textarea });
+        textarea?.focus();
+      }
+    } else {
+      log.info('[handleSwitchFocus] Focusing main');
+      // Get the active pane ID from the split state
+      const activePaneId = activeSessionTabId ? getActivePaneId(activeSessionTabId) : null;
+      if (activePaneId) {
+        const textarea = document.querySelector(
+          `[data-terminal-id="${activePaneId}"] textarea.xterm-helper-textarea`
+        ) as HTMLTextAreaElement | null;
+        log.info('[handleSwitchFocus] Main textarea', { activePaneId, found: !!textarea });
+        textarea?.focus();
+      }
+    }
+  }, [activeEntityId, activeSessionTabId, focusStates, isDrawerOpen, drawerTabs, drawerTabCounters, drawerActiveTabIds, getActivePaneId, dispatchPanelResizeComplete]);
 
   // Navigate back in history (Cmd+[)
   const handleNavigateBack = useCallback(() => {
@@ -3446,7 +3475,14 @@ function App() {
             className="h-full"
           >
             <Panel panelRef={mainPanelRef} minSize="0px" collapsible collapsedSize="0px">
-              <div className="h-full">
+              <div
+                className="h-full transition-opacity duration-150"
+                style={{
+                  opacity: isDrawerOpen && activeFocusState === 'drawer'
+                    ? (config.main.unfocusedOpacity ?? config.panes.unfocusedOpacity)
+                    : 1
+                }}
+              >
                 <MainPane
                   sessions={sessions}
                   openSessionIds={openSessionIds}
@@ -3462,7 +3498,10 @@ function App() {
                   terminalConfig={mainTerminalConfig}
                   editorConfig={config.main}
                   activityTimeout={config.indicators.activityTimeout}
-                  unfocusedPaneOpacity={config.panes.unfocusedOpacity}
+                  unfocusedPaneOpacity={
+                    // Don't apply pane opacity when drawer is focused (whole main area is already dimmed)
+                    isDrawerOpen && activeFocusState === 'drawer' ? 1 : config.panes.unfocusedOpacity
+                  }
                   shouldAutoFocus={activeFocusState === 'main'}
                   focusTrigger={mainFocusTrigger}
                   configErrors={configErrors}
@@ -3498,7 +3537,14 @@ function App() {
               collapsedSize="0px"
               onResize={handleDrawerResize}
             >
-              <div className="h-full overflow-hidden">
+              <div
+                className="h-full overflow-hidden transition-opacity duration-150"
+                style={{
+                  opacity: isDrawerOpen && activeFocusState !== 'drawer'
+                    ? config.drawer.unfocusedOpacity
+                    : 1
+                }}
+              >
                 <Drawer
                   isOpen={isDrawerOpen}
                   isExpanded={isDrawerExpanded}
@@ -3542,7 +3588,7 @@ function App() {
                               tab.id === activeDrawerTabId &&
                               activeFocusState === 'drawer'
                             }
-                            terminalConfig={drawerTerminalConfig}
+                                                        terminalConfig={drawerTerminalConfig}
                             onPtyIdReady={(ptyId) => handleTaskPtyIdReady(entityId, tab.taskName!, ptyId)}
                             onTaskExit={(exitCode) => handleTaskExit(entityId, tab.taskName!, exitCode)}
                             onFocus={() => handleDrawerFocused(entityId)}
@@ -3566,7 +3612,7 @@ function App() {
                               tab.id === activeDrawerTabId &&
                               activeFocusState === 'drawer'
                             }
-                            terminalConfig={drawerTerminalConfig}
+                                                        terminalConfig={drawerTerminalConfig}
                             onFocus={() => handleDrawerFocused(entityId)}
                           />
                         ) : (
@@ -3586,7 +3632,7 @@ function App() {
                               tab.id === activeDrawerTabId &&
                               activeFocusState === 'drawer'
                             }
-                            terminalConfig={drawerTerminalConfig}
+                                                        terminalConfig={drawerTerminalConfig}
                             onClose={() => handleCloseDrawerTab(tab.id, entityId)}
                             onFocus={() => handleDrawerFocused(entityId)}
                             onPtyIdReady={(ptyId) => handleDrawerPtyIdReady(tab.id, ptyId)}

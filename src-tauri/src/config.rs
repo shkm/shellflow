@@ -85,7 +85,7 @@ impl Config {
     /// Resolve a RawConfig into a Config by inheriting drawer values from main
     pub fn from_raw(raw: RawConfig) -> Self {
         Self {
-            drawer: DrawerConfig::from_raw(&raw.drawer, &raw.main),
+            drawer: DrawerConfig::from_raw(&raw.drawer, &raw.main, raw.panes.unfocused_opacity),
             main: raw.main,
             apps: raw.apps,
             worktree: raw.worktree,
@@ -378,6 +378,10 @@ pub struct MainConfig {
     pub font_ligatures: bool,
     /// Padding around the terminal content in pixels
     pub padding: u16,
+    /// Opacity (0.0 to 1.0) applied to the main area when drawer is focused.
+    /// If not specified, uses panes.unfocusedOpacity.
+    #[serde(rename = "unfocusedOpacity", skip_serializing_if = "Option::is_none")]
+    pub unfocused_opacity: Option<f64>,
 }
 
 impl Default for MainConfig {
@@ -388,6 +392,7 @@ impl Default for MainConfig {
             font_size: 13,
             font_ligatures: false,
             padding: 8,
+            unfocused_opacity: None, // Uses panes.unfocusedOpacity when None
         }
     }
 }
@@ -466,6 +471,10 @@ pub struct RawDrawerConfig {
     pub font_ligatures: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub padding: Option<u16>,
+    /// Opacity (0.0 to 1.0) applied to the drawer when open but not focused.
+    /// If not specified, uses panes.unfocusedOpacity.
+    #[serde(rename = "unfocusedOpacity", skip_serializing_if = "Option::is_none")]
+    pub unfocused_opacity: Option<f64>,
 }
 
 /// Resolved drawer config with all fields populated (inherits from main)
@@ -479,16 +488,21 @@ pub struct DrawerConfig {
     pub font_ligatures: bool,
     /// Padding around the terminal content in pixels
     pub padding: u16,
+    /// Opacity (0.0 to 1.0) applied to the drawer when open but not focused.
+    #[serde(rename = "unfocusedOpacity")]
+    pub unfocused_opacity: f64,
 }
 
 impl DrawerConfig {
-    /// Resolve drawer config by inheriting missing values from main config
-    pub fn from_raw(raw: &RawDrawerConfig, main: &MainConfig) -> Self {
+    /// Resolve drawer config by inheriting missing values from main config.
+    /// `panes_unfocused_opacity` is the fallback for unfocused_opacity if not specified.
+    pub fn from_raw(raw: &RawDrawerConfig, main: &MainConfig, panes_unfocused_opacity: f64) -> Self {
         Self {
             font_family: raw.font_family.clone().unwrap_or_else(|| main.font_family.clone()),
             font_size: raw.font_size.unwrap_or(main.font_size),
             font_ligatures: raw.font_ligatures.unwrap_or(main.font_ligatures),
             padding: raw.padding.unwrap_or(main.padding),
+            unfocused_opacity: raw.unfocused_opacity.unwrap_or(panes_unfocused_opacity),
         }
     }
 }
@@ -500,6 +514,7 @@ impl Default for DrawerConfig {
             font_size: 13,
             font_ligatures: false,
             padding: 8,
+            unfocused_opacity: 0.7, // Same default as panes.unfocusedOpacity
         }
     }
 }

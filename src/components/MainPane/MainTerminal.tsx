@@ -13,6 +13,7 @@ import { useXtermTheme } from '../../theme';
 import { useTerminalFileDrop } from '../../hooks/useTerminalFileDrop';
 import { attachKeyboardHandlers, createTerminalCopyPaste, loadWebGLWithRecovery } from '../../lib/terminal';
 import { registerActiveTerminal, unregisterActiveTerminal } from '../../lib/terminalRegistry';
+import { log } from '../../lib/log';
 import '@xterm/xterm/css/xterm.css';
 
 // Fix for xterm.js not handling 5-part colon-separated RGB sequences.
@@ -621,10 +622,16 @@ export function MainTerminal({ entityId, sessionId, type = 'main', isActive, sho
 
   // Focus terminal when shouldAutoFocus is true or when focusTrigger changes
   useEffect(() => {
-    if (shouldAutoFocus && terminalRef.current) {
-      terminalRef.current.focus();
+    log.debug('[MainTerminal] Focus effect', { entityId, shouldAutoFocus, focusTrigger, hasTerminal: !!terminalRef.current });
+    if (shouldAutoFocus) {
+      // Focus the xterm textarea directly
+      const textarea = document.querySelector(
+        `[data-terminal-id="${entityId}"] textarea.xterm-helper-textarea`
+      ) as HTMLTextAreaElement | null;
+      log.info('[MainTerminal] Focusing terminal textarea', { entityId, found: !!textarea });
+      textarea?.focus();
     }
-  }, [shouldAutoFocus, focusTrigger]);
+  }, [shouldAutoFocus, focusTrigger, entityId]);
 
   return (
     <div className="relative w-full h-full overflow-hidden" data-terminal-id={entityId} style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding, contain: 'strict' }}>

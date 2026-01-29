@@ -47,6 +47,8 @@ interface TaskTerminalProps {
   taskName: string;
   isActive: boolean;
   shouldAutoFocus: boolean;
+  /** Counter that triggers focus when incremented */
+  focusTrigger?: number;
   terminalConfig: TerminalConfig;
   onPtyIdReady?: (ptyId: string) => void;
   onTaskExit?: (exitCode: number) => void;
@@ -59,6 +61,7 @@ export function TaskTerminal({
   taskName,
   isActive,
   shouldAutoFocus,
+  focusTrigger,
   terminalConfig,
   onPtyIdReady,
   onTaskExit,
@@ -341,12 +344,18 @@ export function TaskTerminal({
     }
   }, [isActive, isPtyReady, immediateResize]);
 
-  // Focus terminal when shouldAutoFocus is true
+  // Focus terminal when shouldAutoFocus is true or when focusTrigger changes
   useEffect(() => {
-    if (shouldAutoFocus && terminalRef.current) {
-      terminalRef.current.focus();
+    if (shouldAutoFocus) {
+      // Focus the xterm textarea directly using document.querySelector (same approach as SplitContainer)
+      requestAnimationFrame(() => {
+        const textarea = document.querySelector(
+          `[data-terminal-id="${id}"] textarea.xterm-helper-textarea`
+        ) as HTMLTextAreaElement | null;
+        textarea?.focus();
+      });
     }
-  }, [shouldAutoFocus]);
+  }, [shouldAutoFocus, focusTrigger, id]);
 
   // Update terminal theme when it changes
   useEffect(() => {
@@ -356,7 +365,7 @@ export function TaskTerminal({
   }, [xtermTheme]);
 
   return (
-    <div className="relative w-full h-full" style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding, contain: 'strict' }}>
+    <div className="relative w-full h-full" data-terminal-id={id} style={{ backgroundColor: xtermTheme.background, padding: terminalConfig.padding, contain: 'strict' }}>
       <div ref={containerRef} className="w-full h-full" />
       {isResizing && (
         <div className="absolute inset-0 z-50" style={{ backgroundColor: xtermTheme.background }} />
