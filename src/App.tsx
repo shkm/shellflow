@@ -3587,8 +3587,8 @@ function App() {
                           entityId === activeEntityId &&
                           isDrawerOpen &&
                           tab.id === activeDrawerTabId
-                            ? 'visible z-10'
-                            : 'invisible z-0 pointer-events-none'
+                            ? 'z-10'
+                            : 'opacity-0 z-0 pointer-events-none'
                         }`}
                       >
                         {tab.type === 'task' && tab.taskName ? (
