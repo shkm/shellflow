@@ -258,6 +258,12 @@ textarea,
   background: var(--bg-2) !important;
 }
 
+/* Remove shadow and use normal border color for split diff view */
+.monaco-diff-editor.side-by-side .editor.modified {
+  box-shadow: none !important;
+  border-left: 1px solid var(--border-1) !important;
+}
+
 /* macOS title bar drag region */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;
