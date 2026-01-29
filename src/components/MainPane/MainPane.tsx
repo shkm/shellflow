@@ -793,8 +793,8 @@ export const MainPane = memo(function MainPane({
                 key={tab.id}
                 className={`absolute inset-0 ${
                   isActiveTab
-                    ? 'visible z-10'
-                    : 'invisible z-0 pointer-events-none'
+                    ? 'z-10'
+                    : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
                 {tabElement}
