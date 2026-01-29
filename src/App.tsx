@@ -877,7 +877,18 @@ function App() {
       next.set(activeEntityId, target);
       return next;
     });
-  }, [activeEntityId, isDrawerOpen, isDrawerExpanded, drawerTabs, drawerTabCounters, dispatchPanelResize]);
+
+    // Directly focus main terminal when closing drawer
+    if (!willOpen) {
+      const activePaneId = activeSessionTabId ? getActivePaneId(activeSessionTabId) : null;
+      if (activePaneId) {
+        const textarea = document.querySelector(
+          `[data-terminal-id="${activePaneId}"] textarea.xterm-helper-textarea`
+        ) as HTMLTextAreaElement | null;
+        textarea?.focus();
+      }
+    }
+  }, [activeEntityId, activeSessionTabId, isDrawerOpen, isDrawerExpanded, drawerTabs, drawerTabCounters, getActivePaneId, dispatchPanelResize]);
 
   // Toggle drawer expansion handler (maximize/restore within main area)
   const handleToggleDrawerExpand = useCallback(() => {
@@ -1272,6 +1283,14 @@ function App() {
         next.set(targetEntityId, 'main');
         return next;
       });
+      // Directly focus main terminal
+      const activePaneId = activeSessionTabId ? getActivePaneId(activeSessionTabId) : null;
+      if (activePaneId) {
+        const textarea = document.querySelector(
+          `[data-terminal-id="${activePaneId}"] textarea.xterm-helper-textarea`
+        ) as HTMLTextAreaElement | null;
+        textarea?.focus();
+      }
     }
 
     setDrawerTabs((prev) => {
@@ -1295,7 +1314,7 @@ function App() {
         return next;
       });
     }
-  }, [activeEntityId, isDrawerExpanded, drawerTabs, drawerActiveTabIds, drawerPtyIds]);
+  }, [activeEntityId, activeSessionTabId, isDrawerExpanded, drawerTabs, drawerActiveTabIds, drawerPtyIds, getActivePaneId]);
 
   // Register drawer terminal PTY ID
   const handleDrawerPtyIdReady = useCallback((tabId: string, ptyId: string) => {
