@@ -29,9 +29,9 @@
 
 > [!WARNING]
 >
-> - This project is in early development. Things might break.
-> - It's written with heavy AI assistance.
-> - It should work on all platforms but only MacOS is supported at the moment.
+> No longer maintained
+
+This was an experiment in vibe-coding an application for a keyboard-centric worktree-based workflow. We got rather far, but once it became a little complex, the amount of jank present from glued-together react components became unusable. I've since moved back to neovim.
 
 ## What is this?
 
